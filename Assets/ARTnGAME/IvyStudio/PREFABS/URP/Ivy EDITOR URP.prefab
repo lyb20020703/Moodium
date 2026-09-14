@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &727318728625689041
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 727318728625689043}
+  - component: {fileID: 727318728625689042}
+  m_Layer: 0
+  m_Name: Ivy EDITOR URP
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &727318728625689043
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727318728625689041}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &727318728625689042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727318728625689041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a10b35460506dc4fbe646a62944f84d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sourceGenerators:
+  - {fileID: 5421405598398424157, guid: ee9478830ce122b458bf90ed007701b3, type: 3}
+  - {fileID: 3475717432368046236, guid: b517e3b496411404d9b665d70cc3e259, type: 3}
+  ivyGenerators: []
+  EditorIvysHolder: {fileID: 0}
+  maxIvysPerHolder: 3
+  addRunTimeColliders: 0
+  runTimeIvyGenerators: []
+  RunTimeIvysHolder: {fileID: 0}
+  useSingleBranchMesh: 0
+  gridTiles: 2
+  coveredLandPerTile: 10
+  initialized: 0
+  m_record:
+    index: 0
+    colors: []

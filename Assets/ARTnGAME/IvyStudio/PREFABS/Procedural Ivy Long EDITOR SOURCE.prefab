@@ -1,0 +1,158 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3475717432368046239
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3475717432368046227}
+  - component: {fileID: 3475717432368046236}
+  - component: {fileID: 3475717432368046237}
+  - component: {fileID: 3475717432368046238}
+  m_Layer: 0
+  m_Name: Procedural Ivy Long EDITOR SOURCE
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3475717432368046227
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475717432368046239}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3475717432368046236
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475717432368046239}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 312e144a4368751418c6bd6fc4f26d0c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 0}
+  confineToLayers: 0
+  plantLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  runTimePlanting: 0
+  plantMouseButton: 0
+  addColliderPerIvy: 1
+  colliderScale: 0.1
+  growIvy: 0
+  growFlowers: 0
+  growIvySpeed: 1
+  growFlowerSpeed: 1
+  growIvyMaterial: {fileID: 0}
+  growingMaterials: []
+  growthAmount: []
+  growingItems: []
+  growingItemsBranch: []
+  globalBatchEditorIvy: 1
+  singleMeshBranch: 0
+  randomSeed: 1
+  autoLOD: 1
+  limitPlantingArea: 1
+  plantExtends: 10
+  plantExtendsLODLimit: 2
+  maxFlowerPerHolder: 1
+  addLeaves: 1
+  flowerDivide: 9
+  flowerChance: 0.755
+  offsetRadius: 0.01
+  FlowerScale: 1
+  LeafScale: 1
+  flowerScaleMinMax: {x: 1, y: 1}
+  leafScaleMinMax: {x: 1, y: 1}
+  use3dbranch: 1
+  branch3dSize: 0.03
+  branch3dDivisions: 8
+  narrowFactor: 0.03
+  spiderweb: 0
+  branchCount: 12
+  directionality: {x: 0, y: 0, z: 0, w: 0}
+  useCameraDirection: 0
+  branchPartLength: 0.15
+  ivyTrailLength: 0.5
+  ivyTrailWidth: 0.0165
+  cutOffDistance: 0.5
+  normalMult: 0.01
+  surfaceOffset: 0.05
+  maxBranchPositions: 50
+  zigZagPower: 1.3
+  gravityFactor: {x: 0, y: 0, z: 0, w: 0}
+  curvingPower: {x: 0, y: 0, z: 0, w: 0}
+  leavesPrefab: {fileID: 11132687968903304, guid: 360a6234112f0a244a8fe447e43086e4,
+    type: 3}
+  flowersPrefab: {fileID: 7929275899112896877, guid: fa57520a6593edc4f8e581cd3e3f62fe,
+    type: 3}
+  branchMaterial: {fileID: 2100000, guid: c8258cd6023c3694aa9c8c4701c4d5dc, type: 2}
+  ungrown: 0
+  editorIvyHolder: {fileID: 0}
+  globallyBatched: 0
+  flowerHolders: []
+  flowersAdded: 0
+  ivyStrokes: []
+  create3dmesh: 0
+--- !u!33 &3475717432368046237
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475717432368046239}
+  m_Mesh: {fileID: 0}
+--- !u!23 &3475717432368046238
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3475717432368046239}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: c8258cd6023c3694aa9c8c4701c4d5dc, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0

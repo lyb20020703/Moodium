@@ -1,0 +1,139 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Leafs SRP InfiniGRASS GROW
+  m_Shader: {fileID: 4800000, guid: 12ed473abfff89f40a765405ca68a82b, type: 3}
+  m_ShaderKeywords: _ALPHATEST_ON _LEAF_ON _NORMALMAP
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: e7bbb47a911921048b7f9c9650e198ed, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Diffuse:
+        m_Texture: {fileID: 2800000, guid: c60fce0254e720244bd6ff32bcdec2cf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Emission:
+        m_Texture: {fileID: 2800000, guid: 795737501625c054ea8c861e29bfd675, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionPower:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: c60fce0254e720244bd6ff32bcdec2cf, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Normal:
+        m_Texture: {fileID: 2800000, guid: e7bbb47a911921048b7f9c9650e198ed, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Ramp:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SnowTexture:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _Amount: 1
+    - _BaseColorYShift: 1
+    - _BaseLight: 0
+    - _BulgeScale: 0.1
+    - _BulgeScale_copy: 0.1
+    - _BulgeShape: 0.1
+    - _BumpScale: 18.64
+    - _Cutoff: 0.96
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _EmissionPower: 4.41
+    - _FadeThreshold: 100
+    - _GlossMapScale: 1
+    - _Glossiness: 0.21
+    - _GlossyReflections: 1
+    - _Horizontal: 0
+    - _InteractMaxYoffset: 1.5
+    - _Leaf: 1
+    - _Metallic: 0.78
+    - _Mode: 1
+    - _OcclusionStrength: 1
+    - _Parallax: 0.02
+    - _Radius: 0
+    - _RandYScale: 0
+    - _RippleScale: 0
+    - _SmoothMotionFactor: 105
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SpecularPower: 1
+    - _SrcBlend: 1
+    - _StopMotionThreshold: 0
+    - _Thickness: 0
+    - _TintFrequency: 0.1
+    - _TintPower: 0
+    - _UVSec: 0
+    - _WaveXFactor: 0
+    - _WaveYFactor: 0
+    - _ZWrite: 1
+    - _growStage: 0
+    - shadowBrightness: 1
+    - shadowBrightnessCutoff: 0
+    m_Colors:
+    - _Color: {r: 0.922267, g: 1, b: 0.5235849, a: 1}
+    - _ColorCenter: {r: 0.08540359, g: 0.33962262, b: 0, a: 1}
+    - _ColorEnd: {r: 0.30596635, g: 0.7075472, b: 0, a: 1}
+    - _ColorGlobal: {r: 1, g: 0.9827649, b: 0.9764151, a: 0}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionPower: {r: 11.75, g: 4, b: 1, a: 1}
+    - _InteractPos: {r: 0, g: 0, b: 0, a: 0}
+    - _InteractSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _OceanCenter: {r: 0, g: 0, b: 0, a: 0}
+    - _TimeControl1: {r: 4, g: 0, b: 0, a: 0}
+    - _WaveControl1: {r: 10, g: 1, b: 1, a: 1}
