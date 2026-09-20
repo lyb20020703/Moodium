@@ -4,6 +4,8 @@ using System.Linq;
 using Moodium.Opening;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -24,7 +26,11 @@ public static class MoodiumOpeningExperienceSetup
     const string ChineseFontSource = "Assets/TextMesh Pro/Fonts/AlibabaPuHuiTi-2-35-Thin.ttf";
     const string ChineseFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi-2-35-Thin SDF.asset";
     const string EnglishFontAsset = "Assets/UI/Moodium/Fonts/Inter-Regular SDF.asset";
-    const string VersionKey = "Moodium.OpeningExperience.Setup.v15";
+    const string IntroVideoAsset = "Assets/Video/OpenningAni.mp4";
+    const string LeftHandGuideAsset = "Assets/prefab/UI-LeftHand.prefab";
+    const string RightHandGuideAsset = "Assets/prefab/UI-RightHand.prefab";
+    const string IntroPromptFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi Moodium SDF.asset";
+    const string VersionKey = "Moodium.OpeningExperience.Setup.v16";
 
     static MoodiumOpeningExperienceSetup()
     {
@@ -100,7 +106,13 @@ public static class MoodiumOpeningExperienceSetup
             Assign(manager,
                 ("m_AnimationController", animations),
                 ("m_CandyInteraction", interaction),
-                ("m_TouchPrompt", prompt));
+                ("m_TouchPrompt", prompt),
+                ("m_PreOpeningVideo", AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(IntroVideoAsset)),
+                ("m_LeftHandGuidePrefab", AssetDatabase.LoadAssetAtPath<GameObject>(LeftHandGuideAsset)),
+                ("m_RightHandGuidePrefab", AssetDatabase.LoadAssetAtPath<GameObject>(RightHandGuideAsset)),
+                ("m_HandPromptFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(IntroPromptFontAsset)));
+            AssignFloat(manager,
+                ("m_PreOpeningVideoHeightOffset", 0.13f));
 
             ValidateClipBindings(candy.GetComponentInChildren<Animator>(true), candyClip);
 
@@ -152,13 +164,13 @@ public static class MoodiumOpeningExperienceSetup
             EditorApplication.delayCall += TryAutomaticSetup;
             return;
         }
-        if (SessionState.GetBool(VersionKey, false))
+        if (EditorPrefs.GetBool(VersionKey, false))
             return;
         if (AssetDatabase.LoadAssetAtPath<GameObject>(CandyFbx) == null ||
             AssetDatabase.LoadAssetAtPath<GameObject>(SpriteFbx) == null ||
             AssetDatabase.LoadAssetAtPath<GameObject>(LogoFbx) == null)
             return;
-        SessionState.SetBool(VersionKey, true);
+        EditorPrefs.SetBool(VersionKey, true);
         BuildOpeningExperience();
     }
 
@@ -776,6 +788,31 @@ public static class MoodiumOpeningExperienceSetup
         var name = path.Substring(path.LastIndexOf('/') + 1);
         EnsureFolder(parent);
         AssetDatabase.CreateFolder(parent, name);
+    }
+}
+
+public sealed class MoodiumOpeningBuildValidator : IPreprocessBuildWithReport
+{
+    public int callbackOrder => -1000;
+
+    public void OnPreprocessBuild(BuildReport report)
+    {
+        const string prefabPath = "Assets/prefab/MoodiumOpening/MoodiumOpening.prefab";
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        var manager = prefab != null ? prefab.GetComponent<OpeningManager>() : null;
+        if (manager == null)
+            throw new BuildFailedException($"Moodium opening prefab or OpeningManager is missing: {prefabPath}");
+
+        var serialized = new SerializedObject(manager);
+        foreach (var propertyName in new[]
+                 {
+                     "m_PreOpeningVideo", "m_LeftHandGuidePrefab", "m_RightHandGuidePrefab", "m_HandPromptFont"
+                 })
+        {
+            if (serialized.FindProperty(propertyName)?.objectReferenceValue == null)
+                throw new BuildFailedException(
+                    $"Moodium opening asset '{propertyName}' is missing. Rebuild the Opening Experience before building the app.");
+        }
     }
 }
 #endif

@@ -9,6 +9,7 @@ using Unity.PolySpatial;
 using Moodium.Audio;
 using Moodium.CandyWorld;
 using Moodium.Flow.ObjectPicker;
+using Moodium.Opening;
 using Moodium.Reality;
 
 namespace Moodium.Flow
@@ -17,8 +18,12 @@ namespace Moodium.Flow
     {
         [Header("Existing scene modules")]
         [SerializeField] ARTrackedObjectManager m_TrackedObjectManager;
+        [SerializeField] ARTrackedImageManager m_TrackedImageManager;
         [SerializeField] ARMeshManager m_SpatialMeshManager;
         [SerializeField] MeshSwiftUIDriver m_SpatialPhysicsDriver;
+
+        [Header("Moodium entrance")]
+        [SerializeField] MoodiumPortalEntranceController m_PortalEntrance;
 
         [Header("Creative Space worlds")]
         [SerializeField] MoodiumWorldDefinition[] m_Worlds;
@@ -71,6 +76,7 @@ namespace Moodium.Flow
         GameObject m_CandyTransformationPreviewInstance;
         Camera m_MainCamera;
         bool m_LoggedMissingFont;
+        bool m_FlowUiReady;
 
         public MoodiumMode CurrentMode => m_CurrentMode;
 
@@ -79,6 +85,14 @@ namespace Moodium.Flow
             MoodiumAudioManager.StopBackgroundMusic();
             SetExistingModules(false, false);
             HideAllPanels();
+            m_PortalEntrance?.HideImmediate();
+        }
+
+        public void BeginPortalFlow()
+        {
+            enabled = true;
+            if (m_FlowUiReady)
+                ShowPortalEntrance();
         }
 
         void Awake()
@@ -86,6 +100,8 @@ namespace Moodium.Flow
             HideSpatialMeshVisualization();
             if (m_TrackedObjectManager != null)
                 m_TrackedObjectManager.enabled = false;
+            if (m_TrackedImageManager != null)
+                m_TrackedImageManager.enabled = false;
             if (m_SpatialPhysicsDriver != null)
                 m_SpatialPhysicsDriver.enabled = false;
         }
@@ -101,6 +117,8 @@ namespace Moodium.Flow
 
             if (m_TrackedObjectManager != null)
                 m_TrackedObjectManager.enabled = false;
+            if (m_TrackedImageManager != null)
+                m_TrackedImageManager.enabled = false;
 
             if (m_SpatialPhysicsDriver != null)
                 m_SpatialPhysicsDriver.enabled = false;
@@ -117,18 +135,23 @@ namespace Moodium.Flow
             }
 
             BuildFlowUI();
-            ShowModeSelection();
+            m_FlowUiReady = true;
+
+            // The opening sequence owns the initial flow when it is present in the
+            // scene. It calls BeginPortalFlow only after the video and candy reveal.
+            if (FindFirstObjectByType<Moodium.Opening.OpeningManager>() != null)
+            {
+                Debug.Log("[Moodium Flow] Waiting for MoodiumOpening before showing the portal.");
+                yield break;
+            }
+            ShowPortalEntrance();
         }
 
         void BuildFlowUI()
         {
             m_UiRoot = new GameObject("Moodium Flow UI").transform;
 
-            BuildModeSelection();
-            BuildWorldSelectionPanel();
             BuildObjectWorldSelectionPanel();
-            BuildNoObjectPanel();
-            BuildInteractionPanel();
             BuildObjectPanel();
         }
 
@@ -155,12 +178,6 @@ namespace Moodium.Flow
                 SelectObjectWorld,
                 PreviewWorldMusic);
 
-            CreateButton(
-                m_ObjectWorldSelectionPanel.transform,
-                "Back",
-                new Vector3(0f, -0.36f, 0f),
-                new Vector2(0.28f, 0.09f),
-                ShowModeSelection);
             m_ObjectWorldSelectionPanel.SetActive(false);
         }
 
@@ -327,21 +344,40 @@ namespace Moodium.Flow
                 "Back",
                 new Vector3(0f, 0.834f, 0f),
                 new Vector2(0.18f, 0.07f),
-                ShowModeSelection);
+                ShowObjectWorldSelection);
             m_ObjectPanel.SetActive(false);
         }
 
         public void ShowModeSelection()
         {
+            ShowPortalEntrance();
+        }
+
+        public void ShowPortalEntrance()
+        {
             ExitCreativeSpaceIfNeeded();
             StopCandyWorldExperience();
             MoodiumAudioManager.StopBackgroundMusic();
-            SetMode(MoodiumMode.ModeSelection);
+            SetMode(MoodiumMode.Intro);
             SetExistingModules(false, false);
             HideAllPanels();
-            PlacePanel(m_ModePanel, -0.05f);
-            m_ModePanel.SetActive(true);
-            Debug.Log("[Moodium Flow] Mode selection shown.");
+            if (m_PortalEntrance == null)
+            {
+                Debug.LogError("[Moodium Flow] Portal entrance is missing; opening Reality world selection as fallback.");
+                ShowObjectWorldSelection();
+                return;
+            }
+            m_PortalEntrance.Completed -= HandlePortalCompleted;
+            m_PortalEntrance.Completed += HandlePortalCompleted;
+            m_PortalEntrance.Show();
+            Debug.Log("[Moodium Flow] Moodium portal entrance shown.");
+        }
+
+        void HandlePortalCompleted()
+        {
+            if (m_PortalEntrance != null)
+                m_PortalEntrance.Completed -= HandlePortalCompleted;
+            ShowObjectWorldSelection();
         }
 
         void EnterNoObjectMode()
@@ -434,9 +470,15 @@ namespace Moodium.Flow
 
         void EnterObjectMode()
         {
+            ShowObjectWorldSelection();
+        }
+
+        void ShowObjectWorldSelection()
+        {
             ExitCreativeSpaceIfNeeded();
             SetMode(MoodiumMode.ObjectTracking);
             SetExistingModules(false, false);
+            m_PortalEntrance?.HideImmediate();
             HideAllPanels();
             PlacePanel(m_ObjectWorldSelectionPanel, -0.08f);
             m_ObjectWorldSelectionPanel.SetActive(true);
@@ -457,11 +499,10 @@ namespace Moodium.Flow
             }
 
             m_SelectedWorld = world;
+            m_PortalEntrance?.HideImmediate();
             MoodiumAudioManager.PlayBackgroundMusic(world.BackgroundMusic);
             EnsureCandyWorldManager();
             m_CandyWorldManager.StartExperience(world);
-            EnsureRealitySpatialTableManager();
-            m_RealitySpatialTableManager.ShowTable(m_MainCamera);
             EnsureRealityEnhancementFlow();
             m_RealityEnhancementFlow.StartFlow();
             SetMode(MoodiumMode.ObjectTracking);
@@ -558,8 +599,10 @@ namespace Moodium.Flow
             if (m_RealityEnhancementFlow == null)
                 m_RealityEnhancementFlow = gameObject.AddComponent<RealityEnhancementFlowController>();
             var spawner = FindFirstObjectByType<TissueObjectTrackingSpawner>(FindObjectsInactive.Include);
+            var imageSpawner = FindFirstObjectByType<ImageTrackingCapsuleSpawner>(FindObjectsInactive.Include);
             m_RealityEnhancementFlow.Configure(
                 spawner,
+                imageSpawner,
                 m_MainCamera,
                 m_GlassPanelPrefab,
                 m_FontAsset,
@@ -573,6 +616,8 @@ namespace Moodium.Flow
             HideSpatialMeshVisualization();
             if (m_TrackedObjectManager != null)
                 m_TrackedObjectManager.enabled = objectTracking;
+            if (m_TrackedImageManager != null)
+                m_TrackedImageManager.enabled = objectTracking;
             if (m_SpatialPhysicsDriver != null)
             {
                 if (spatialPhysics)

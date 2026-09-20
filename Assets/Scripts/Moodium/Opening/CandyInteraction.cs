@@ -33,18 +33,6 @@ namespace Moodium.Opening
             }
         }
 
-        void OnTriggerEnter(Collider other)
-        {
-            if (m_Consumed || other == null)
-                return;
-
-            // Meshing1 creates XR-hand proxies named HandCollider. Do not accept
-            // arbitrary rigidbodies/colliders: that caused automatic triggering.
-            if (other.CompareTag("Hand") ||
-                other.name.IndexOf("HandCollider", StringComparison.OrdinalIgnoreCase) >= 0)
-                Consume();
-        }
-
         public void ResetInteraction() => m_Consumed = false;
 
         void Consume()

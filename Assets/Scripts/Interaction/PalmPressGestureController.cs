@@ -1,17 +1,19 @@
-using Moodium.Gestures;
+using System.Collections.Generic;
 using UnityEngine;
+using Unity.XR.CoreUtils;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
 
 namespace Moodium.Interaction
 {
-    /// <summary>Detects either physical palm pressing the currently tracked capsule.</summary>
+    /// <summary>Detects either physical palm touching the tracked capsule collider.</summary>
     [DisallowMultipleComponent]
     public sealed class PalmPressGestureController : MonoBehaviour
     {
         [Header("Palm contact volume (metres)")]
-        [SerializeField] Vector3 m_PalmColliderSize = new(0.09f, 0.035f, 0.105f);
-        [SerializeField, Range(-0.04f, 0.06f)] float m_PalmForwardOffset = 0.015f;
+        [SerializeField] Vector3 m_PalmColliderSize = new(0.09f, 0.06f, 0.105f);
+        [Tooltip("Offset along the derived palm normal. Keep near zero to cover both palm and hand-back surfaces.")]
+        [SerializeField, Range(-0.04f, 0.04f)] float m_PalmForwardOffset;
         [SerializeField, Min(0f)] float m_TargetPadding = 0.008f;
         [SerializeField, Min(0f)] float m_TriggerCooldown = 0.3f;
 
@@ -25,10 +27,12 @@ namespace Moodium.Interaction
         readonly Collider[] m_OverlapBuffer = new Collider[24];
 
         XRHandSubsystem m_HandSubsystem;
-        PalmPressStateMachine m_LeftState;
-        PalmPressStateMachine m_RightState;
-        ChocolateCapsuleInteraction m_Target;
-        BoxCollider m_GeneratedTargetCollider;
+        XROrigin m_XROrigin;
+        readonly HashSet<ChocolateCapsuleInteraction> m_Targets = new();
+        readonly Dictionary<ChocolateCapsuleInteraction, BoxCollider> m_GeneratedTargetColliders = new();
+        readonly Dictionary<ChocolateCapsuleInteraction, float> m_LastTriggerTimes = new();
+        ChocolateCapsuleInteraction m_LeftContactTarget;
+        ChocolateCapsuleInteraction m_RightContactTarget;
         bool m_LoggedSubsystemReady;
         bool m_LoggedSubsystemMissing;
 
@@ -37,14 +41,35 @@ namespace Moodium.Interaction
 
         public void SetTarget(ChocolateCapsuleInteraction target)
         {
-            if (m_Target == target)
-                return;
+            ClearTargets();
+            RegisterTarget(target);
+        }
 
+        public void RegisterTarget(ChocolateCapsuleInteraction target)
+        {
+            if (target == null || !m_Targets.Add(target))
+                return;
+            EnsureTargetCollider(target);
+        }
+
+        public void UnregisterTarget(ChocolateCapsuleInteraction target)
+        {
+            if (target == null || !m_Targets.Remove(target))
+                return;
+            if (m_LeftContactTarget == target) m_LeftContactTarget = null;
+            if (m_RightContactTarget == target) m_RightContactTarget = null;
+            if (target.IsPinched) target.PalmContactEnded();
+            RemoveGeneratedTargetCollider(target);
+            m_LastTriggerTimes.Remove(target);
+        }
+
+        public void ClearTargets()
+        {
             EndCurrentContact();
-            RemoveGeneratedTargetCollider();
-            m_Target = target;
-            if (m_Target != null)
-                EnsureTargetCollider();
+            foreach (var target in new List<ChocolateCapsuleInteraction>(m_Targets))
+                RemoveGeneratedTargetCollider(target);
+            m_Targets.Clear();
+            m_LastTriggerTimes.Clear();
         }
 
         public void SetInteractionEnabled(bool enabled)
@@ -59,7 +84,6 @@ namespace Moodium.Interaction
 
         void Awake()
         {
-            RebuildStateMachines();
         }
 
         void OnEnable()
@@ -83,7 +107,7 @@ namespace Moodium.Interaction
 
         void OnDestroy()
         {
-            RemoveGeneratedTargetCollider();
+            ClearTargets();
         }
 
         void OnValidate()
@@ -92,16 +116,7 @@ namespace Moodium.Interaction
             m_PalmColliderSize.y = Mathf.Max(0.005f, m_PalmColliderSize.y);
             m_PalmColliderSize.z = Mathf.Max(0.01f, m_PalmColliderSize.z);
             if (Application.isPlaying)
-            {
                 EndCurrentContact();
-                RebuildStateMachines();
-            }
-        }
-
-        void RebuildStateMachines()
-        {
-            m_LeftState = new PalmPressStateMachine(m_TriggerCooldown);
-            m_RightState = new PalmPressStateMachine(m_TriggerCooldown);
         }
 
         void TrySubscribeToHandSubsystem()
@@ -137,7 +152,7 @@ namespace Moodium.Interaction
             if (updateType != XRHandSubsystem.UpdateType.Dynamic)
                 return;
 
-            if (!m_InteractionEnabled || m_Target == null || !m_Target.isActiveAndEnabled)
+            if (!m_InteractionEnabled || m_Targets.Count == 0)
             {
                 EndCurrentContact();
                 return;
@@ -147,20 +162,12 @@ namespace Moodium.Interaction
             Physics.SyncTransforms();
             m_LeftPalmTracked = TryGetPalmBox(subsystem.leftHand, out var leftCenter, out var leftRotation);
             m_RightPalmTracked = TryGetPalmBox(subsystem.rightHand, out var rightCenter, out var rightRotation);
-            m_LeftPalmTouching = m_LeftPalmTracked && IsTouchingTarget(leftCenter, leftRotation);
-            m_RightPalmTouching = m_RightPalmTracked && IsTouchingTarget(rightCenter, rightRotation);
-
-            var leftStarted = m_LeftState.Update(m_LeftPalmTouching, now);
-            var rightStarted = m_RightState.Update(m_RightPalmTouching, now);
-            if (leftStarted || rightStarted)
-            {
-                m_Target.PalmContactStarted();
-                Debug.Log($"[Moodium Palm Press] Capsule pressed by " +
-                          $"{(leftStarted ? "left" : "right")} palm.");
-            }
-
-            if (!m_LeftPalmTouching && !m_RightPalmTouching && m_Target.IsPinched)
-                m_Target.PalmContactEnded();
+            var leftTarget = m_LeftPalmTracked ? FindTouchingTarget(leftCenter, leftRotation) : null;
+            var rightTarget = m_RightPalmTracked ? FindTouchingTarget(rightCenter, rightRotation) : null;
+            m_LeftPalmTouching = leftTarget != null;
+            m_RightPalmTouching = rightTarget != null;
+            UpdateHandContact(ref m_LeftContactTarget, leftTarget, m_RightContactTarget, "left", now);
+            UpdateHandContact(ref m_RightContactTarget, rightTarget, m_LeftContactTarget, "right", now);
         }
 
         bool TryGetPalmBox(XRHand hand, out Vector3 center, out Quaternion rotation)
@@ -170,32 +177,61 @@ namespace Moodium.Interaction
             if (!hand.isTracked)
                 return false;
 
-            var palm = hand.GetJoint(XRHandJointID.Palm);
+            // Apple visionOS reports XRHandJointID.Palm as WillNeverBeValid.
+            // Derive the palm plane from joints that visionOS actually supplies.
             var wrist = hand.GetJoint(XRHandJointID.Wrist);
             var indexMetacarpal = hand.GetJoint(XRHandJointID.IndexMetacarpal);
+            var middleMetacarpal = hand.GetJoint(XRHandJointID.MiddleMetacarpal);
             var littleMetacarpal = hand.GetJoint(XRHandJointID.LittleMetacarpal);
-            if (!palm.TryGetPose(out var palmPose) ||
-                !wrist.TryGetPose(out var wristPose) ||
+            if (!wrist.TryGetPose(out var wristPose) ||
                 !indexMetacarpal.TryGetPose(out var indexPose) ||
+                !middleMetacarpal.TryGetPose(out var middlePose) ||
                 !littleMetacarpal.TryGetPose(out var littlePose))
                 return false;
 
-            var forward = palmPose.position - wristPose.position;
-            var across = indexPose.position - littlePose.position;
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            var origin = m_XROrigin != null ? m_XROrigin.Origin.transform : null;
+            wristPose = TransformTrackingPose(wristPose, origin);
+            indexPose = TransformTrackingPose(indexPose, origin);
+            middlePose = TransformTrackingPose(middlePose, origin);
+            littlePose = TransformTrackingPose(littlePose, origin);
+            if (!TryBuildPalmBox(
+                    wristPose, indexPose, middlePose, littlePose, out center, out rotation))
+                return false;
+            center += rotation * Vector3.up * m_PalmForwardOffset;
+            return true;
+        }
+
+        public static bool TryBuildPalmBox(
+            Pose wrist,
+            Pose indexMetacarpal,
+            Pose middleMetacarpal,
+            Pose littleMetacarpal,
+            out Vector3 center,
+            out Quaternion rotation)
+        {
+            center = (wrist.position + middleMetacarpal.position) * 0.5f;
+            rotation = Quaternion.identity;
+            var forward = middleMetacarpal.position - wrist.position;
+            var across = littleMetacarpal.position - indexMetacarpal.position;
             if (forward.sqrMagnitude < 0.000001f || across.sqrMagnitude < 0.000001f)
                 return false;
 
             forward.Normalize();
-            var palmNormal = Vector3.Cross(forward, across).normalized;
-            if (palmNormal.sqrMagnitude < 0.5f)
+            var normal = Vector3.Cross(forward, across).normalized;
+            if (normal.sqrMagnitude < 0.5f)
                 return false;
-
-            center = palmPose.position + forward * m_PalmForwardOffset;
-            rotation = Quaternion.LookRotation(forward, palmNormal);
+            rotation = Quaternion.LookRotation(forward, normal);
             return true;
         }
 
         bool IsTouchingTarget(Vector3 center, Quaternion rotation)
+        {
+            return FindTouchingTarget(center, rotation) != null;
+        }
+
+        ChocolateCapsuleInteraction FindTouchingTarget(Vector3 center, Quaternion rotation)
         {
             var count = Physics.OverlapBoxNonAlloc(
                 center,
@@ -207,26 +243,28 @@ namespace Moodium.Interaction
             for (var i = 0; i < count; i++)
             {
                 var candidate = m_OverlapBuffer[i];
-                if (candidate != null &&
-                    candidate.GetComponentInParent<ChocolateCapsuleInteraction>() == m_Target)
-                    return true;
+                if (candidate == null)
+                    continue;
+                var target = candidate.GetComponentInParent<ChocolateCapsuleInteraction>();
+                if (target != null && target.isActiveAndEnabled && m_Targets.Contains(target))
+                    return target;
             }
-            return false;
+            return null;
         }
 
-        void EnsureTargetCollider()
+        void EnsureTargetCollider(ChocolateCapsuleInteraction target)
         {
-            if (m_Target.GetComponentInChildren<Collider>(true) != null)
+            if (target.GetComponentInChildren<Collider>(true) != null)
                 return;
 
-            var renderers = m_Target.GetComponentsInChildren<Renderer>(true);
+            var renderers = target.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0)
             {
                 Debug.LogWarning("[Moodium Palm Press] Capsule has no renderer for contact bounds.");
                 return;
             }
 
-            var root = m_Target.transform;
+            var root = target.transform;
             var localBounds = ToLocalBounds(root, renderers[0].bounds);
             for (var i = 1; i < renderers.Length; i++)
             {
@@ -235,15 +273,25 @@ namespace Moodium.Interaction
                 localBounds.Encapsulate(rendererBounds.max);
             }
 
-            m_GeneratedTargetCollider = m_Target.gameObject.AddComponent<BoxCollider>();
-            m_GeneratedTargetCollider.isTrigger = true;
-            m_GeneratedTargetCollider.center = localBounds.center;
+            var generatedCollider = target.gameObject.AddComponent<BoxCollider>();
+            generatedCollider.isTrigger = true;
+            generatedCollider.center = localBounds.center;
             var scale = root.lossyScale;
             var localPadding = new Vector3(
                 m_TargetPadding / Mathf.Max(Mathf.Abs(scale.x), 0.0001f),
                 m_TargetPadding / Mathf.Max(Mathf.Abs(scale.y), 0.0001f),
                 m_TargetPadding / Mathf.Max(Mathf.Abs(scale.z), 0.0001f));
-            m_GeneratedTargetCollider.size = localBounds.size + localPadding * 2f;
+            generatedCollider.size = localBounds.size + localPadding * 2f;
+            m_GeneratedTargetColliders[target] = generatedCollider;
+        }
+
+        public static Pose TransformTrackingPose(Pose trackingPose, Transform xrOrigin)
+        {
+            if (xrOrigin == null)
+                return trackingPose;
+            return new Pose(
+                xrOrigin.TransformPoint(trackingPose.position),
+                xrOrigin.rotation * trackingPose.rotation);
         }
 
         static Bounds ToLocalBounds(Transform root, Bounds worldBounds)
@@ -263,25 +311,51 @@ namespace Moodium.Interaction
 
         void EndCurrentContact()
         {
-            if (m_Target != null && m_Target.IsPinched)
-                m_Target.PalmContactEnded();
-            m_LeftState?.Reset();
-            m_RightState?.Reset();
+            if (m_LeftContactTarget != null && m_LeftContactTarget.IsPinched)
+                m_LeftContactTarget.PalmContactEnded();
+            if (m_RightContactTarget != null && m_RightContactTarget != m_LeftContactTarget &&
+                m_RightContactTarget.IsPinched)
+                m_RightContactTarget.PalmContactEnded();
+            m_LeftContactTarget = null;
+            m_RightContactTarget = null;
             m_LeftPalmTracked = false;
             m_RightPalmTracked = false;
             m_LeftPalmTouching = false;
             m_RightPalmTouching = false;
         }
 
-        void RemoveGeneratedTargetCollider()
+        void UpdateHandContact(
+            ref ChocolateCapsuleInteraction current,
+            ChocolateCapsuleInteraction next,
+            ChocolateCapsuleInteraction otherHand,
+            string handName,
+            float now)
         {
-            if (m_GeneratedTargetCollider == null)
+            if (current == next)
+                return;
+            var previous = current;
+            current = next;
+            if (previous != null && previous != otherHand && previous.IsPinched)
+                previous.PalmContactEnded();
+            if (next == null || next == otherHand)
+                return;
+            if (m_LastTriggerTimes.TryGetValue(next, out var last) && now - last < m_TriggerCooldown)
+                return;
+            m_LastTriggerTimes[next] = now;
+            next.PalmContactStarted();
+            Debug.Log($"[Moodium Palm Press] Capsule pressed by {handName} palm.");
+        }
+
+        void RemoveGeneratedTargetCollider(ChocolateCapsuleInteraction target)
+        {
+            if (!m_GeneratedTargetColliders.Remove(target, out var generatedCollider) ||
+                generatedCollider == null)
                 return;
             if (Application.isPlaying)
-                Destroy(m_GeneratedTargetCollider);
+                Destroy(generatedCollider);
             else
-                DestroyImmediate(m_GeneratedTargetCollider);
-            m_GeneratedTargetCollider = null;
+                DestroyImmediate(generatedCollider);
         }
+
     }
 }

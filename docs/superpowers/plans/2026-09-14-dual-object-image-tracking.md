@@ -32,7 +32,7 @@
 - Produces: `TrackedCapsuleRuntimeFactory.Create(GameObject prefab, Transform anchor, Vector3 localPosition, Quaternion localRotation, string instanceName) -> GameObject`.
 - Preserves: Object Capsules have movement/scale disabled, explicit world-pose following, enabled `ChocolateCapsuleInteraction`, and disabled Spatial Pointer.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```csharp
 [Test]
@@ -46,11 +46,11 @@ public void FactoryCreatesInteractiveNonScalableFollowingCapsule()
 }
 ```
 
-- [ ] **Step 2: Run the targeted EditMode test**
+- [x] **Step 2: Run the targeted EditMode test**
 
 Run `TrackedCapsuleFactoryTests`; expect failure because `TrackedCapsuleRuntimeFactory` does not exist.
 
-- [ ] **Step 3: Implement the factory and delegate Object spawning to it**
+- [x] **Step 3: Implement the factory and delegate Object spawning to it**
 
 ```csharp
 public static GameObject Create(GameObject prefab, Transform anchor, Vector3 localPosition,
@@ -69,7 +69,7 @@ public static GameObject Create(GameObject prefab, Transform anchor, Vector3 loc
 }
 ```
 
-- [ ] **Step 4: Run factory and existing tracked-Capsule tests**
+- [x] **Step 4: Run factory and existing tracked-Capsule tests**
 
 Expected: all targeted tests pass and Object Tracking still produces a non-scalable Capsule.
 
@@ -85,7 +85,7 @@ Expected: all targeted tests pass and Object Tracking still produces a non-scala
 - Produces: `CapsuleAvailable(ChocolateCapsuleInteraction)` and `CapsuleUnavailable(ChocolateCapsuleInteraction)` events.
 - Produces: `Configure(ARTrackedImageManager manager, GameObject capsulePrefab)` and `ClearRuntimeInstances()`.
 
-- [ ] **Step 1: Write failing lifecycle tests**
+- [x] **Step 1: Write failing lifecycle tests**
 
 ```csharp
 [Test]
@@ -107,19 +107,19 @@ public void ImageSpawnerHidesAndUnregistersCapsuleWhenTrackingIsNone()
 }
 ```
 
-- [ ] **Step 2: Run the targeted tests**
+- [x] **Step 2: Run the targeted tests**
 
 Expected: failure because `ImageTrackingCapsuleSpawner` and its lifecycle API do not exist.
 
-- [ ] **Step 3: Implement ImageTrackingCapsuleSpawner**
+- [x] **Step 3: Implement ImageTrackingCapsuleSpawner**
 
 Subscribe to `ARTrackedImageManager.trackablesChanged`; key instances by `TrackableId`; call the shared factory for added/updated tracked images; emit availability only on state transitions; hide on `TrackingState.None`; unregister and destroy on removal.
 
-- [ ] **Step 4: Create and configure the image library and scene components**
+- [x] **Step 4: Create and configure the image library and scene components**
 
 Create `MoodiumImageReferenceLibrary`, add `TestImageTracking.png`, enable specified size, assign `(0.10f, 0.10f)`, add `ARTrackedImageManager` to XR Origin, and wire the new spawner to the existing Chocolate Capsule prefab.
 
-- [ ] **Step 5: Verify asset and scene wiring**
+- [x] **Step 5: Verify asset and scene wiring**
 
 Assert through `AssetDatabase`/serialized properties that the library has one named 10 cm image and the scene manager references that library.
 
@@ -133,7 +133,7 @@ Assert through `AssetDatabase`/serialized properties that the library has one na
 - Produces: `RegisterTarget(ChocolateCapsuleInteraction target)` and `UnregisterTarget(ChocolateCapsuleInteraction target)`.
 - Consumes: live Capsules reported by both spawners.
 
-- [ ] **Step 1: Write failing multi-target tests**
+- [x] **Step 1: Write failing multi-target tests**
 
 ```csharp
 [Test]
@@ -154,15 +154,15 @@ public void UnregisteringOneCapsuleLeavesTheOtherInteractive()
 }
 ```
 
-- [ ] **Step 2: Run the targeted tests**
+- [x] **Step 2: Run the targeted tests**
 
 Expected: failure because the controller stores only one `m_Target`.
 
-- [ ] **Step 3: Implement target registry and per-hand contact ownership**
+- [x] **Step 3: Implement target registry and per-hand contact ownership**
 
 Use a `HashSet<ChocolateCapsuleInteraction>` for valid targets. Resolve overlap candidates to their parent Capsule, ignore unregistered Capsules, and track the current Capsule independently for each hand. End a Capsule contact only after neither hand touches it.
 
-- [ ] **Step 4: Run palm state-machine and Capsule feedback tests**
+- [x] **Step 4: Run palm state-machine and Capsule feedback tests**
 
 Expected: existing one-shot/rearm behavior and new multi-target behavior pass.
 
@@ -179,7 +179,7 @@ Expected: existing one-shot/rearm behavior and new multi-target behavior pass.
 - Reality flow consumes availability/unavailability events from both spawners.
 - CandyWorldManager accepts a follower anchor containing either `ARTrackedObject` or `ARTrackedImage`.
 
-- [ ] **Step 1: Write failing integration tests**
+- [x] **Step 1: Write failing integration tests**
 
 ```csharp
 [Test]
@@ -198,19 +198,19 @@ public void ImageTrackedCapsuleIncreasesSharedCandyEnergy()
 }
 ```
 
-- [ ] **Step 2: Run the targeted tests**
+- [x] **Step 2: Run the targeted tests**
 
 Expected: failure because Reality flow has a single target and CandyWorldManager accepts only `ARTrackedObject`.
 
-- [ ] **Step 3: Update Reality flow and app mode switching**
+- [x] **Step 3: Update Reality flow and app mode switching**
 
 Subscribe to both spawners for the session, independently animate/register every Capsule, unregister unavailable instances, enable both AR managers in Reality mode, and clear both sources on exit.
 
-- [ ] **Step 4: Generalize tracked-source validation**
+- [x] **Step 4: Generalize tracked-source validation**
 
 Resolve the follower anchor and accept either `anchor.GetComponentInParent<ARTrackedObject>()` or `anchor.GetComponentInParent<ARTrackedImage>()` before registering energy and burst feedback.
 
-- [ ] **Step 5: Run the complete EditMode suite**
+- [x] **Step 5: Run the complete EditMode suite**
 
 Expected: zero compilation errors, all tests pass, `Meshing 1` remains saved and clean.
 

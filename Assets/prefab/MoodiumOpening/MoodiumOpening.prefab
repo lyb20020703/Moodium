@@ -74,12 +74,19 @@ MonoBehaviour:
   m_HeightOffset: 0
   m_HeadPoseSettleTime: 1
   m_TouchPrompt: {fileID: 7523161337086780521}
-  m_GestureGuidePrefab: {fileID: 3560243022351013353, guid: 4383f47cbb8024b2b9ea52e65043e83a, type: 3}
+  m_GestureGuidePrefab: {fileID: 0}
   m_GestureGuideDelay: 3
   m_GestureGuideLocalOffset: {x: 0, y: 0, z: -0.18}
   m_LogoFadeDuration: 1.8
   m_FinalLogoHold: 2.8
   m_HandoffDelay: 0.15
+  m_PreOpeningVideo: {fileID: 32900000, guid: a535d2cac7a164375899b5328e17476f, type: 3}
+  m_PreOpeningVideoTimeout: 30
+  m_InteractiveVideoPreviewDuration: 2
+  m_PreOpeningVideoHeightOffset: 0.13
+  m_LeftHandGuidePrefab: {fileID: 7212545589841548407, guid: 66f49a5063c2543bc8b678e85733192d, type: 3}
+  m_RightHandGuidePrefab: {fileID: 6365916240531524286, guid: 86f587fb2af7a4109b7659ca7d567ab1, type: 3}
+  m_HandPromptFont: {fileID: 11400000, guid: 87c6dc9cf9eb7482f92d732e550a4b92, type: 2}
 --- !u!1 &4631176335456226961
 GameObject:
   m_ObjectHideFlags: 0

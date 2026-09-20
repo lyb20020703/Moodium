@@ -21,6 +21,8 @@ namespace Moodium.Reality
             m_Anchor = anchor;
             m_LocalPosition = localPosition;
             m_LocalRotation = localRotation;
+            if (transform.parent != null)
+                transform.SetParent(null, true);
             SyncNow();
         }
 
@@ -29,10 +31,9 @@ namespace Moodium.Reality
             if (m_Anchor == null)
                 return;
 
-            if (transform.parent != m_Anchor)
-                transform.SetParent(m_Anchor, false);
-
-            transform.SetLocalPositionAndRotation(m_LocalPosition, m_LocalRotation);
+            transform.SetPositionAndRotation(
+                m_Anchor.TransformPoint(m_LocalPosition),
+                m_Anchor.rotation * m_LocalRotation);
         }
 
         void LateUpdate()

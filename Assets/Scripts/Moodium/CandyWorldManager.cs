@@ -127,9 +127,18 @@ namespace Moodium.CandyWorld
         {
             if (!m_Running || capsule == null || !capsule.gameObject.activeInHierarchy)
                 return;
-            if (capsule.GetComponentInParent<ARTrackedObject>() == null)
+            var trackedSource = capsule.GetComponentInParent<ARTrackedObject>() != null ||
+                                capsule.GetComponentInParent<ARTrackedImage>() != null;
+            if (!trackedSource)
             {
-                Debug.Log("[Candy World] Ignored a Chocolate Capsule that is not attached to a tracked object.");
+                var poseFollower = capsule.GetComponent<TrackedObjectPoseFollower>();
+                if (poseFollower != null && poseFollower.Anchor != null)
+                    trackedSource = poseFollower.Anchor.GetComponentInParent<ARTrackedObject>() != null ||
+                                    poseFollower.Anchor.GetComponentInParent<ARTrackedImage>() != null;
+            }
+            if (!trackedSource)
+            {
+                Debug.Log("[Candy World] Ignored a Chocolate Capsule that is not attached to a tracked source.");
                 return;
             }
             m_ProgressController.SetOrigin(position);

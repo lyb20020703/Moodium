@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Moodium.Flow;
 using Moodium.Interaction;
 using TMPro;
@@ -26,28 +27,31 @@ namespace Moodium.Reality
         [SerializeField, Min(0.2f)] float m_GenerationDuration = 0.5f;
 
         TissueObjectTrackingSpawner m_Spawner;
+        ImageTrackingCapsuleSpawner m_ImageSpawner;
         Camera m_Camera;
         GameObject m_GlassPanelPrefab;
         TMP_FontAsset m_Font;
         TMP_FontAsset m_ChineseFont;
         RealityEnhancementFlowState m_State;
-        ARTrackedObject m_TrackedObject;
         GameObject m_Guide;
         Coroutine m_GuideRoutine;
-        Coroutine m_DetectionRoutine;
-        PalmPressGestureController m_PalmPressGesture;
+        readonly HashSet<ChocolateCapsuleInteraction> m_InteractiveCapsules = new();
+        readonly Dictionary<ChocolateCapsuleInteraction, Coroutine> m_PresentationRoutines = new();
         bool m_Running;
 
         public RealityEnhancementFlowState State => m_State;
+        public int InteractiveCapsuleCount => m_InteractiveCapsules.Count;
 
         public void Configure(
             TissueObjectTrackingSpawner spawner,
+            ImageTrackingCapsuleSpawner imageSpawner,
             Camera camera,
             GameObject glassPanelPrefab,
             TMP_FontAsset font,
             TMP_FontAsset chineseFont)
         {
             m_Spawner = spawner;
+            m_ImageSpawner = imageSpawner;
             m_Camera = camera;
             m_GlassPanelPrefab = glassPanelPrefab;
             m_Font = font;
@@ -59,27 +63,32 @@ namespace Moodium.Reality
                 legacyThumbBend.SetTarget(null);
                 legacyThumbBend.enabled = false;
             }
-            if (m_PalmPressGesture == null)
-                m_PalmPressGesture = GetComponent<PalmPressGestureController>();
-            if (m_PalmPressGesture == null)
-                m_PalmPressGesture = gameObject.AddComponent<PalmPressGestureController>();
-            m_PalmPressGesture.SetInteractionEnabled(false);
         }
 
         public void StartFlow()
         {
             StopFlow(false);
-            if (m_Spawner == null)
+            if (m_Spawner == null && m_ImageSpawner == null)
             {
-                Debug.LogError("[Reality Flow] TissueObjectTrackingSpawner was not found.");
+                Debug.LogError("[Reality Flow] No tracked-source Capsule spawner was found.");
                 return;
             }
             m_Running = true;
             m_State = RealityEnhancementFlowState.Idle;
-            m_Spawner.SetDeferredSpawning(true);
-            m_Spawner.TissueDetected += OnTissueDetected;
+            if (m_Spawner != null)
+            {
+                m_Spawner.SetDeferredSpawning(true);
+                m_Spawner.TissueDetected += OnTissueDetected;
+                m_Spawner.CapsuleAvailable += OnCapsuleAvailable;
+                m_Spawner.CapsuleUnavailable += OnCapsuleUnavailable;
+            }
+            if (m_ImageSpawner != null)
+            {
+                m_ImageSpawner.CapsuleAvailable += OnCapsuleAvailable;
+                m_ImageSpawner.CapsuleUnavailable += OnCapsuleUnavailable;
+            }
             m_GuideRoutine = StartCoroutine(ShowInitialGuide());
-            Debug.Log("[Reality Flow] Waiting for an everyday object.");
+            Debug.Log("[Reality Flow] Waiting for an object or reference image.");
         }
 
         public void StopFlow() => StopFlow(true);
@@ -89,21 +98,27 @@ namespace Moodium.Reality
             if (m_Spawner != null)
             {
                 m_Spawner.TissueDetected -= OnTissueDetected;
+                m_Spawner.CapsuleAvailable -= OnCapsuleAvailable;
+                m_Spawner.CapsuleUnavailable -= OnCapsuleUnavailable;
                 m_Spawner.SetDeferredSpawning(false);
                 if (clearTrackedVisuals)
                     m_Spawner.ClearRuntimeInstances();
             }
+            if (m_ImageSpawner != null)
+            {
+                m_ImageSpawner.CapsuleAvailable -= OnCapsuleAvailable;
+                m_ImageSpawner.CapsuleUnavailable -= OnCapsuleUnavailable;
+                if (clearTrackedVisuals)
+                    m_ImageSpawner.ClearRuntimeInstances();
+            }
             m_Running = false;
             m_State = RealityEnhancementFlowState.Idle;
-            if (m_PalmPressGesture != null)
-            {
-                m_PalmPressGesture.SetInteractionEnabled(false);
-                m_PalmPressGesture.SetTarget(null);
-            }
             if (m_GuideRoutine != null) StopCoroutine(m_GuideRoutine);
-            if (m_DetectionRoutine != null) StopCoroutine(m_DetectionRoutine);
+            foreach (var routine in m_PresentationRoutines.Values)
+                if (routine != null) StopCoroutine(routine);
             m_GuideRoutine = null;
-            m_DetectionRoutine = null;
+            m_PresentationRoutines.Clear();
+            m_InteractiveCapsules.Clear();
             DestroyPresentationObjects();
         }
 
@@ -141,60 +156,88 @@ namespace Moodium.Reality
 
         void OnTissueDetected(ARTrackedObject trackedObject)
         {
-            if (!m_Running || trackedObject == null || m_State != RealityEnhancementFlowState.Idle)
+            if (!m_Running || trackedObject == null)
                 return;
-            if (m_GuideRoutine != null) StopCoroutine(m_GuideRoutine);
-            m_GuideRoutine = null;
-            DestroySafe(ref m_Guide);
-            m_TrackedObject = trackedObject;
-            m_DetectionRoutine = StartCoroutine(RunDetectionFlow());
+            DismissGuide();
+            StartCoroutine(RunDetectionFlow(trackedObject));
         }
 
-        IEnumerator RunDetectionFlow()
+        IEnumerator RunDetectionFlow(ARTrackedObject trackedObject)
         {
             m_State = RealityEnhancementFlowState.ObjectDetected;
-            if (!CanContinue())
+            if (!CanContinue(trackedObject))
             {
-                CancelDetection("Tracked tissue was removed before generation.");
+                CancelDetection(trackedObject, "Tracked tissue was removed before generation.");
                 yield break;
             }
 
             m_State = RealityEnhancementFlowState.Generating;
-            var capsule = m_Spawner.SpawnDeferred(m_TrackedObject);
+            var capsule = m_Spawner.SpawnDeferred(trackedObject);
             if (capsule == null)
             {
-                CancelDetection("Chocolate Capsule could not be generated.");
+                CancelDetection(trackedObject, "Chocolate Capsule could not be generated.");
                 yield break;
             }
-            yield return AnimateCapsuleIn(capsule, m_GenerationDuration);
-
-            var interaction = capsule.GetComponent<ChocolateCapsuleInteraction>();
-            if (interaction == null)
-            {
-                CancelDetection("Chocolate Capsule interaction was not found.");
-                yield break;
-            }
-            m_PalmPressGesture.SetTarget(interaction);
-            m_PalmPressGesture.SetInteractionEnabled(true);
-
-            m_State = RealityEnhancementFlowState.Interactive;
-            Debug.Log("[Reality Flow] Interactive Candy Capsule experience ready.");
-            m_DetectionRoutine = null;
+            yield return null;
         }
 
-        bool CanContinue()
+        bool CanContinue(ARTrackedObject trackedObject)
         {
-            return m_Running && m_TrackedObject != null &&
-                   m_TrackedObject.trackingState != TrackingState.None;
+            return m_Running && trackedObject != null &&
+                   trackedObject.trackingState != TrackingState.None;
         }
 
-        void CancelDetection(string reason)
+        void CancelDetection(ARTrackedObject trackedObject, string reason)
         {
             Debug.LogWarning($"[Reality Flow] {reason}");
-            m_Spawner?.ReleaseDeferredDetection(m_TrackedObject);
-            m_TrackedObject = null;
-            m_State = RealityEnhancementFlowState.Idle;
-            m_DetectionRoutine = null;
+            m_Spawner?.ReleaseDeferredDetection(trackedObject);
+            if (m_InteractiveCapsules.Count == 0)
+                m_State = RealityEnhancementFlowState.Idle;
+        }
+
+        void OnCapsuleAvailable(ChocolateCapsuleInteraction capsule)
+        {
+            if (!m_Running || capsule == null || m_InteractiveCapsules.Contains(capsule) ||
+                m_PresentationRoutines.ContainsKey(capsule))
+                return;
+            DismissGuide();
+            m_State = RealityEnhancementFlowState.Generating;
+            m_PresentationRoutines[capsule] = StartCoroutine(PresentCapsule(capsule));
+        }
+
+        IEnumerator PresentCapsule(ChocolateCapsuleInteraction capsule)
+        {
+            yield return AnimateCapsuleIn(capsule.gameObject, m_GenerationDuration);
+            m_PresentationRoutines.Remove(capsule);
+            if (!m_Running || capsule == null || !capsule.isActiveAndEnabled)
+                yield break;
+            RegisterAvailableCapsule(capsule);
+            Debug.Log("[Reality Flow] Interactive tracked Candy Capsule ready.");
+        }
+
+        void RegisterAvailableCapsule(ChocolateCapsuleInteraction capsule)
+        {
+            if (capsule == null || !m_InteractiveCapsules.Add(capsule))
+                return;
+            m_State = RealityEnhancementFlowState.Interactive;
+        }
+
+        void OnCapsuleUnavailable(ChocolateCapsuleInteraction capsule)
+        {
+            if (capsule == null)
+                return;
+            if (m_PresentationRoutines.Remove(capsule, out var routine) && routine != null)
+                StopCoroutine(routine);
+            if (m_InteractiveCapsules.Remove(capsule))
+            if (m_InteractiveCapsules.Count == 0)
+                m_State = RealityEnhancementFlowState.Idle;
+        }
+
+        void DismissGuide()
+        {
+            if (m_GuideRoutine != null) StopCoroutine(m_GuideRoutine);
+            m_GuideRoutine = null;
+            DestroySafe(ref m_Guide);
         }
 
         GameObject CreateGlassCard(string name, string text, Vector2 size, TextAlignmentOptions alignment)
@@ -275,7 +318,6 @@ namespace Moodium.Reality
         void DestroyPresentationObjects()
         {
             DestroySafe(ref m_Guide);
-            m_TrackedObject = null;
         }
 
         static void DestroySafe(ref GameObject value)

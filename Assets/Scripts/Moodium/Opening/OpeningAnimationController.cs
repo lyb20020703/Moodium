@@ -46,6 +46,17 @@ namespace Moodium.Opening
             m_CandyIdle = true;
         }
 
+        /// <summary>Hides every opening visual while the pre-roll video owns the view.</summary>
+        public void HideOpeningVisuals()
+        {
+            SetActive(m_CandyRoot, false);
+            SetActive(m_SpriteRoot, false);
+            SetActive(m_LegacyLogoRoot, false);
+            m_LogoTextView?.SetVisibleImmediate(false);
+            StopGraph(ref m_CandyGraph);
+            m_CandyIdle = false;
+        }
+
         public void PlayCandyTransform()
         {
             m_CandyIdle = false;
