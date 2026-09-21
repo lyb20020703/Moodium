@@ -62,7 +62,7 @@ namespace Moodium.Opening
             var changed = false;
             if (m_PreOpeningVideo == null)
             {
-                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/OpenningAni.mp4");
+                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/NewOpenningAni.mp4");
                 changed = true;
             }
             if (m_LeftHandGuidePrefab == null)

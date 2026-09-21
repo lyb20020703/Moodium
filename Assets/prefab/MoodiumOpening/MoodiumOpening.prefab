@@ -80,7 +80,7 @@ MonoBehaviour:
   m_LogoFadeDuration: 1.8
   m_FinalLogoHold: 2.8
   m_HandoffDelay: 0.15
-  m_PreOpeningVideo: {fileID: 32900000, guid: a535d2cac7a164375899b5328e17476f, type: 3}
+  m_PreOpeningVideo: {fileID: 32900000, guid: 6c16e6294ad62484cae43d6739bd5c7d, type: 3}
   m_PreOpeningVideoTimeout: 30
   m_InteractiveVideoPreviewDuration: 2
   m_PreOpeningVideoHeightOffset: 0.13

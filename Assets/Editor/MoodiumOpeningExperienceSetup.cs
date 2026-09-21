@@ -26,11 +26,11 @@ public static class MoodiumOpeningExperienceSetup
     const string ChineseFontSource = "Assets/TextMesh Pro/Fonts/AlibabaPuHuiTi-2-35-Thin.ttf";
     const string ChineseFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi-2-35-Thin SDF.asset";
     const string EnglishFontAsset = "Assets/UI/Moodium/Fonts/Inter-Regular SDF.asset";
-    const string IntroVideoAsset = "Assets/Video/OpenningAni.mp4";
+    const string IntroVideoAsset = "Assets/Video/NewOpenningAni.mp4";
     const string LeftHandGuideAsset = "Assets/prefab/UI-LeftHand.prefab";
     const string RightHandGuideAsset = "Assets/prefab/UI-RightHand.prefab";
     const string IntroPromptFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi Moodium SDF.asset";
-    const string VersionKey = "Moodium.OpeningExperience.Setup.v16";
+    const string VersionKey = "Moodium.OpeningExperience.Setup.v17";
 
     static MoodiumOpeningExperienceSetup()
     {

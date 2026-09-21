@@ -19,7 +19,7 @@ public sealed class MoodiumOpeningPersistenceTests
 
         var introVideo = serialized.FindProperty("m_PreOpeningVideo").objectReferenceValue;
         Assert.That(introVideo, Is.Not.Null, "The intro video reference must survive editor restarts.");
-        Assert.That(AssetDatabase.GetAssetPath(introVideo), Is.EqualTo("Assets/Video/OpenningAni.mp4"));
+        Assert.That(AssetDatabase.GetAssetPath(introVideo), Is.EqualTo("Assets/Video/NewOpenningAni.mp4"));
         var videoHeightOffset = serialized.FindProperty("m_PreOpeningVideoHeightOffset");
         Assert.That(videoHeightOffset, Is.Not.Null,
             "The intro video needs an explicit eye-relative height that matches the portal window.");
