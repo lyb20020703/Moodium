@@ -29,6 +29,7 @@ public static class MoodiumPortalEntranceSetup
     const string CloudPrefabPath = "Assets/prefab/MoodiumCloud.prefab";
     const string DecorativeCloudPrefabPath = "Assets/prefab/Cloud.prefab";
     const string SnowPrefabPath = "Assets/Epic Toon FX/Prefabs/Environment/Weather/Snow/SnowLight.prefab";
+    const string RoundedButtonSpritePath = "Assets/UI/Moodium/WristHUD_Rounded.png";
 
     [MenuItem("Moodium/Setup Portal Entrance")]
     public static void BuildAndConnect()
@@ -240,6 +241,7 @@ public static class MoodiumPortalEntranceSetup
         prompt.fontSize = 0.3f;
         prompt.color = Color.white;
         prompt.rectTransform.sizeDelta = new Vector2(1.2f, 0.18f);
+        prompt.GetComponent<Renderer>().allowOcclusionWhenDynamic = false;
 
         var particlesObject = new GameObject("EntryParticles");
         particlesObject.transform.SetParent(content.transform, false);
@@ -271,6 +273,8 @@ public static class MoodiumPortalEntranceSetup
         serialized.FindProperty("m_EntryBagPusher").objectReferenceValue = pusherCollider;
         serialized.FindProperty("m_EntryPrompt").objectReferenceValue = promptObject;
         serialized.FindProperty("m_MoodiIntroMinimumDuration").floatValue = 3f;
+        serialized.FindProperty("m_LanguageButtonRoundedSprite").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<Sprite>(RoundedButtonSpritePath);
         serialized.FindProperty("m_EntryParticles").objectReferenceValue = particles;
         serialized.FindProperty("m_TrailParticleTexture").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Moodium/Textures/MoodiumParticleCircle.png");

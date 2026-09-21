@@ -92,7 +92,13 @@ namespace Moodium.Flow
         {
             enabled = true;
             if (m_FlowUiReady)
-                ShowPortalEntrance();
+                ShowObjectWorldSelection();
+        }
+
+        /// <summary>Entry point used by the opening video. The launch sequence no longer enters Portal.</summary>
+        public void ShowObjectWorldSelectionFromOpening()
+        {
+            ShowObjectWorldSelection();
         }
 
         void Awake()
@@ -350,7 +356,7 @@ namespace Moodium.Flow
 
         public void ShowModeSelection()
         {
-            ShowPortalEntrance();
+            ShowObjectWorldSelection();
         }
 
         public void ShowPortalEntrance()

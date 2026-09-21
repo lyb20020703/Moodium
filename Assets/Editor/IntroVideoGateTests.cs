@@ -38,6 +38,21 @@ public sealed class IntroVideoGateTests
     }
 
     [Test]
+    public void Gate_CanLoopAnArbitrarySegmentAndResumeAfterItsEnd()
+    {
+        var gate = new IntroVideoGate(24d, 32d);
+
+        Assert.That(gate.ShouldLoopAt(32d), Is.True);
+        Assert.That(gate.TryBeginPreviewLoop(32d), Is.True);
+        Assert.That(gate.TryCompletePreviewSeek(24.01d), Is.True);
+
+        gate.Activate();
+
+        Assert.That(gate.ResumeTime, Is.EqualTo(32d));
+        Assert.That(gate.ShouldLoopAt(32d), Is.False);
+    }
+
+    [Test]
     public void HandGuideLayout_PlacesHandsSymmetricallyOnVideoSides()
     {
         var layout = new IntroVideoHandGuideLayout();

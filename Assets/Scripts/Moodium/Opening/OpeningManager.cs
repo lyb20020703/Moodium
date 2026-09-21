@@ -37,13 +37,18 @@ namespace Moodium.Opening
         [SerializeField, Range(0.5f, 4f)] float m_LogoFadeDuration = 1.8f;
         [SerializeField, Min(0f)] float m_FinalLogoHold = 2.8f;
         [SerializeField, Min(0f)] float m_HandoffDelay = 0.15f;
+        [SerializeField] OpeningVideoSequenceConfig m_VideoSequenceConfig;
+        // Legacy fallback keeps older prefabs functional while the sequence asset
+        // becomes the single inspector-editable source of video/timing data.
         [SerializeField] VideoClip m_PreOpeningVideo;
         [SerializeField, Min(0f)] float m_PreOpeningVideoTimeout = 30f;
-        [SerializeField, Min(0.1f)] float m_InteractiveVideoPreviewDuration = 2f;
-        [SerializeField] float m_PreOpeningVideoHeightOffset = 0.13f;
+        [SerializeField, Min(0.1f)] float m_InteractiveVideoPreviewDuration = 3.08f;
+        [SerializeField] float m_PreOpeningVideoHeightOffset = -0.05f;
+        [SerializeField, Min(0.2f)] float m_PreOpeningVideoDistanceFromUser = 1.35f;
         [SerializeField] GameObject m_LeftHandGuidePrefab;
         [SerializeField] GameObject m_RightHandGuidePrefab;
         [SerializeField] TMP_FontAsset m_HandPromptFont;
+        [SerializeField] Sprite m_LanguageButtonRoundedSprite;
 
         MoodiumAppFlowController m_AppFlow;
         OpeningHandTrailController m_HandTrail;
@@ -60,9 +65,15 @@ namespace Moodium.Opening
             // These are runtime-created UI pieces. Keep their project references
             // stable if Unity reserializes the opening prefab while scripts change.
             var changed = false;
+            if (m_VideoSequenceConfig == null)
+            {
+                m_VideoSequenceConfig = AssetDatabase.LoadAssetAtPath<OpeningVideoSequenceConfig>(
+                    "Assets/Resources/MoodiumOpening/OpeningVideoSequenceConfig.asset");
+                changed = true;
+            }
             if (m_PreOpeningVideo == null)
             {
-                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/NewOpenningAni.mp4");
+                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/hiimmoodi.mp4");
                 changed = true;
             }
             if (m_LeftHandGuidePrefab == null)
@@ -78,6 +89,11 @@ namespace Moodium.Opening
             if (m_HandPromptFont == null)
             {
                 m_HandPromptFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/UI/Moodium/Fonts/AlibabaPuHuiTi Moodium SDF.asset");
+                changed = true;
+            }
+            if (m_LanguageButtonRoundedSprite == null)
+            {
+                m_LanguageButtonRoundedSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/Moodium/WristHUD_Rounded.png");
                 changed = true;
             }
             if (changed)
@@ -116,11 +132,12 @@ namespace Moodium.Opening
             while (Camera.main == null && Time.realtimeSinceStartup < timeout)
                 yield return null;
             yield return PlayPreOpeningVideo();
-            // Temporarily bypass the candy-opening sequence: once the intro
-            // video finishes, hand control directly to the portal flow.
+            // The opening video now hands directly to the tracked-object world
+            // selection. Portal assets remain available for future use but are
+            // intentionally outside the launch path.
             State = OpeningState.Opening_Finished;
             m_AnimationController?.HideOpeningVisuals();
-            m_AppFlow?.BeginPortalFlow();
+            m_AppFlow?.ShowObjectWorldSelectionFromOpening();
             yield break;
             // Re-anchor during the short tracking warm-up. This prevents one early
             // camera pose (often world origin) from placing the Candy near the floor.
@@ -145,7 +162,9 @@ namespace Moodium.Opening
 
         IEnumerator PlayPreOpeningVideo()
         {
-            if (m_PreOpeningVideo == null)
+            var sequence = m_VideoSequenceConfig;
+            var videoClip = sequence != null && sequence.VideoClip != null ? sequence.VideoClip : m_PreOpeningVideo;
+            if (videoClip == null)
                 yield break;
             var camera = Camera.main != null ? Camera.main : FindFirstObjectByType<Camera>();
             if (camera == null)
@@ -163,8 +182,18 @@ namespace Moodium.Opening
             var viewForward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
             if (viewForward.sqrMagnitude < 0.01f)
                 viewForward = camera.transform.forward.normalized;
-            display.transform.position = camera.transform.position + viewForward * 1.35f +
-                                         Vector3.up * m_PreOpeningVideoHeightOffset;
+            // The sequence asset is the single source of truth for placement.
+            // This object is created at runtime, so editing its Play Mode
+            // transform would otherwise be discarded on the next launch.
+            var videoDistance = sequence != null ? sequence.DistanceFromUser : m_PreOpeningVideoDistanceFromUser;
+            var videoHeight = sequence != null ? sequence.HeightOffset : m_PreOpeningVideoHeightOffset;
+            var videoPosition = camera.transform.position + viewForward * videoDistance +
+                                Vector3.up * videoHeight;
+            // Explicit world Y is intentional: the display is a runtime object
+            // and the requested placement must not drift with head-pose height.
+            if (sequence != null)
+                videoPosition.y = sequence.WorldPositionY;
+            display.transform.position = videoPosition;
             // A Unity Quad faces its local -Z axis. Align local +Z with the view
             // direction so its rendered face points back toward the viewer.
             display.transform.rotation = Quaternion.LookRotation(camera.transform.forward, camera.transform.up);
@@ -209,11 +238,11 @@ namespace Moodium.Opening
             player.playOnAwake = false;
             player.isLooping = false;
             player.source = VideoSource.VideoClip;
-            player.clip = m_PreOpeningVideo;
+            player.clip = videoClip;
             player.renderMode = VideoRenderMode.RenderTexture;
             player.targetTexture = renderTexture;
             player.Prepare();
-            Debug.Log($"[Moodium Opening] Preparing intro video: {m_PreOpeningVideo.name}.");
+            Debug.Log($"[Moodium Opening] Preparing intro video: {videoClip.name}.");
             var deadline = Time.realtimeSinceStartup + m_PreOpeningVideoTimeout;
             while (!player.isPrepared && Time.realtimeSinceStartup < deadline)
                 yield return null;
@@ -236,7 +265,11 @@ namespace Moodium.Opening
             var promptRevealStart = Time.realtimeSinceStartup + 1f;
             var guideFadeDuration = 0.8f;
             var guideAnimationTime = 0f;
-            var gate = new IntroVideoGate(Mathf.Min(m_InteractiveVideoPreviewDuration, (float)m_PreOpeningVideo.length));
+            var introStart = sequence != null ? sequence.IntroLoopStartTime : 0f;
+            var introEnd = sequence != null ? sequence.IntroLoopEndTime : m_InteractiveVideoPreviewDuration;
+            var languageStart = sequence != null ? sequence.LanguageLoopStartTime : 24.14f;
+            var languageEnd = sequence != null ? sequence.LanguageLoopEndTime : 32f;
+            var gate = new IntroVideoGate(introStart, Mathf.Min(introEnd, (float)videoClip.length));
             var previewSeekCompleted = false;
             VideoPlayer.EventHandler onSeekCompleted = _ => previewSeekCompleted = true;
             player.seekCompleted += onSeekCompleted;
@@ -273,12 +306,40 @@ namespace Moodium.Opening
                 {
                     previewLoopCount++;
                     Debug.Log($"[Moodium Opening] Preview loop {previewLoopCount}: time={player.time:0.000}, playing={player.isPlaying}.");
-                    player.time = 0d;
+                    player.time = gate.PreviewStartTime;
                 }
                 yield return null;
             }
 
-            var playbackDeadline = Time.realtimeSinceStartup + Mathf.Max(1f, (float)m_PreOpeningVideo.length - (float)gate.ResumeTime + 0.75f);
+            var languageChoice = CreateVideoLanguageChoice(display.transform, m_HandPromptFont, m_LanguageButtonRoundedSprite);
+            languageChoice.SetActive(false);
+            var languageGate = new IntroVideoGate(languageStart, Mathf.Min(languageEnd, (float)videoClip.length));
+            var languageSeekCompleted = false;
+            VideoPlayer.EventHandler onLanguageSeekCompleted = _ => languageSeekCompleted = true;
+            player.seekCompleted += onLanguageSeekCompleted;
+            while (player.isPlaying && !languageGate.IsActivated)
+            {
+                if (player.time >= languageGate.PreviewStartTime)
+                    languageChoice.SetActive(true);
+                if (languageChoice.GetComponent<OpeningVideoLanguageChoice>().HasSelection)
+                {
+                    languageGate.Activate();
+                    languageChoice.SetActive(false);
+                    player.time = languageGate.ResumeTime;
+                    player.Play();
+                    break;
+                }
+                if (languageSeekCompleted && languageGate.TryCompletePreviewSeek(player.time))
+                {
+                    languageSeekCompleted = false;
+                    player.Play();
+                }
+                if (languageGate.TryBeginPreviewLoop(player.time))
+                    player.time = languageGate.PreviewStartTime;
+                yield return null;
+            }
+            player.seekCompleted -= onLanguageSeekCompleted;
+            var playbackDeadline = Time.realtimeSinceStartup + Mathf.Max(1f, (float)videoClip.length - (float)languageGate.ResumeTime + 0.75f);
             while (player.isPlaying && Time.realtimeSinceStartup < playbackDeadline)
                 yield return null;
             player.seekCompleted -= onSeekCompleted;
@@ -288,6 +349,7 @@ namespace Moodium.Opening
             Destroy(leftGuide);
             Destroy(rightGuide);
             Destroy(prompt);
+            Destroy(languageChoice);
             Destroy(display);
             Destroy(material);
             renderTexture.Release();
@@ -367,6 +429,21 @@ namespace Moodium.Opening
             text.outlineWidth = 0.08f;
             text.outlineColor = new Color(0.12f, 0.04f, 0.2f, 0.8f);
             return promptObject;
+        }
+
+        static GameObject CreateVideoLanguageChoice(Transform parent, TMP_FontAsset font, Sprite roundedSprite)
+        {
+            var choice = new GameObject("Opening Video Language Choice", typeof(RectTransform));
+            choice.transform.SetParent(parent, false);
+            choice.transform.localPosition = new Vector3(0f, -0.05f, -0.025f);
+            choice.transform.localRotation = Quaternion.identity;
+            var parentScale = parent.localScale;
+            choice.transform.localScale = new Vector3(
+                SafeScaleDivide(0.0012f, parentScale.x),
+                SafeScaleDivide(0.0012f, parentScale.y),
+                SafeScaleDivide(0.0012f, parentScale.z));
+            choice.AddComponent<OpeningVideoLanguageChoice>().Configure(font, roundedSprite);
+            return choice;
         }
 
         static void AnimateVideoHandPrompt(GameObject prompt, float reveal, float time)
@@ -531,7 +608,7 @@ namespace Moodium.Opening
             State = OpeningState.Opening_Finished;
 
             if (m_AppFlow != null)
-                m_AppFlow.BeginPortalFlow();
+                m_AppFlow.ShowObjectWorldSelectionFromOpening();
             gameObject.SetActive(false);
         }
     }

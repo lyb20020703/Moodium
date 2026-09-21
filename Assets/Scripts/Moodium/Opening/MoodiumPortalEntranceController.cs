@@ -57,6 +57,7 @@ namespace Moodium.Opening
         [SerializeField] AudioClip m_MoodiIntroVoiceClip;
         [SerializeField, Min(0f)] float m_MoodiIntroMinimumDuration = 3f;
         [SerializeField] TMP_FontAsset m_MoodiSubtitleFont;
+        [SerializeField] Sprite m_LanguageButtonRoundedSprite;
         AudioSource m_PortalAudio;
         AudioSource m_MoodiVoiceAudio;
         [SerializeField] Texture2D m_TrailParticleTexture;
@@ -364,6 +365,10 @@ namespace Moodium.Opening
             subtitle.color = Color.white;
             subtitle.outlineWidth = 0.08f;
             subtitle.outlineColor = new Color(0.12f, 0.04f, 0.2f, 0.85f);
+            var subtitleRenderer = subtitle.GetComponent<Renderer>();
+            if (subtitleRenderer != null)
+                subtitleRenderer.allowOcclusionWhenDynamic = false;
+            subtitle.ForceMeshUpdate(ignoreActiveState: true);
             m_EntryPromptText = subtitle;
             var subtitleScale = subtitle.transform.localScale;
             subtitle.transform.localScale = new Vector3(-Mathf.Abs(subtitleScale.x), subtitleScale.y, subtitleScale.z);
@@ -380,6 +385,8 @@ namespace Moodium.Opening
         {
             if (m_EntryPrompt != null)
                 m_EntryPrompt.SetActive(visible);
+            if (visible)
+                m_EntryPromptText?.ForceMeshUpdate(ignoreActiveState: true);
             if (!visible)
                 m_MoodiVoiceAudio?.Stop();
         }
@@ -390,7 +397,10 @@ namespace Moodium.Opening
                 m_MoodiIntroMinimumDuration,
                 m_MoodiIntroVoiceClip != null ? m_MoodiIntroVoiceClip.length : 0f));
             if (m_EntryPromptText != null)
+            {
                 m_EntryPromptText.text = "你更希望 Moodi 用哪种语言陪你探索？\nWhich language would you like Moodi to use?";
+                m_EntryPromptText.ForceMeshUpdate(ignoreActiveState: true);
+            }
             SetLanguageChoiceVisible(true);
         }
 
@@ -419,7 +429,23 @@ namespace Moodium.Opening
 
         void CreateLanguageButton(Transform parent, string label, Vector2 position, UnityEngine.Events.UnityAction action)
         {
-            var go = new GameObject(label == "中文" ? "Language Button - Chinese" : "Language Button - English", typeof(RectTransform), typeof(Image), typeof(Button)); go.transform.SetParent(parent, false); var rect = go.GetComponent<RectTransform>(); rect.sizeDelta = new Vector2(200f, 50f); rect.anchoredPosition = position; var image = go.GetComponent<Image>(); image.sprite = Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd"); image.type = Image.Type.Sliced; image.color = new Color(1f, 1f, 1f, 0.42f); var outline = go.AddComponent<Outline>(); outline.effectColor = new Color(1f, 1f, 1f, 0.9f); outline.effectDistance = new Vector2(2f, 2f); go.GetComponent<Button>().onClick.AddListener(action); CreateChoiceText(go.transform, label, Vector2.zero, 24f);
+            var go = new GameObject(label == "中文" ? "Language Button - Chinese" : "Language Button - English",
+                typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+            var rect = go.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(200f, 50f);
+            rect.anchoredPosition = position;
+            var image = go.GetComponent<Image>();
+            image.sprite = m_LanguageButtonRoundedSprite != null
+                ? m_LanguageButtonRoundedSprite
+                : Resources.GetBuiltinResource<Sprite>("UI/Skin/UISprite.psd");
+            image.type = Image.Type.Sliced;
+            image.color = new Color(0.055f, 0.08f, 0.16f, 0.84f);
+            var outline = go.AddComponent<Outline>();
+            outline.effectColor = new Color(0.42f, 0.58f, 0.95f, 0.55f);
+            outline.effectDistance = new Vector2(1f, 1f);
+            go.GetComponent<Button>().onClick.AddListener(action);
+            CreateChoiceText(go.transform, label, Vector2.zero, 24f);
         }
 
         void SelectLanguage(string language) { PlayerPrefs.SetString("Moodium.Language", language); PlayerPrefs.Save(); SetLanguageChoiceVisible(false); }
@@ -466,20 +492,20 @@ namespace Moodium.Opening
             main.loop = true;
             main.playOnAwake = false;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(1.4f, 2.6f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.008f, 0.028f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.006f, 0.018f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.65f, 1.25f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.006f, 0.018f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.004f, 0.012f);
             main.startColor = new ParticleSystem.MinMaxGradient(
-                new Color(0.56f, 0.4f, 0.98f, 0.12f),
-                new Color(0.82f, 0.7f, 1f, 0.32f));
+                new Color(0.56f, 0.4f, 0.98f, 0.07f),
+                new Color(0.82f, 0.7f, 1f, 0.22f));
             var emission = m_EntryTrailParticles.emission;
-            emission.rateOverTime = 16f;
+            emission.rateOverTime = 8f;
             var shape = m_EntryTrailParticles.shape;
             shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.012f;
+            shape.radius = 0.006f;
             var noise = m_EntryTrailParticles.noise;
             noise.enabled = true;
-            noise.strength = 0.1f;
+            noise.strength = 0.035f;
             noise.frequency = 0.42f;
             noise.scrollSpeed = 0.18f;
             var renderer = particleObject.GetComponent<ParticleSystemRenderer>();

@@ -26,11 +26,12 @@ public static class MoodiumOpeningExperienceSetup
     const string ChineseFontSource = "Assets/TextMesh Pro/Fonts/AlibabaPuHuiTi-2-35-Thin.ttf";
     const string ChineseFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi-2-35-Thin SDF.asset";
     const string EnglishFontAsset = "Assets/UI/Moodium/Fonts/Inter-Regular SDF.asset";
-    const string IntroVideoAsset = "Assets/Video/NewOpenningAni.mp4";
+    const string IntroVideoAsset = "Assets/Video/hiimmoodi.mp4";
+    const string OpeningVideoSequenceConfigAsset = "Assets/Resources/MoodiumOpening/OpeningVideoSequenceConfig.asset";
     const string LeftHandGuideAsset = "Assets/prefab/UI-LeftHand.prefab";
     const string RightHandGuideAsset = "Assets/prefab/UI-RightHand.prefab";
     const string IntroPromptFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi Moodium SDF.asset";
-    const string VersionKey = "Moodium.OpeningExperience.Setup.v17";
+    const string VersionKey = "Moodium.OpeningExperience.Setup.v22";
 
     static MoodiumOpeningExperienceSetup()
     {
@@ -49,6 +50,7 @@ public static class MoodiumOpeningExperienceSetup
         EnsureFolder(OutputFolder);
         EnsureFolder("Assets/Resources");
         EnsureFolder(AnimationFolder);
+        var openingVideoSequence = EnsureOpeningVideoSequenceConfig();
 
         var candyIdleClip = FindClip(CandyFbx, "Candy_Idle");
         var candySourcePath = AnimationFolder + "/Candy_Transform_Source.anim";
@@ -107,12 +109,15 @@ public static class MoodiumOpeningExperienceSetup
                 ("m_AnimationController", animations),
                 ("m_CandyInteraction", interaction),
                 ("m_TouchPrompt", prompt),
+                ("m_VideoSequenceConfig", openingVideoSequence),
                 ("m_PreOpeningVideo", AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(IntroVideoAsset)),
                 ("m_LeftHandGuidePrefab", AssetDatabase.LoadAssetAtPath<GameObject>(LeftHandGuideAsset)),
                 ("m_RightHandGuidePrefab", AssetDatabase.LoadAssetAtPath<GameObject>(RightHandGuideAsset)),
                 ("m_HandPromptFont", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(IntroPromptFontAsset)));
             AssignFloat(manager,
-                ("m_PreOpeningVideoHeightOffset", 0.13f));
+                ("m_PreOpeningVideoHeightOffset", 0.63f),
+                ("m_PreOpeningVideoDistanceFromUser", 1.15f),
+                ("m_InteractiveVideoPreviewDuration", 3.08f));
 
             ValidateClipBindings(candy.GetComponentInChildren<Animator>(true), candyClip);
 
@@ -172,6 +177,28 @@ public static class MoodiumOpeningExperienceSetup
             return;
         EditorPrefs.SetBool(VersionKey, true);
         BuildOpeningExperience();
+    }
+
+    static OpeningVideoSequenceConfig EnsureOpeningVideoSequenceConfig()
+    {
+        var config = AssetDatabase.LoadAssetAtPath<OpeningVideoSequenceConfig>(OpeningVideoSequenceConfigAsset);
+        if (config != null)
+            return config;
+
+        config = ScriptableObject.CreateInstance<OpeningVideoSequenceConfig>();
+        AssetDatabase.CreateAsset(config, OpeningVideoSequenceConfigAsset);
+        var serialized = new SerializedObject(config);
+        serialized.FindProperty("m_VideoClip").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<UnityEngine.Video.VideoClip>(IntroVideoAsset);
+        serialized.FindProperty("m_IntroLoopStartTime").floatValue = 0f;
+        serialized.FindProperty("m_IntroLoopEndTime").floatValue = 3.08f;
+        serialized.FindProperty("m_LanguageLoopStartTime").floatValue = 24.14f;
+        serialized.FindProperty("m_LanguageLoopEndTime").floatValue = 32f;
+        serialized.FindProperty("m_DistanceFromUser").floatValue = 1.35f;
+        serialized.FindProperty("m_HeightOffset").floatValue = -0.05f;
+        serialized.FindProperty("m_WorldPositionY").floatValue = 1f;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        return config;
     }
 
     static void VerifyRuntimeClipResources()

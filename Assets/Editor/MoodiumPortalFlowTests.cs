@@ -7,22 +7,22 @@ public sealed class MoodiumPortalFlowTests
     const string OpeningPath = "Assets/Scripts/Moodium/Opening/OpeningManager.cs";
 
     [Test]
-    public void RuntimeStartupRoutesThroughPortalAndSkipsCreativeUiConstruction()
+    public void RuntimeStartupRoutesDirectlyToObjectWorldSelection()
     {
         var source = File.ReadAllText(FlowPath);
 
-        StringAssert.Contains("ShowPortalEntrance();", source);
+        StringAssert.Contains("ShowObjectWorldSelection();", source);
         StringAssert.DoesNotContain("BuildModeSelection();", source);
         StringAssert.DoesNotContain("BuildWorldSelectionPanel();", source);
         StringAssert.DoesNotContain("BuildNoObjectPanel();", source);
     }
 
     [Test]
-    public void OpeningHandsControlToPortalFlow()
+    public void OpeningHandsControlDirectlyToObjectWorldSelection()
     {
         var source = File.ReadAllText(OpeningPath);
 
-        StringAssert.Contains("BeginPortalFlow", source);
+        StringAssert.Contains("ShowObjectWorldSelectionFromOpening", source);
     }
 
     [Test]

@@ -80,13 +80,16 @@ MonoBehaviour:
   m_LogoFadeDuration: 1.8
   m_FinalLogoHold: 2.8
   m_HandoffDelay: 0.15
-  m_PreOpeningVideo: {fileID: 32900000, guid: 6c16e6294ad62484cae43d6739bd5c7d, type: 3}
+  m_VideoSequenceConfig: {fileID: 11400000, guid: 5f87c8c365d74692ad5c93f6a7742b0d, type: 2}
+  m_PreOpeningVideo: {fileID: 32900000, guid: b93a81f8067ea473d99cfb057cc0bd1c, type: 3}
   m_PreOpeningVideoTimeout: 30
-  m_InteractiveVideoPreviewDuration: 2
-  m_PreOpeningVideoHeightOffset: 0.13
+  m_InteractiveVideoPreviewDuration: 3.08
+  m_PreOpeningVideoHeightOffset: 0.63
+  m_PreOpeningVideoDistanceFromUser: 1.15
   m_LeftHandGuidePrefab: {fileID: 7212545589841548407, guid: 66f49a5063c2543bc8b678e85733192d, type: 3}
   m_RightHandGuidePrefab: {fileID: 6365916240531524286, guid: 86f587fb2af7a4109b7659ca7d567ab1, type: 3}
   m_HandPromptFont: {fileID: 11400000, guid: 87c6dc9cf9eb7482f92d732e550a4b92, type: 2}
+  m_LanguageButtonRoundedSprite: {fileID: 21300000, guid: 485a3f92515ed4d1dae5811a5ad83e37, type: 3}
 --- !u!1 &4631176335456226961
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using FIMSpace.BonesStimulation;
 using Moodium.Flow;
 using Moodium.Opening;
@@ -7,6 +8,7 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class MoodiumPortalSceneValidationTests
 {
@@ -84,8 +86,51 @@ public sealed class MoodiumPortalSceneValidationTests
         Assert.That(prompt.localEulerAngles.y, Is.EqualTo(180f).Within(0.01f));
         Assert.That(prompt.localScale, Is.EqualTo(new Vector3(-1f, 1f, 1f)));
         Assert.That(text.fontSize, Is.EqualTo(0.3f).Within(0.001f));
+        Assert.That(prompt.GetComponent<Renderer>().allowOcclusionWhenDynamic, Is.False,
+            "The portal subtitle must not be dynamically occluded on device.");
         Assert.That(serialized.FindProperty("m_MoodiIntroMinimumDuration").floatValue,
             Is.EqualTo(3f).Within(0.001f));
+    }
+
+    [Test]
+    public void PortalLanguageButtonsUseDarkRoundedGlassStyle()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/prefab/MoodiumOpening/MoodiumPortalEntrance.prefab");
+        var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+        instance.SetActive(true);
+        var controller = instance.GetComponent<MoodiumPortalEntranceController>();
+        typeof(MoodiumPortalEntranceController)
+            .GetMethod("ConfigureLanguageChoice", BindingFlags.Instance | BindingFlags.NonPublic)
+            .Invoke(controller, null);
+        var button = instance.transform.Find(
+            "PortalVisualRoot/EntryPrompt/Moodi Language Choice/Language Choice Buttons/Language Button - Chinese");
+
+        Assert.That(button, Is.Not.Null);
+        var image = button.GetComponent<Image>();
+        Assert.That(image.type, Is.EqualTo(Image.Type.Sliced));
+        Assert.That(image.color.r, Is.LessThan(0.2f));
+        Assert.That(image.color.g, Is.LessThan(0.25f));
+        Assert.That(image.color.b, Is.GreaterThan(image.color.r));
+        Assert.That(button.GetComponent<Outline>(), Is.Not.Null);
+        Object.DestroyImmediate(instance);
+    }
+
+    [Test]
+    public void MoodiTrailUsesAShortSparseParticleWake()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+            "Assets/prefab/MoodiumOpening/MoodiumPortalEntrance.prefab");
+        var instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+        instance.SetActive(true);
+        var trail = instance.GetComponentInChildren<ParticleSystem>(true);
+        foreach (var candidate in instance.GetComponentsInChildren<ParticleSystem>(true))
+            if (candidate.name == "Moodi Loose Trail Particles") trail = candidate;
+
+        Assert.That(trail, Is.Not.Null);
+        Assert.That(trail.emission.rateOverTime.constant, Is.LessThanOrEqualTo(8f));
+        Assert.That(trail.main.startLifetime.constantMax, Is.LessThanOrEqualTo(1.35f));
+        Object.DestroyImmediate(instance);
     }
 
     [Test]

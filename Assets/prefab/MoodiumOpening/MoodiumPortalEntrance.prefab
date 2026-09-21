@@ -100,7 +100,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -6052,6 +6052,7 @@ MonoBehaviour:
   m_MoodiIntroVoiceClip: {fileID: 0}
   m_MoodiIntroMinimumDuration: 3
   m_MoodiSubtitleFont: {fileID: 11400000, guid: 87c6dc9cf9eb7482f92d732e550a4b92, type: 2}
+  m_LanguageButtonRoundedSprite: {fileID: 21300000, guid: 485a3f92515ed4d1dae5811a5ad83e37, type: 3}
 --- !u!1 &8033705221830353416
 GameObject:
   m_ObjectHideFlags: 0
