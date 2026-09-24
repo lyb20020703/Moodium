@@ -26,7 +26,7 @@ public static class MoodiumOpeningExperienceSetup
     const string ChineseFontSource = "Assets/TextMesh Pro/Fonts/AlibabaPuHuiTi-2-35-Thin.ttf";
     const string ChineseFontAsset = "Assets/UI/Moodium/Fonts/AlibabaPuHuiTi-2-35-Thin SDF.asset";
     const string EnglishFontAsset = "Assets/UI/Moodium/Fonts/Inter-Regular SDF.asset";
-    const string IntroVideoAsset = "Assets/Video/hiimmoodi.mp4";
+    const string IntroVideoAsset = "Assets/Video/VideoPLUS.mp4";
     const string OpeningVideoSequenceConfigAsset = "Assets/Resources/MoodiumOpening/OpeningVideoSequenceConfig.asset";
     const string LeftHandGuideAsset = "Assets/prefab/UI-LeftHand.prefab";
     const string RightHandGuideAsset = "Assets/prefab/UI-RightHand.prefab";
@@ -182,21 +182,37 @@ public static class MoodiumOpeningExperienceSetup
     static OpeningVideoSequenceConfig EnsureOpeningVideoSequenceConfig()
     {
         var config = AssetDatabase.LoadAssetAtPath<OpeningVideoSequenceConfig>(OpeningVideoSequenceConfigAsset);
-        if (config != null)
-            return config;
-
-        config = ScriptableObject.CreateInstance<OpeningVideoSequenceConfig>();
-        AssetDatabase.CreateAsset(config, OpeningVideoSequenceConfigAsset);
+        if (config == null)
+        {
+            config = ScriptableObject.CreateInstance<OpeningVideoSequenceConfig>();
+            AssetDatabase.CreateAsset(config, OpeningVideoSequenceConfigAsset);
+        }
         var serialized = new SerializedObject(config);
         serialized.FindProperty("m_VideoClip").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<UnityEngine.Video.VideoClip>(IntroVideoAsset);
         serialized.FindProperty("m_IntroLoopStartTime").floatValue = 0f;
         serialized.FindProperty("m_IntroLoopEndTime").floatValue = 3.08f;
-        serialized.FindProperty("m_LanguageLoopStartTime").floatValue = 24.14f;
-        serialized.FindProperty("m_LanguageLoopEndTime").floatValue = 32f;
+        serialized.FindProperty("m_LanguageLoopStartTime").floatValue =
+            (float)OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.LanguageLoop.StartFrame);
+        serialized.FindProperty("m_LanguageLoopEndTime").floatValue =
+            (float)OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.LanguageLoop.EndFrame);
         serialized.FindProperty("m_DistanceFromUser").floatValue = 1.35f;
         serialized.FindProperty("m_HeightOffset").floatValue = -0.05f;
         serialized.FindProperty("m_WorldPositionY").floatValue = 1f;
+        serialized.FindProperty("m_ChineseTutorialClip").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<UnityEngine.Video.VideoClip>(IntroVideoAsset);
+        serialized.FindProperty("m_EnglishTutorialClip").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<UnityEngine.Video.VideoClip>(IntroVideoAsset);
+        serialized.FindProperty("m_ChineseHardwareQuestionTime").floatValue = 9.04f;
+        serialized.FindProperty("m_ChineseHardwareLoopEndTime").floatValue = 15.03f;
+        serialized.FindProperty("m_ChineseHardwareYesEndTime").floatValue = 30.06f;
+        serialized.FindProperty("m_ChineseHardwareNoStartTime").floatValue = 36.05f;
+        serialized.FindProperty("m_ChineseHardwareNoEndTime").floatValue = 51.08f;
+        serialized.FindProperty("m_EnglishHardwareQuestionTime").floatValue = 9.23f;
+        serialized.FindProperty("m_EnglishHardwareLoopEndTime").floatValue = 15.03f;
+        serialized.FindProperty("m_EnglishHardwareYesEndTime").floatValue = 30.11f;
+        serialized.FindProperty("m_EnglishHardwareNoStartTime").floatValue = 35.16f;
+        serialized.FindProperty("m_EnglishHardwareNoEndTime").floatValue = 50.20f;
         serialized.ApplyModifiedPropertiesWithoutUndo();
         return config;
     }
@@ -840,6 +856,12 @@ public sealed class MoodiumOpeningBuildValidator : IPreprocessBuildWithReport
                 throw new BuildFailedException(
                     $"Moodium opening asset '{propertyName}' is missing. Rebuild the Opening Experience before building the app.");
         }
+
+        var sequence = serialized.FindProperty("m_VideoSequenceConfig")?.objectReferenceValue
+            as OpeningVideoSequenceConfig;
+        if (sequence == null || sequence.VideoClip == null)
+            throw new BuildFailedException(
+                "Moodium combined opening video is missing. Assign VideoPLUS.mp4 before building the app.");
     }
 }
 #endif

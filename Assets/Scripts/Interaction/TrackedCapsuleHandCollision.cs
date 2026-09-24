@@ -14,6 +14,21 @@ namespace Moodium.Interaction
     {
         [SerializeField, Min(0.005f)] float m_JointProbeRadius = 0.025f;
 
+        static readonly XRHandJointID[] HandJointIds =
+        {
+            XRHandJointID.Wrist, XRHandJointID.Palm,
+            XRHandJointID.ThumbMetacarpal, XRHandJointID.ThumbProximal,
+            XRHandJointID.ThumbDistal, XRHandJointID.ThumbTip,
+            XRHandJointID.IndexMetacarpal, XRHandJointID.IndexProximal,
+            XRHandJointID.IndexIntermediate, XRHandJointID.IndexDistal, XRHandJointID.IndexTip,
+            XRHandJointID.MiddleMetacarpal, XRHandJointID.MiddleProximal,
+            XRHandJointID.MiddleIntermediate, XRHandJointID.MiddleDistal, XRHandJointID.MiddleTip,
+            XRHandJointID.RingMetacarpal, XRHandJointID.RingProximal,
+            XRHandJointID.RingIntermediate, XRHandJointID.RingDistal, XRHandJointID.RingTip,
+            XRHandJointID.LittleMetacarpal, XRHandJointID.LittleProximal,
+            XRHandJointID.LittleIntermediate, XRHandJointID.LittleDistal, XRHandJointID.LittleTip
+        };
+
         readonly Collider[] m_HitBuffer = new Collider[12];
         ChocolateCapsuleInteraction m_Capsule;
         XRHandSubsystem m_HandSubsystem;
@@ -79,24 +94,26 @@ namespace Moodium.Interaction
                 return;
             }
 
-            var touching = HandTouchesCapsule(subsystem.leftHand) ||
-                           HandTouchesCapsule(subsystem.rightHand);
-            SetTouching(touching);
+            var touching = HandTouchesCapsule(subsystem.leftHand, out var contactPosition) ||
+                           HandTouchesCapsule(subsystem.rightHand, out contactPosition);
+            SetTouching(touching, contactPosition);
         }
 
-        bool HandTouchesCapsule(XRHand hand)
+        bool HandTouchesCapsule(XRHand hand, out Vector3 contactPosition)
         {
+            contactPosition = default;
             if (!hand.isTracked)
                 return false;
 
-            return JointTouchesCapsule(hand.GetJoint(XRHandJointID.Wrist)) ||
-                   JointTouchesCapsule(hand.GetJoint(XRHandJointID.IndexMetacarpal)) ||
-                   JointTouchesCapsule(hand.GetJoint(XRHandJointID.MiddleMetacarpal)) ||
-                   JointTouchesCapsule(hand.GetJoint(XRHandJointID.LittleMetacarpal));
+            foreach (var jointId in HandJointIds)
+                if (JointTouchesCapsule(hand.GetJoint(jointId), out contactPosition))
+                    return true;
+            return false;
         }
 
-        bool JointTouchesCapsule(XRHandJoint joint)
+        bool JointTouchesCapsule(XRHandJoint joint, out Vector3 contactPosition)
         {
+            contactPosition = default;
             if (!joint.TryGetPose(out var trackingPose))
                 return false;
 
@@ -114,20 +131,32 @@ namespace Moodium.Interaction
             {
                 var hit = m_HitBuffer[i];
                 if (hit != null && hit.GetComponentInParent<ChocolateCapsuleInteraction>() == m_Capsule)
+                {
+                    contactPosition = hit.ClosestPoint(worldPose.position);
                     return true;
+                }
             }
             return false;
         }
 
         void SetTouching(bool touching)
         {
+            SetTouching(touching, default);
+        }
+
+        void SetTouching(bool touching, Vector3 contactPosition)
+        {
             if (m_Touching == touching)
+            {
+                if (touching)
+                    m_Capsule?.HandContactHeld(contactPosition);
                 return;
+            }
             m_Touching = touching;
             if (m_Capsule == null)
                 return;
             if (touching)
-                m_Capsule.PalmContactStarted();
+                m_Capsule.HandContactStarted(contactPosition);
             else
                 m_Capsule.PalmContactEnded();
         }

@@ -369,7 +369,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TrackedObjectManager: {fileID: 1739991078}
-  m_ChocolatePrefab: {fileID: 1662292505339529401, guid: 4d20f0cce1839407f8e158d94f322b11, type: 3}
+  m_ChocolatePrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
   m_ReferenceObjectName: Tissue
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalEulerAngles: {x: 0, y: 0, z: 0}
@@ -398,6 +398,16 @@ MonoBehaviour:
   m_RealityCandyWorldModelPrefab: {fileID: 2686762556302764267, guid: 568a81cade6de4441917864c3a0ca2ca, type: 3}
   m_RealityNatureWorldModelPrefab: {fileID: 8467906725528905566, guid: aae9b05163e2e41119b31f85cca4d3a8, type: 3}
   m_RealityFallbackWorldModelPrefab: {fileID: 1243638243325089260, guid: 9b7f48995c0634708b12f6eddad122fc, type: 3}
+  m_RealityCandySoftPrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
+  m_RealityNatureSoftPrefab: {fileID: 7753623436516282245, guid: 304ef1a166c654b98808d9c59f5bb5b9, type: 3}
+  m_NatureForestTreePrefabs:
+  - {fileID: 392179945897341202, guid: 0f9361eeb4922a04882096919c996ba9, type: 3}
+  - {fileID: 7294295943489037214, guid: 3f7a9cf2c689a8c4995faa003bda87c3, type: 3}
+  - {fileID: 8916691322274730802, guid: ba3d3ee8f3ee9764a9a4b156896c0b6f, type: 3}
+  - {fileID: 7460352013013813171, guid: 0fa75777d520af24495d9f3e8f7516b6, type: 3}
+  - {fileID: 133151556428898140, guid: 22ffea230304c0048846b7a1735ed5a2, type: 3}
+  m_NatureIvyGeneratorPrefab: {fileID: 3475717432368046239, guid: b517e3b496411404d9b665d70cc3e259, type: 3}
+  m_NatureIvyGrowMaterial: {fileID: 2100000, guid: 536d76ee6e9f93e419f5417e44c26bb9, type: 2}
   m_CreativePrefabScaleConfigs: []
   m_FontAsset: {fileID: 11400000, guid: 5d946757aa5b8410aba5b97ed2216bfa, type: 2}
   m_ChineseFontAsset: {fileID: 11400000, guid: 87c6dc9cf9eb7482f92d732e550a4b92, type: 2}
@@ -464,7 +474,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TrackedImageManager: {fileID: 1739991079}
-  m_ChocolatePrefab: {fileID: 1662292505339529401, guid: 4d20f0cce1839407f8e158d94f322b11, type: 3}
+  m_ChocolatePrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalEulerAngles: {x: 0, y: 0, z: 0}
 --- !u!1001 &679955422

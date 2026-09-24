@@ -20,5 +20,5 @@ MonoBehaviour:
   m_CardArtwork: {fileID: 0}
   m_BackgroundMusic: {fileID: 8300000, guid: 3b2208a6d74d44e1d88381e0dfb138e8, type: 3}
   m_AccentColor: {r: 0.42, g: 0.82, b: 0.58, a: 1}
-  m_IsAvailable: 0
+  m_IsAvailable: 1
   m_Prefabs: []

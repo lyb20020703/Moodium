@@ -1,5 +1,6 @@
 using Moodium.Flow;
 using Moodium.Interaction;
+using Moodium.NatureWorld;
 using Moodium.Reality;
 using TMPro;
 using UnityEngine;
@@ -16,8 +17,15 @@ namespace Moodium.CandyWorld
         CandyFrostParticleController m_Frost;
         CandyRainRewardController m_RainReward;
         CandyWorldProgressController m_ProgressController;
+        NatureForestGrowthController m_NatureForestGrowth;
+        NatureIvySpatialGrowthController m_NatureIvyGrowth;
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
         CandyHandOpenBurstGesture m_HandOpenBurstGesture;
+        ARMeshManager m_SpatialMeshManager;
+        GameObject[] m_NatureTreePrefabs;
+        GameObject m_NatureIvyGeneratorPrefab;
+        Material m_NatureIvyGrowMaterial;
+        bool m_NatureWorldActive;
         bool m_Running;
 
         public float Energy => m_Energy != null ? m_Energy.Energy : 0f;
@@ -26,6 +34,7 @@ namespace Moodium.CandyWorld
             MoodiumWorldDefinition world, ARMeshManager meshManager, Material candyTransformationMaterial,
             Sprite wristRoundedSprite, Sprite wristCircleSprite, GameObject candyFrostPrefab)
         {
+            m_SpatialMeshManager = meshManager;
             m_Energy = GetComponent<CandyEnergyController>();
             if (m_Energy == null)
                 m_Energy = gameObject.AddComponent<CandyEnergyController>();
@@ -69,6 +78,13 @@ namespace Moodium.CandyWorld
                 camera, m_SpatialTransformation, m_Frost, m_RainReward,
                 world != null ? world.Prefabs : null);
 
+            m_NatureForestGrowth = GetComponent<NatureForestGrowthController>();
+            if (m_NatureForestGrowth == null)
+                m_NatureForestGrowth = gameObject.AddComponent<NatureForestGrowthController>();
+            m_NatureIvyGrowth = GetComponent<NatureIvySpatialGrowthController>();
+            if (m_NatureIvyGrowth == null)
+                m_NatureIvyGrowth = gameObject.AddComponent<NatureIvySpatialGrowthController>();
+
             if (m_EnergyUI == null)
             {
                 var ui = new GameObject("Candy Energy Left Wrist HUD");
@@ -86,6 +102,25 @@ namespace Moodium.CandyWorld
             m_ProgressController.Configure(
                 Camera.main, m_SpatialTransformation, m_Frost, m_RainReward,
                 world != null ? world.Prefabs : null);
+            m_NatureWorldActive = world != null &&
+                                  world.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase);
+            if (m_NatureWorldActive)
+            {
+                m_NatureForestGrowth.Configure(Camera.main != null ? Camera.main.transform : null, m_NatureTreePrefabs);
+                m_NatureForestGrowth.StartGrowth();
+                m_NatureIvyGrowth.Configure(
+                    Camera.main,
+                    m_SpatialMeshManager,
+                    m_NatureIvyGeneratorPrefab,
+                    m_NatureIvyGrowMaterial,
+                    3);
+                m_NatureIvyGrowth.StartGrowth();
+            }
+            else
+            {
+                m_NatureForestGrowth.StopAndClear();
+                m_NatureIvyGrowth.StopAndClear();
+            }
             m_Energy.ResetEnergy();
             m_ProgressController.StartProgress();
             m_SpatialTouchFeedback?.SetInteractionEnabled(true);
@@ -95,9 +130,8 @@ namespace Moodium.CandyWorld
                 return;
             m_Running = true;
             ChocolateCapsuleInteraction.AnyCapsulePinched += OnCapsulePinched;
-            m_Energy.EnergyChanged += m_EnergyUI.SetProgress;
-            m_Energy.EnergyChanged += m_ProgressController.SetProgress;
-            m_EnergyUI.SetProgress(0f, 0f);
+            m_Energy.EnergyChanged += OnEnergyChanged;
+            OnEnergyChanged(0f, 0f);
             Debug.Log("[Candy World] Reality Enhancement Mode experience started.");
         }
 
@@ -106,8 +140,7 @@ namespace Moodium.CandyWorld
             if (m_Running)
             {
                 ChocolateCapsuleInteraction.AnyCapsulePinched -= OnCapsulePinched;
-                m_Energy.EnergyChanged -= m_EnergyUI.SetProgress;
-                m_Energy.EnergyChanged -= m_ProgressController.SetProgress;
+                m_Energy.EnergyChanged -= OnEnergyChanged;
             }
             m_Running = false;
             m_SpatialTouchFeedback?.SetInteractionEnabled(false);
@@ -115,6 +148,8 @@ namespace Moodium.CandyWorld
             if (m_EnergyUI != null)
                 m_EnergyUI.gameObject.SetActive(false);
             m_ProgressController?.StopAndClear();
+            m_NatureForestGrowth?.StopAndClear();
+            m_NatureIvyGrowth?.StopAndClear();
             m_BurstController?.StopAndClear();
         }
 
@@ -144,6 +179,27 @@ namespace Moodium.CandyWorld
             m_ProgressController.SetOrigin(position);
             m_Energy.RegisterPinch();
             m_BurstController.Burst(position, capsule.transform);
+            if (m_NatureWorldActive)
+                m_NatureIvyGrowth.TryGrowNearInteraction(position);
+        }
+
+        public void ConfigureNatureForestTrees(GameObject[] treePrefabs)
+        {
+            m_NatureTreePrefabs = treePrefabs;
+        }
+
+        public void ConfigureNatureIvy(GameObject generatorPrefab, Material growMaterial)
+        {
+            m_NatureIvyGeneratorPrefab = generatorPrefab;
+            m_NatureIvyGrowMaterial = growMaterial;
+        }
+
+        void OnEnergyChanged(float energy, float normalizedProgress)
+        {
+            m_EnergyUI.SetProgress(energy, normalizedProgress);
+            m_ProgressController.SetProgress(energy, normalizedProgress);
+            if (m_NatureWorldActive)
+                m_NatureForestGrowth.SetProgress(normalizedProgress);
         }
     }
 }

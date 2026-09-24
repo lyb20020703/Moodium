@@ -24,6 +24,7 @@ namespace Moodium.Interaction
 
         TouchParticleFeedback m_ParticleFeedback;
         MoodiumTouchAudio m_TouchAudio;
+        SoftTouchDeformationController m_SoftDeformation;
 
         Transform[] m_Pieces;
         Vector3[] m_InitialPositions;
@@ -68,6 +69,7 @@ namespace Moodium.Interaction
             ResolveReferences();
             m_ParticleFeedback = GetComponent<TouchParticleFeedback>();
             m_TouchAudio = GetComponent<MoodiumTouchAudio>();
+            m_SoftDeformation = GetComponent<SoftTouchDeformationController>();
             CapturePiecePose();
             CaptureBurstCenter();
             m_InteractionBaseScale = transform.localScale;
@@ -110,7 +112,18 @@ namespace Moodium.Interaction
 
         public void PalmContactStarted()
         {
-            BeginSqueeze();
+            BeginSqueeze(BurstCenter);
+        }
+
+        public void HandContactStarted(Vector3 contactPosition)
+        {
+            BeginSqueeze(contactPosition);
+        }
+
+        public void HandContactHeld(Vector3 contactPosition)
+        {
+            if (m_IsPinched)
+                m_SoftDeformation?.TouchHold(contactPosition);
         }
 
         public void PalmContactEnded()
@@ -121,12 +134,20 @@ namespace Moodium.Interaction
 
         bool BeginSqueeze()
         {
+            return BeginSqueeze(BurstCenter);
+        }
+
+        bool BeginSqueeze(Vector3 contactPosition)
+        {
             if (!m_InteractionEnabled || m_IsPinched)
                 return false;
 
             m_IsPinched = true;
             m_InteractionBaseScale = transform.localScale;
-            PlayPressSquash();
+            if (m_SoftDeformation != null)
+                m_SoftDeformation.TouchBegin(contactPosition);
+            else
+                PlayPressSquash();
             Debug.Log("Chocolate Capsule Pinched");
             m_ParticleFeedback?.Play();
             if (m_TouchAudio != null)
@@ -135,18 +156,21 @@ namespace Moodium.Interaction
                 MoodiumAudioManager.Play(MoodiumAudioCue.RealitySqueeze, BurstCenter);
             AnyCapsulePinched?.Invoke(this, BurstCenter);
 
-            if (m_CrackPiecesRoot != null)
+            // Legacy Chocolate prefabs retain their authored crack animation. CandySoft
+            // deliberately uses the Creative Space soft-deformation path instead.
+            if (m_SoftDeformation == null && m_CrackPiecesRoot != null)
                 m_CrackPiecesRoot.SetActive(true);
 
-            RestorePiecePose();
-            if (m_Animator != null && m_Animator.runtimeAnimatorController != null)
+            if (m_SoftDeformation == null)
+                RestorePiecePose();
+            if (m_SoftDeformation == null && m_Animator != null && m_Animator.runtimeAnimatorController != null)
             {
                 m_Animator.enabled = true;
                 m_Animator.speed = 1f;
                 m_Animator.Play(m_CrackStateHash, 0, m_CrackStartNormalizedTime);
                 m_Animator.Update(0f);
             }
-            if (m_NormalShell != null)
+            if (m_SoftDeformation == null && m_NormalShell != null)
                 m_NormalShell.SetActive(false);
 
             Debug.Log("Chocolate Crack Animation Start");
@@ -165,7 +189,8 @@ namespace Moodium.Interaction
             var wasPinched = m_IsPinched;
             m_IsPinched = false;
             m_ActivePointerId = -1;
-            if (wasPinched)
+            m_SoftDeformation?.TouchEnd();
+            if (wasPinched && m_SoftDeformation == null)
                 PlayReleaseBounce();
 
             if (m_CrackPiecesRoot != null)

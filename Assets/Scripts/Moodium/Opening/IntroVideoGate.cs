@@ -21,6 +21,11 @@ namespace Moodium.Opening
 
         public bool ShouldLoopAt(double currentTime) => !IsActivated && currentTime >= PreviewEndTime;
 
+        // A selection can be submitted after the coroutine yields and before
+        // its next loop-condition check. Keep the loop alive until the caller
+        // consumes that selection and explicitly activates the gate.
+        public bool ShouldKeepSelectionPromptVisible(bool hasSelection) => !IsActivated;
+
         public bool TryBeginPreviewLoop(double currentTime)
         {
             if (m_PreviewSeekPending || !ShouldLoopAt(currentTime))

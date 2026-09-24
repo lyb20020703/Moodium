@@ -18,6 +18,10 @@ namespace Moodium.Reality
 
             var instance = Object.Instantiate(prefab);
             instance.name = instanceName;
+            // Soft tracked-world props use the same runtime deformation as Creative Space.
+            if (prefab.name.EndsWith("Soft", System.StringComparison.OrdinalIgnoreCase) &&
+                instance.GetComponent<SoftTouchDeformationController>() == null)
+                instance.AddComponent<SoftTouchDeformationController>();
             var manipulable = MoodiumRuntimeObjectSetup.Configure(
                 instance,
                 allowMove: false,

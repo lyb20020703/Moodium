@@ -1,11 +1,6 @@
 using TMPro;
-using Unity.PolySpatial.InputDevices;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.EnhancedTouch;
-using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.UI;
-using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 namespace Moodium.Opening
 {
@@ -16,6 +11,10 @@ namespace Moodium.Opening
         public string SelectedLanguage { get; private set; }
         GameObject m_Chinese;
         GameObject m_English;
+        readonly OpeningVideoSpatialChoiceGate m_TransitionGate = new OpeningVideoSpatialChoiceGate();
+
+        public bool IsReadyForVideoTransition =>
+            m_TransitionGate.IsReadyForVideoTransition(Time.frameCount, false);
 
         public void Configure(TMP_FontAsset font, Sprite roundedSprite)
         {
@@ -24,6 +23,7 @@ namespace Moodium.Opening
             canvas.worldCamera = Camera.main;
             gameObject.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
             gameObject.AddComponent<GraphicRaycaster>();
+            gameObject.AddComponent<OpeningVideoSpatialUIInputManager>();
             var rect = GetComponent<RectTransform>();
             rect.sizeDelta = new Vector2(900f, 340f);
 
@@ -34,23 +34,7 @@ namespace Moodium.Opening
             m_English = CreateButton("Language Button - English", "English", new Vector2(190f, -160f), font, roundedSprite, "English");
         }
 
-        void OnEnable() => EnhancedTouchSupport.Enable();
-
-        void Update()
-        {
-            if (HasSelection)
-                return;
-            foreach (var touch in Touch.activeTouches)
-            {
-                var pointer = EnhancedSpatialPointerSupport.GetPointerState(touch);
-                if (pointer.phase != SpatialPointerPhase.Began || pointer.targetObject == null)
-                    continue;
-                if (m_Chinese != null && (pointer.targetObject == m_Chinese || pointer.targetObject.transform.IsChildOf(m_Chinese.transform)))
-                    Select("中文");
-                else if (m_English != null && (pointer.targetObject == m_English || pointer.targetObject.transform.IsChildOf(m_English.transform)))
-                    Select("English");
-            }
-        }
+        public void SelectChineseWhenTimedOut() => SelectAutomatically("中文");
 
         TextMeshProUGUI CreateText(string name, string value, TMP_FontAsset font, float size)
         {
@@ -82,11 +66,13 @@ namespace Moodium.Opening
             var outline = item.AddComponent<Outline>();
             outline.effectColor = new Color(.42f, .58f, .95f, .65f);
             outline.effectDistance = new Vector2(1f, -1f);
+            var spatialButton = item.AddComponent<OpeningVideoSpatialButton>();
+            spatialButton.Configure(touchId => SelectFromPress(value, touchId));
             var button = item.AddComponent<Button>();
             button.targetGraphic = image;
-            button.onClick.AddListener(() => Select(value));
+            button.onClick.AddListener(() => spatialButton.OnPointerClick(null));
             var collider = item.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
+            collider.isTrigger = false;
             collider.size = new Vector3(285f, 94f, 2f);
             var text = CreateText("Label", label, font, 36f);
             text.transform.SetParent(item.transform, false);
@@ -97,13 +83,28 @@ namespace Moodium.Opening
             return item;
         }
 
-        void Select(string value)
+        void SelectFromPress(string value, int touchId)
         {
             if (HasSelection)
                 return;
             SelectedLanguage = value;
+            if (touchId >= 0)
+                m_TransitionGate.SelectFromSpatialTouch(Time.frameCount, touchId);
+            else
+                m_TransitionGate.SelectAutomatically(Time.frameCount);
             HasSelection = true;
-            Debug.Log($"[Moodium Opening] Video language selected: {value}.");
+            Debug.Log($"[Moodium Opening] Video language selected by {(touchId >= 0 ? "spatial pointer" : "UI click")}: {value}.");
         }
+
+        void SelectAutomatically(string value)
+        {
+            if (HasSelection)
+                return;
+            SelectedLanguage = value;
+            m_TransitionGate.SelectAutomatically(Time.frameCount);
+            HasSelection = true;
+            Debug.Log($"[Moodium Opening] Video language selected automatically: {value}.");
+        }
+
     }
 }

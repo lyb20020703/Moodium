@@ -81,7 +81,7 @@ MonoBehaviour:
   m_FinalLogoHold: 2.8
   m_HandoffDelay: 0.15
   m_VideoSequenceConfig: {fileID: 11400000, guid: 5f87c8c365d74692ad5c93f6a7742b0d, type: 2}
-  m_PreOpeningVideo: {fileID: 32900000, guid: b93a81f8067ea473d99cfb057cc0bd1c, type: 3}
+  m_PreOpeningVideo: {fileID: 32900000, guid: 25c81c93cd0db4c97a212bc0110d7a1f, type: 3}
   m_PreOpeningVideoTimeout: 30
   m_InteractiveVideoPreviewDuration: 3.08
   m_PreOpeningVideoHeightOffset: 0.63

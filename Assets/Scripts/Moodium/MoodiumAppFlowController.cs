@@ -36,6 +36,16 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_RealityNatureWorldModelPrefab;
         [SerializeField] GameObject m_RealityFallbackWorldModelPrefab;
 
+        [Header("Reality Enhancement tracked soft objects")]
+        [SerializeField] GameObject m_RealityCandySoftPrefab;
+        [SerializeField] GameObject m_RealityNatureSoftPrefab;
+
+        [Header("Nature World forest growth")]
+        [Tooltip("Static tree prefabs with LODGroup components. Spawned progressively only in Nature World.")]
+        [SerializeField] GameObject[] m_NatureForestTreePrefabs;
+        [SerializeField] GameObject m_NatureIvyGeneratorPrefab;
+        [SerializeField] Material m_NatureIvyGrowMaterial;
+
         [Header("Creative Space initial object scale")]
         [Tooltip("Creative Space only. Each value multiplies the source prefab scale when it is spawned.")]
         [SerializeField] CreativePrefabScaleConfig[] m_CreativePrefabScaleConfigs;
@@ -79,6 +89,14 @@ namespace Moodium.Flow
         bool m_FlowUiReady;
 
         public MoodiumMode CurrentMode => m_CurrentMode;
+
+        public static bool SupportsRealityWorld(MoodiumWorldDefinition world)
+        {
+            if (world == null)
+                return false;
+            return world.WorldId.Equals("candy", System.StringComparison.OrdinalIgnoreCase) ||
+                   world.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase);
+        }
 
         public void PrepareForOpening()
         {
@@ -497,8 +515,7 @@ namespace Moodium.Flow
         {
             if (world == null || !world.IsAvailable)
                 return;
-            if (!world.WorldId.Contains("candy", System.StringComparison.OrdinalIgnoreCase) &&
-                !world.DisplayName.Contains("candy", System.StringComparison.OrdinalIgnoreCase))
+            if (!SupportsRealityWorld(world))
             {
                 Debug.Log($"[Moodium Object World] {world.DisplayName} is not implemented yet.");
                 return;
@@ -507,6 +524,7 @@ namespace Moodium.Flow
             m_SelectedWorld = world;
             m_PortalEntrance?.HideImmediate();
             MoodiumAudioManager.PlayBackgroundMusic(world.BackgroundMusic);
+            ConfigureTrackedSoftPrefab(world);
             EnsureCandyWorldManager();
             m_CandyWorldManager.StartExperience(world);
             EnsureRealityEnhancementFlow();
@@ -516,7 +534,26 @@ namespace Moodium.Flow
             HideAllPanels();
             PlacePanel(m_ObjectPanel, -0.28f, 1f);
             m_ObjectPanel.SetActive(true);
-            Debug.Log("[Moodium Flow] Reality Enhancement Mode: Candy World. Tissue tracking enabled.");
+            Debug.Log($"[Moodium Flow] Reality Enhancement Mode: {world.DisplayName}. Tissue tracking enabled.");
+        }
+
+        void ConfigureTrackedSoftPrefab(MoodiumWorldDefinition world)
+        {
+            var prefab = world.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase)
+                ? m_RealityNatureSoftPrefab
+                : m_RealityCandySoftPrefab;
+            if (prefab == null)
+            {
+                Debug.LogError($"[Moodium Object World] Missing tracked soft prefab for {world.DisplayName}.");
+                return;
+            }
+
+            var objectSpawner = FindFirstObjectByType<TissueObjectTrackingSpawner>(FindObjectsInactive.Include);
+            var imageSpawner = FindFirstObjectByType<ImageTrackingCapsuleSpawner>(FindObjectsInactive.Include);
+            objectSpawner?.ClearRuntimeInstances();
+            imageSpawner?.ClearRuntimeInstances();
+            objectSpawner?.Configure(m_TrackedObjectManager, prefab);
+            imageSpawner?.Configure(m_TrackedImageManager, prefab);
         }
 
         void SetCreativeSpacePhysicsEnabled(bool enabled)
@@ -565,6 +602,8 @@ namespace Moodium.Flow
                 m_WristHudRoundedSprite,
                 m_WristHudCircleSprite,
                 m_CandyFrostPrefab);
+            m_CandyWorldManager.ConfigureNatureForestTrees(m_NatureForestTreePrefabs);
+            m_CandyWorldManager.ConfigureNatureIvy(m_NatureIvyGeneratorPrefab, m_NatureIvyGrowMaterial);
         }
 
         void StopCandyWorldExperience()

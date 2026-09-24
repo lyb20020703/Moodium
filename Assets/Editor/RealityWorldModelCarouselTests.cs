@@ -100,6 +100,35 @@ public sealed class RealityWorldModelCarouselTests
     }
 
     [Test]
+    public void NatureWorldIsAvailableForRealityEnhancement()
+    {
+        var nature = AssetDatabase.LoadAssetAtPath<MoodiumWorldDefinition>(
+            "Assets/Data/Moodium/Worlds/NatureWorld.asset");
+
+        Assert.That(nature, Is.Not.Null);
+        Assert.That(nature.IsAvailable, Is.True,
+            "Nature World must be selectable from the Reality Enhancement carousel.");
+    }
+
+    [Test]
+    public void RealityEnhancementSupportsNatureWorld()
+    {
+        var nature = ScriptableObject.CreateInstance<MoodiumWorldDefinition>();
+        try
+        {
+            var serializedNature = new SerializedObject(nature);
+            serializedNature.FindProperty("m_WorldId").stringValue = "nature";
+            serializedNature.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.That(MoodiumAppFlowController.SupportsRealityWorld(nature), Is.True);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(nature);
+        }
+    }
+
+    [Test]
     public void ExistingWorldCardUsesSharedCarouselItemContract()
     {
         var itemType = RuntimeType("Moodium.Flow.WorldCarouselItem");

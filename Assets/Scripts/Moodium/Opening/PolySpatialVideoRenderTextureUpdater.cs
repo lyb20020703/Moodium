@@ -20,7 +20,7 @@ namespace Moodium.Opening
 
         public static bool ShouldTransfer(RenderTexture targetTexture)
         {
-            return targetTexture != null && targetTexture.IsCreated();
+            return Application.isFocused && targetTexture != null && targetTexture.IsCreated();
         }
 
         void LateUpdate()

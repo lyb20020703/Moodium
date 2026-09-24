@@ -56,6 +56,7 @@ namespace Moodium.Opening
         GameObject m_GestureGuideInstance;
         bool m_Triggered;
         bool m_ReadyForCandy;
+        OpeningTutorialFlowGate m_TutorialFlowGate;
 
         public OpeningState State { get; private set; } = OpeningState.Opening_Idle;
 
@@ -73,7 +74,7 @@ namespace Moodium.Opening
             }
             if (m_PreOpeningVideo == null)
             {
-                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/hiimmoodi.mp4");
+                m_PreOpeningVideo = AssetDatabase.LoadAssetAtPath<VideoClip>("Assets/Video/VideoPLUS.mp4");
                 changed = true;
             }
             if (m_LeftHandGuidePrefab == null)
@@ -118,6 +119,7 @@ namespace Moodium.Opening
 
         IEnumerator Start()
         {
+            m_TutorialFlowGate = new OpeningTutorialFlowGate();
             // Do not leave the candy's trigger/input live while the app-launch
             // gesture is still being processed. Otherwise the initial hand proxy
             // can consume the candy before the pre-roll has finished.
@@ -132,6 +134,11 @@ namespace Moodium.Opening
             while (Camera.main == null && Time.realtimeSinceStartup < timeout)
                 yield return null;
             yield return PlayPreOpeningVideo();
+            if (m_TutorialFlowGate != null && !m_TutorialFlowGate.CanEnterWorldSelection)
+            {
+                Debug.LogError("[Moodium Opening] Tutorial video did not complete. World selection remains blocked instead of skipping the tutorial.");
+                yield break;
+            }
             // The opening video now hands directly to the tracked-object world
             // selection. Portal assets remain available for future use but are
             // intentionally outside the launch path.
@@ -267,8 +274,8 @@ namespace Moodium.Opening
             var guideAnimationTime = 0f;
             var introStart = sequence != null ? sequence.IntroLoopStartTime : 0f;
             var introEnd = sequence != null ? sequence.IntroLoopEndTime : m_InteractiveVideoPreviewDuration;
-            var languageStart = sequence != null ? sequence.LanguageLoopStartTime : 24.14f;
-            var languageEnd = sequence != null ? sequence.LanguageLoopEndTime : 32f;
+            var languageStart = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.LanguageLoop.StartFrame);
+            var languageEnd = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.LanguageLoop.EndFrame);
             var gate = new IntroVideoGate(introStart, Mathf.Min(introEnd, (float)videoClip.length));
             var previewSeekCompleted = false;
             VideoPlayer.EventHandler onSeekCompleted = _ => previewSeekCompleted = true;
@@ -313,20 +320,47 @@ namespace Moodium.Opening
 
             var languageChoice = CreateVideoLanguageChoice(display.transform, m_HandPromptFont, m_LanguageButtonRoundedSprite);
             languageChoice.SetActive(false);
-            var languageGate = new IntroVideoGate(languageStart, Mathf.Min(languageEnd, (float)videoClip.length));
+            var languageChoiceController = languageChoice.GetComponent<OpeningVideoLanguageChoice>();
+            var languagePromptShownAt = -1f;
+            var languageGate = new IntroVideoGate(languageStart, System.Math.Min(languageEnd, videoClip.length));
             var languageSeekCompleted = false;
             VideoPlayer.EventHandler onLanguageSeekCompleted = _ => languageSeekCompleted = true;
             player.seekCompleted += onLanguageSeekCompleted;
-            while (player.isPlaying && !languageGate.IsActivated)
+            while (languageGate.ShouldKeepSelectionPromptVisible(
+                languageChoiceController.HasSelection))
             {
-                if (player.time >= languageGate.PreviewStartTime)
-                    languageChoice.SetActive(true);
-                if (languageChoice.GetComponent<OpeningVideoLanguageChoice>().HasSelection)
+                // Some visionOS video backends report isPlaying=false for a frame
+                // after a seek or when the clip reaches its end. That must not be
+                // interpreted as an answer to the language question.
+                if (!player.isPlaying)
                 {
+                    player.time = languageGate.PreviewStartTime;
+                    player.Play();
+                }
+                if (player.time >= languageGate.PreviewStartTime)
+                {
+                    languageChoice.SetActive(true);
+                    if (languagePromptShownAt < 0f)
+                        languagePromptShownAt = Time.realtimeSinceStartup;
+                }
+                if (!languageChoiceController.HasSelection && languagePromptShownAt >= 0f &&
+                    Time.realtimeSinceStartup - languagePromptShownAt >=
+                    OpeningVideoTimeline.LanguageAutoSelectTimeoutSeconds)
+                {
+                    Debug.Log("[Moodium Opening] Language choice timed out; temporarily selecting Chinese for video-flow verification.");
+                    languageChoiceController.SelectChineseWhenTimedOut();
+                }
+                if (languageChoiceController.HasSelection)
+                {
+                    while (!languageChoiceController.IsReadyForVideoTransition)
+                        yield return null;
+                    var selectedLanguage = languageChoiceController.SelectedLanguage;
                     languageGate.Activate();
                     languageChoice.SetActive(false);
-                    player.time = languageGate.ResumeTime;
-                    player.Play();
+                    yield return PlayHardwareTutorial(
+                        player,
+                        display.transform,
+                        string.Equals(selectedLanguage, "English", System.StringComparison.OrdinalIgnoreCase));
                     break;
                 }
                 if (languageSeekCompleted && languageGate.TryCompletePreviewSeek(player.time))
@@ -335,16 +369,22 @@ namespace Moodium.Opening
                     player.Play();
                 }
                 if (languageGate.TryBeginPreviewLoop(player.time))
+                {
                     player.time = languageGate.PreviewStartTime;
+                    player.Play();
+                }
                 yield return null;
             }
             player.seekCompleted -= onLanguageSeekCompleted;
-            var playbackDeadline = Time.realtimeSinceStartup + Mathf.Max(1f, (float)videoClip.length - (float)languageGate.ResumeTime + 0.75f);
-            while (player.isPlaying && Time.realtimeSinceStartup < playbackDeadline)
-                yield return null;
             player.seekCompleted -= onSeekCompleted;
+            if (m_TutorialFlowGate != null && !m_TutorialFlowGate.CanEnterWorldSelection)
+            {
+                player.Stop();
+                ShowTutorialLoadFailure(display.transform, m_HandPromptFont);
+                yield break;
+            }
             player.Stop();
-            Debug.Log("[Moodium Opening] Intro video completed; revealing the candy.");
+            Debug.Log("[Moodium Opening] Intro and hardware tutorial completed; opening World selection.");
             player.targetTexture = null;
             Destroy(leftGuide);
             Destroy(rightGuide);
@@ -354,6 +394,107 @@ namespace Moodium.Opening
             Destroy(material);
             renderTexture.Release();
             Destroy(renderTexture);
+        }
+
+        IEnumerator PlayHardwareTutorial(VideoPlayer player, Transform display, bool english)
+        {
+            // Reaching the language screen proves this same player has already
+            // decoded the combined clip. Do not re-validate transient backend
+            // flags here; visionOS can update them around seeks.
+            if (player == null || player.clip == null)
+            {
+                m_TutorialFlowGate?.MarkTutorialFailed();
+                Debug.LogError("[Moodium Opening] Combined tutorial video is not prepared.");
+                yield break;
+            }
+            var timeline = english ? OpeningVideoTimeline.English : OpeningVideoTimeline.Chinese;
+            // Do not inspect VideoPlayer.frameCount here. visionOS can report
+            // partial metadata immediately after a seek despite decoding this
+            // same clip successfully. The imported asset is validated before
+            // build; runtime playback must continue from the configured frames.
+            var choiceObject = CreateVideoHardwareChoice(display, m_HandPromptFont, m_LanguageButtonRoundedSprite, english);
+            choiceObject.SetActive(false);
+
+            yield return SeekToFrameAndPlay(player, timeline.EntryFrame);
+            var questionDeadline = Time.realtimeSinceStartup +
+                                   Mathf.Max(2f, (float)OpeningVideoTimeline.FrameToSeconds(
+                                       timeline.QuestionLoop.StartFrame - timeline.EntryFrame) + 5f);
+            while (CurrentFrame(player) < timeline.QuestionLoop.StartFrame &&
+                   Time.realtimeSinceStartup < questionDeadline)
+            {
+                if (!player.isPlaying)
+                    player.Play();
+                yield return null;
+            }
+
+            choiceObject.SetActive(true);
+            var hardwareChoice = choiceObject.GetComponent<OpeningVideoHardwareChoice>();
+            while (!hardwareChoice.HasSelection || !hardwareChoice.IsReadyForVideoTransition)
+            {
+                if (CurrentFrame(player) >= timeline.QuestionLoop.EndFrame || !player.isPlaying)
+                    yield return SeekToFrameAndPlay(player, timeline.QuestionLoop.StartFrame);
+                yield return null;
+            }
+
+            choiceObject.SetActive(false);
+            var branch = hardwareChoice.HasHardware ? timeline.Yes : timeline.No;
+            yield return SeekToFrameAndPlay(player, branch.StartFrame);
+            var branchDeadline = Time.realtimeSinceStartup + Mathf.Max(2f,
+                (float)OpeningVideoTimeline.FrameToSeconds(branch.EndFrame - branch.StartFrame) + 3f);
+            while (CurrentFrame(player) < branch.EndFrame && Time.realtimeSinceStartup < branchDeadline)
+            {
+                if (!player.isPlaying)
+                    player.Play();
+                yield return null;
+            }
+            player.Stop();
+            Destroy(choiceObject);
+            m_TutorialFlowGate?.MarkTutorialCompleted();
+        }
+
+        static long CurrentFrame(VideoPlayer player)
+        {
+            return player.frame >= 0
+                ? player.frame
+                : (long)System.Math.Round(player.time * OpeningVideoTimeline.FramesPerSecond);
+        }
+
+        IEnumerator SeekToFrameAndPlay(VideoPlayer player, long targetFrame)
+        {
+            var seekCompleted = false;
+            VideoPlayer.EventHandler onSeekCompleted = _ => seekCompleted = true;
+            player.seekCompleted += onSeekCompleted;
+            player.Pause();
+            player.frame = targetFrame;
+            var deadline = Time.realtimeSinceStartup + 3f;
+            while (!seekCompleted && CurrentFrame(player) != targetFrame &&
+                   Time.realtimeSinceStartup < deadline)
+                yield return null;
+            player.seekCompleted -= onSeekCompleted;
+            if (CurrentFrame(player) != targetFrame)
+                Debug.LogWarning($"[Moodium Opening] Seek settled at frame {CurrentFrame(player)} instead of {targetFrame}.");
+            player.Play();
+        }
+
+        static void ShowTutorialLoadFailure(Transform display, TMP_FontAsset font)
+        {
+            var notice = new GameObject("Opening Tutorial Load Failure");
+            notice.transform.SetParent(display, false);
+            notice.transform.localPosition = new Vector3(0f, 0f, -0.03f);
+            notice.transform.localRotation = Quaternion.identity;
+            var parentScale = display.localScale;
+            notice.transform.localScale = new Vector3(
+                SafeScaleDivide(0.04f, parentScale.x),
+                SafeScaleDivide(0.04f, parentScale.y),
+                SafeScaleDivide(0.04f, parentScale.z));
+            var text = notice.AddComponent<TextMeshPro>();
+            text.text = "诊断版本 VP-20260924-02：教学流程在设备端被中断。\nDiagnostic VP-20260924-02: the tutorial flow was interrupted on this device.";
+            text.font = font;
+            text.fontSize = 7f;
+            text.alignment = TextAlignmentOptions.Center;
+            text.color = Color.white;
+            text.outlineWidth = 0.08f;
+            text.outlineColor = new Color(.08f, .02f, .16f, .9f);
         }
 
         static GameObject CreateVideoHandGuide(Transform parent, GameObject prefab, string objectName,
@@ -443,6 +584,21 @@ namespace Moodium.Opening
                 SafeScaleDivide(0.0012f, parentScale.y),
                 SafeScaleDivide(0.0012f, parentScale.z));
             choice.AddComponent<OpeningVideoLanguageChoice>().Configure(font, roundedSprite);
+            return choice;
+        }
+
+        static GameObject CreateVideoHardwareChoice(Transform parent, TMP_FontAsset font, Sprite roundedSprite, bool english)
+        {
+            var choice = new GameObject("Opening Video Hardware Choice", typeof(RectTransform));
+            choice.transform.SetParent(parent, false);
+            choice.transform.localPosition = new Vector3(0f, -0.05f, -0.025f);
+            choice.transform.localRotation = Quaternion.identity;
+            var parentScale = parent.localScale;
+            choice.transform.localScale = new Vector3(
+                SafeScaleDivide(0.0012f, parentScale.x),
+                SafeScaleDivide(0.0012f, parentScale.y),
+                SafeScaleDivide(0.0012f, parentScale.z));
+            choice.AddComponent<OpeningVideoHardwareChoice>().Configure(font, roundedSprite, english);
             return choice;
         }
 
