@@ -94,13 +94,20 @@ namespace Moodium.Calibration
         {
             visual.transform.localPosition = Vector3.zero;
             visual.transform.localRotation = Quaternion.identity;
-            visual.transform.localScale = Vector3.one;
+            // Preserve the scale authored on the prefab root. CandySoft carries
+            // a deliberate 0.5 root scale while NatureSoft is authored at 1.0;
+            // forcing both to one silently doubled Candy before calibration.
+            var authoredRootScale = visual.transform.localScale;
+            visual.transform.localScale = authoredRootScale;
             var bounds = CalculateLocalRendererBounds(visual.transform);
             // CandySoft/NatureSoft are authored as tabletop bags: X/Z is their
             // visible bag face, and Y is their vertical depth/detail axis. The
             // calibration frame is also an X/Z table plane. Mapping Height onto
-            // Y made a wide bag become a tall, narrow slab on-device.
-            VisualRoot.localScale = CalculateTablePlaneFitScale(m_Data.Width, m_Data.Height, bounds);
+            // Y made a wide bag become a tall, narrow slab on-device. Keeping
+            // Y fixed made a small bag look unnaturally thick, so it follows the
+            // overall X/Z scale rather than either dimension independently.
+            VisualRoot.localScale = CalculateTablePlaneFitScale(
+                m_Data.Width, m_Data.Height, bounds, authoredRootScale);
         }
 
         /// <summary>
@@ -110,9 +117,29 @@ namespace Moodium.Calibration
         /// </summary>
         public static Vector3 CalculateTablePlaneFitScale(float calibratedWidth, float calibratedHeight, Bounds prefabBounds)
         {
-            var authoredWidth = Mathf.Max(.0001f, prefabBounds.size.x);
-            var authoredHeight = Mathf.Max(.0001f, prefabBounds.size.z);
-            return new Vector3(calibratedWidth / authoredWidth, 1f, calibratedHeight / authoredHeight);
+            return CalculateTablePlaneFitScale(calibratedWidth, calibratedHeight, prefabBounds, Vector3.one);
+        }
+
+        /// <summary>
+        /// As above, while preserving any scale authored on the prefab's root.
+        /// Renderer bounds expressed in root-local coordinates deliberately omit
+        /// that scale, so it needs to be put back before calculating the fit.
+        /// </summary>
+        public static Vector3 CalculateTablePlaneFitScale(
+            float calibratedWidth,
+            float calibratedHeight,
+            Bounds prefabBounds,
+            Vector3 authoredRootScale)
+        {
+            var authoredWidth = Mathf.Max(.0001f, prefabBounds.size.x * Mathf.Abs(authoredRootScale.x));
+            var authoredHeight = Mathf.Max(.0001f, prefabBounds.size.z * Mathf.Abs(authoredRootScale.z));
+            var widthScale = calibratedWidth / authoredWidth;
+            var heightScale = calibratedHeight / authoredHeight;
+            // Geometric mean preserves a proportional overall scale: 2x × 2x
+            // yields 2x thickness, .5x × .5x yields .5x. A one-axis resize only
+            // affects depth moderately instead of creating a flat sheet.
+            var thicknessScale = Mathf.Sqrt(Mathf.Max(.0001f, widthScale * heightScale));
+            return new Vector3(widthScale, thicknessScale, heightScale);
         }
 
         static Bounds CalculateLocalRendererBounds(Transform root)

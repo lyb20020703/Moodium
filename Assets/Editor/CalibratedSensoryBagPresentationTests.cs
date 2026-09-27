@@ -82,4 +82,32 @@ public sealed class CalibratedSensoryBagPresentationTests
         Assert.That(scale.y, Is.EqualTo(1f).Within(.0001f));
         Assert.That(scale.z, Is.EqualTo(.18f).Within(.0001f));
     }
+
+    [Test]
+    public void VisualFit_ScalesThicknessFromTheOverallTablePlaneFit()
+    {
+        var scale = CalibratedSensoryBagPresentation.CalculateTablePlaneFitScale(
+            calibratedWidth: .40f,
+            calibratedHeight: .10f,
+            prefabBounds: new Bounds(Vector3.zero, new Vector3(2f, .25f, 1f)));
+
+        // X = .20 and Z = .10. Their geometric mean is the overall bag-size
+        // change, so Y must no longer remain at a fixed 1.0 thickness.
+        Assert.That(scale.y, Is.EqualTo(Mathf.Sqrt(.02f)).Within(.0001f));
+    }
+
+    [Test]
+    public void VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds()
+    {
+        var scale = CalibratedSensoryBagPresentation.CalculateTablePlaneFitScale(
+            calibratedWidth: .40f,
+            calibratedHeight: .10f,
+            prefabBounds: new Bounds(Vector3.zero, new Vector3(2f, .25f, 1f)),
+            authoredRootScale: Vector3.one * .5f);
+
+        // A .5 authored prefab must still fill the same calibrated frame, rather
+        // than ending up at half the physical bag size.
+        Assert.That(scale.x, Is.EqualTo(.40f).Within(.0001f));
+        Assert.That(scale.z, Is.EqualTo(.20f).Within(.0001f));
+    }
 }
