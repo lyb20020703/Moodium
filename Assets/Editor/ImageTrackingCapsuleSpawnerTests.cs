@@ -91,6 +91,21 @@ public sealed class ImageTrackingCapsuleSpawnerTests
         }
     }
 
+    [Test]
+    public void ImageLibraryIncludesFiveCentimetreCandyAndNaturePhoneImages()
+    {
+        var library = AssetDatabase.LoadAssetAtPath<XRReferenceImageLibrary>(
+            "Assets/Moodium/Tracking/MoodiumImageReferenceLibrary.asset");
+
+        Assert.That(library.count, Is.EqualTo(3));
+        Assert.That(library[1].name, Is.EqualTo("CandyWorldPhoneTracking"));
+        Assert.That(library[1].specifySize, Is.True);
+        Assert.That(library[1].size, Is.EqualTo(new Vector2(0.05f, 0.05f)));
+        Assert.That(library[2].name, Is.EqualTo("NatureWorldPhoneTracking"));
+        Assert.That(library[2].specifySize, Is.True);
+        Assert.That(library[2].size, Is.EqualTo(new Vector2(0.05f, 0.05f)));
+    }
+
     Harness CreateHarness()
     {
         var type = typeof(TrackedObjectPoseFollower).Assembly.GetType(

@@ -7,7 +7,7 @@ public sealed class OpeningVideoTimelineTests
     public void Timeline_ConvertsThirtyFpsTimecodesToExactFrames()
     {
         Assert.That(OpeningVideoTimeline.ToFrame(0, 24, 14), Is.EqualTo(734));
-        Assert.That(OpeningVideoTimeline.ToFrame(0, 32, 9), Is.EqualTo(969));
+        Assert.That(OpeningVideoTimeline.ToFrame(0, 32, 8), Is.EqualTo(968));
         Assert.That(OpeningVideoTimeline.ToFrame(2, 10, 29), Is.EqualTo(3929));
     }
 
@@ -15,7 +15,7 @@ public sealed class OpeningVideoTimelineTests
     public void Timeline_UsesConfirmedLanguageAndHardwareSegments()
     {
         Assert.That(OpeningVideoTimeline.LanguageLoop.StartFrame, Is.EqualTo(734));
-        Assert.That(OpeningVideoTimeline.LanguageLoop.EndFrame, Is.EqualTo(969));
+        Assert.That(OpeningVideoTimeline.LanguageLoop.EndFrame, Is.EqualTo(968));
 
         Assert.That(OpeningVideoTimeline.Chinese.QuestionLoop.StartFrame, Is.EqualTo(1240));
         Assert.That(OpeningVideoTimeline.Chinese.QuestionLoop.EndFrame, Is.EqualTo(1410));

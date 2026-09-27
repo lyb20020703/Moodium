@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
+using Unity.XR.CoreUtils;
 
 namespace Moodium.CandyWorld
 {
@@ -23,6 +24,7 @@ namespace Moodium.CandyWorld
 
         Camera m_Camera;
         XRHandSubsystem m_HandSubsystem;
+        XROrigin m_XROrigin;
         CanvasGroup m_CanvasGroup;
         RectTransform m_CanvasRect;
         RectTransform m_FillRect;
@@ -30,6 +32,7 @@ namespace Moodium.CandyWorld
         Image m_Glow;
         Image m_Fill;
         TMP_Text m_Percentage;
+        TMP_Text m_Title;
         TMP_Text m_Feedback;
         Image[] m_Sparkles;
         Sprite m_RoundedSprite;
@@ -43,6 +46,7 @@ namespace Moodium.CandyWorld
         float m_FeedbackTime = -1f;
         bool m_Completed;
         bool m_Built;
+        string m_WorldEnergyTitle = "Candy Energy";
 
         public float DisplayedProgress => m_DisplayedProgress;
         public bool HandTracked { get; private set; }
@@ -75,7 +79,7 @@ namespace Moodium.CandyWorld
             CreateImage("Avatar Placeholder", m_CanvasRect, new Vector2(-170f, 0f), new Vector2(64f, 64f), m_CircleSprite,
                 new Color(0.83f, 0.71f, 1f, 0.95f));
             CreateText("M", m_CanvasRect, new Vector2(-170f, 0f), new Vector2(54f, 54f), 25f, font, Color.white);
-            CreateText("Candy Energy", m_CanvasRect, new Vector2(-53f, 21f), new Vector2(210f, 28f), 19f, font,
+            m_Title = CreateText(m_WorldEnergyTitle, m_CanvasRect, new Vector2(-53f, 21f), new Vector2(210f, 28f), 19f, font,
                 new Color(1f, 1f, 1f, 0.93f));
 
             CreateImage("Progress Track", m_CanvasRect, new Vector2(39f, -17f), new Vector2(250f, 30f), roundedSprite,
@@ -102,6 +106,14 @@ namespace Moodium.CandyWorld
             m_Built = true;
             m_CanvasGroup.alpha = 0f;
             SetProgress(0f, 0f);
+        }
+
+        /// <summary>Updates the wording only; progress tracking stays shared by both worlds.</summary>
+        public void SetWorldTheme(bool natureWorld)
+        {
+            m_WorldEnergyTitle = natureWorld ? "Nature Energy" : "Candy Energy";
+            if (m_Title != null)
+                m_Title.text = m_WorldEnergyTitle;
         }
 
         public void SetProgress(float energy, float normalized)
@@ -131,11 +143,11 @@ namespace Moodium.CandyWorld
             if (m_Feedback == null)
                 return;
             if (completed)
-                m_Feedback.text = "Wonderful!\nYour candy world is blooming";
+                m_Feedback.text = $"Wonderful!\nYour {(m_WorldEnergyTitle == "Nature Energy" ? "nature" : "candy")} world is blooming";
             else
             {
                 var index = Mathf.Clamp(Mathf.FloorToInt(m_TargetProgress * m_Encouragements.Length), 0, m_Encouragements.Length - 1);
-                m_Feedback.text = $"{m_Encouragements[index]}\n+{Mathf.RoundToInt(gained)} Candy Energy";
+                m_Feedback.text = $"{m_Encouragements[index]}\n+{Mathf.RoundToInt(gained)} {m_WorldEnergyTitle}";
             }
             m_FeedbackTime = 0f;
         }
@@ -152,7 +164,9 @@ namespace Moodium.CandyWorld
 
         void UpdateWristPose()
         {
-            var tracked = TryGetLeftWristPose(out var wristPose);
+            // Use the left wrist when possible, but do not hide the entire HUD just
+            // because visionOS is currently reporting only the user's right hand.
+            var tracked = TryGetWristPose(out var wristPose);
 #if UNITY_EDITOR
             if (!tracked && m_Camera != null)
             {
@@ -177,7 +191,7 @@ namespace Moodium.CandyWorld
             }
         }
 
-        bool TryGetLeftWristPose(out Pose pose)
+        bool TryGetWristPose(out Pose pose)
         {
             pose = Pose.identity;
             if (m_HandSubsystem == null)
@@ -185,9 +199,28 @@ namespace Moodium.CandyWorld
             if (m_HandSubsystem == null || !m_HandSubsystem.running)
                 return false;
             var flags = m_HandSubsystem.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
-            if ((flags & XRHandSubsystem.UpdateSuccessFlags.LeftHandJoints) == 0 && !m_HandSubsystem.leftHand.isTracked)
+            if (!TryGetWristPose(m_HandSubsystem.leftHand,
+                    flags & XRHandSubsystem.UpdateSuccessFlags.LeftHandJoints,
+                    out pose) &&
+                !TryGetWristPose(m_HandSubsystem.rightHand,
+                    flags & XRHandSubsystem.UpdateSuccessFlags.RightHandJoints,
+                    out pose))
                 return false;
-            var wrist = m_HandSubsystem.leftHand.GetJoint(XRHandJointID.Wrist);
+            // visionOS XR Hands reports tracking-space poses. Convert them exactly as the
+            // physical bag and wrapper-contact systems do before placing a world-space HUD.
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            pose = PalmPressGestureController.TransformTrackingPose(
+                pose, m_XROrigin != null ? m_XROrigin.Origin.transform : null);
+            return true;
+        }
+
+        static bool TryGetWristPose(XRHand hand, XRHandSubsystem.UpdateSuccessFlags handUpdated, out Pose pose)
+        {
+            pose = Pose.identity;
+            if (handUpdated == 0 && !hand.isTracked)
+                return false;
+            var wrist = hand.GetJoint(XRHandJointID.Wrist);
             return wrist.trackingState != XRHandJointTrackingState.None && wrist.TryGetPose(out pose);
         }
 

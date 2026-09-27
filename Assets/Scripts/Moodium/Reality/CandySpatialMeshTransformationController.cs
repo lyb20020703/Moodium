@@ -44,6 +44,31 @@ namespace Moodium.Reality
 
         public float Progress => m_Progress;
         public Vector3 Origin => m_Origin;
+        /// <summary>True once the Candy wrapper has reached its interactive visual phase.</summary>
+        public bool IsInteractionReady => m_Running && m_Progress >= ActivationProgress;
+
+        /// <summary>
+        /// Returns true only when the AR mesh owning this collider currently has a visible
+        /// Candy overlay. This lets surface interactions follow the actual visual spread.
+        /// </summary>
+        public bool IsOverlayActive(Collider collider)
+        {
+            if (!IsInteractionReady || collider == null)
+                return false;
+            var source = collider.GetComponentInParent<MeshFilter>();
+            if (source != null && m_Overlays.TryGetValue(source, out var directEntry))
+                return directEntry.VisualRenderer != null && directEntry.VisualRenderer.enabled;
+            // AR Default Mesh normally hosts filter and collider together, but retain a
+            // conservative fallback for provider prefabs that place their collider below it.
+            foreach (var pair in m_Overlays)
+            {
+                var entry = pair.Value;
+                if (entry.Source != null && (collider.transform == entry.Source.transform ||
+                                             collider.transform.IsChildOf(entry.Source.transform)))
+                    return entry.VisualRenderer != null && entry.VisualRenderer.enabled;
+            }
+            return false;
+        }
 
         public void Configure(ARMeshManager meshManager, Material candyMaterialTemplate)
         {

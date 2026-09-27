@@ -41,7 +41,7 @@ namespace Moodium.Opening
 
         public static readonly Segment LanguageLoop = new(
             ToFrame(0, 24, 14),
-            ToFrame(0, 32, 9));
+            ToFrame(0, 32, 8));
 
         public static readonly LanguageTimeline Chinese = new(
             LanguageLoop.EndFrame,
@@ -54,6 +54,10 @@ namespace Moodium.Opening
             new Segment(ToFrame(1, 33, 21), ToFrame(1, 38, 19)),
             new Segment(ToFrame(1, 38, 19), ToFrame(1, 53, 27)),
             new Segment(ToFrame(1, 58, 27), ToFrame(2, 10, 29)));
+
+        // Shared post-tutorial visual waiting segment used while the user locates
+        // a physical Moodium world sticker.
+        public static readonly Segment StickerSelectionLoop = Chinese.QuestionLoop;
 
         public static long ToFrame(int minutes, int seconds, int frames) =>
             ((long)minutes * 60L + seconds) * FramesPerSecond + frames;

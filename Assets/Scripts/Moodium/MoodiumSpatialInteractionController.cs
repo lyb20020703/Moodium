@@ -6,6 +6,8 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.InputSystem.LowLevel;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using Moodium.Flow.ObjectPicker;
+using Moodium.Calibration;
+using Moodium.NatureWorld;
 
 namespace Moodium.Flow
 {
@@ -16,6 +18,7 @@ namespace Moodium.Flow
         readonly Dictionary<int, WorldCarouselController> m_CarouselInteractions = new();
         readonly Dictionary<int, ChocolateCapsuleInteraction> m_ChocolateInteractions = new();
         readonly Dictionary<int, MoodiumWindowHandle> m_WindowInteractions = new();
+        readonly Dictionary<int, SensoryBagCalibrationHandle> m_CalibrationInteractions = new();
         readonly HashSet<MoodiumSpatialButton> m_HoveredButtons = new();
         readonly HashSet<MoodiumSpatialButton> m_ButtonsThisFrame = new();
         readonly HashSet<MoodiumObjectPickerItem> m_HoveredPickerItems = new();
@@ -50,10 +53,24 @@ namespace Moodium.Flow
                     var target = pointer.targetObject;
                     if (target != null)
                     {
+                        var ivy = FindFirstObjectByType<NatureIvySpatialGrowthController>();
+                        var targetCollider = target.GetComponentInParent<Collider>();
+                        if (ivy != null && ivy.IsSpatialMeshCollider(targetCollider) &&
+                            ivy.TryGrowFromSpatialPointer(targetCollider, pointer.interactionPosition))
+                            continue;
+
                         var pickerItem = target.GetComponentInParent<MoodiumObjectPickerItem>();
                         if (pickerItem != null)
                         {
                             pickerItem.Press();
+                            continue;
+                        }
+
+                        var calibrationHandle = target.GetComponentInParent<SensoryBagCalibrationHandle>();
+                        if (calibrationHandle != null)
+                        {
+                            m_CalibrationInteractions[id] = calibrationHandle;
+                            calibrationHandle.PointerStarted(id, pointer.interactionPosition);
                             continue;
                         }
 
@@ -120,6 +137,23 @@ namespace Moodium.Flow
                     {
                         chocolateInteraction.PointerEnded(id);
                         m_ChocolateInteractions.Remove(id);
+                    }
+                    continue;
+                }
+
+                if (m_CalibrationInteractions.TryGetValue(id, out var calibrationInteraction))
+                {
+                    switch (pointer.phase)
+                    {
+                        case SpatialPointerPhase.Moved:
+                            calibrationInteraction.PointerMoved(id, pointer.interactionPosition);
+                            break;
+                        case SpatialPointerPhase.Ended:
+                        case SpatialPointerPhase.Cancelled:
+                        case SpatialPointerPhase.None:
+                            calibrationInteraction.PointerEnded(id);
+                            m_CalibrationInteractions.Remove(id);
+                            break;
                     }
                     continue;
                 }

@@ -26,6 +26,7 @@ namespace Moodium.CandyWorld
         float m_NextCandyProgress;
         bool m_Running;
         bool m_CompletionTriggered;
+        bool m_SpatialTransformationEnabled = true;
 
         public void Configure(
             Camera camera,
@@ -61,10 +62,22 @@ namespace Moodium.CandyWorld
             m_Running = true;
             m_CompletionTriggered = false;
             m_NextCandyProgress = m_CandyEmergenceStart;
-            m_SpatialTransformation?.StartTransformation();
+            if (m_SpatialTransformationEnabled)
+                m_SpatialTransformation?.StartTransformation();
             m_Frost?.StartFrost();
             SetProgress(0f, 0f);
             Debug.Log("[Candy Progress] Environment journey started at natural reality state.");
+        }
+
+        /// <summary>
+        /// Candy World uses the candy-glass overlay on the scanned spatial mesh.
+        /// Nature World deliberately leaves that mesh visually untouched.
+        /// </summary>
+        public void SetSpatialTransformationEnabled(bool enabled)
+        {
+            m_SpatialTransformationEnabled = enabled;
+            if (!enabled)
+                m_SpatialTransformation?.StopTransformation();
         }
 
         public void SetOrigin(Vector3 worldPosition)
@@ -80,7 +93,9 @@ namespace Moodium.CandyWorld
             if (!m_Running)
                 return;
             var progress = Mathf.Clamp01(normalizedProgress);
-            m_SpatialTransformation?.SetProgress(energy, progress);
+            MoodiEmergenceController.SetAllProgress(progress);
+            if (m_SpatialTransformationEnabled)
+                m_SpatialTransformation?.SetProgress(energy, progress);
             m_Frost?.UpdateFrostIntensity(energy, progress);
 
             if (progress >= m_NextCandyProgress && m_AmbientCandies.Count < m_MaxAmbientCandies)

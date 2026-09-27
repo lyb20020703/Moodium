@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
 using UnityEngine.Video;
+using UnityEngine.UI;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -57,6 +58,8 @@ namespace Moodium.Opening
         bool m_Triggered;
         bool m_ReadyForCandy;
         OpeningTutorialFlowGate m_TutorialFlowGate;
+        bool m_OpeningVideoHandedToStickerSelection;
+        const string OpeningCompletedKey = "Moodium.Opening.Completed";
 
         public OpeningState State { get; private set; } = OpeningState.Opening_Idle;
 
@@ -134,6 +137,12 @@ namespace Moodium.Opening
             while (Camera.main == null && Time.realtimeSinceStartup < timeout)
                 yield return null;
             yield return PlayPreOpeningVideo();
+            if (m_OpeningVideoHandedToStickerSelection)
+            {
+                State = OpeningState.Opening_Finished;
+                m_AnimationController?.HideOpeningVisuals();
+                yield break;
+            }
             if (m_TutorialFlowGate != null && !m_TutorialFlowGate.CanEnterWorldSelection)
             {
                 Debug.LogError("[Moodium Opening] Tutorial video did not complete. World selection remains blocked instead of skipping the tutorial.");
@@ -215,6 +224,9 @@ namespace Moodium.Opening
             videoCollider.isTrigger = true;
             videoCollider.size = new Vector3(1f, 1f, 0.04f);
             var videoInteraction = display.AddComponent<OpeningVideoInteraction>();
+            var subtitleObject = new GameObject("Opening Video Subtitles");
+            subtitleObject.AddComponent<OpeningVideoSubtitlePresenter>()
+                .Configure(player, m_HandPromptFont, display.transform);
             var handGuideLayout = new IntroVideoHandGuideLayout();
             var leftGuide = CreateVideoHandGuide(display.transform, m_LeftHandGuidePrefab,
                 "Opening Video Left Hand", handGuideLayout.LeftLocalPosition, handGuideLayout.LocalScale,
@@ -267,6 +279,14 @@ namespace Moodium.Opening
             }
             player.Play();
             Debug.Log("[Moodium Opening] Intro video started.");
+            var skipRequested = false;
+            var skipButton = PlayerPrefs.GetInt(OpeningCompletedKey, 0) == 1
+                ? CreateSkipButton(display.transform, () =>
+                {
+                    skipRequested = true;
+                    HideIntroGuidance(leftGuide, rightGuide, prompt);
+                })
+                : null;
             var noInteractionElapsed = 0f;
             var guideRevealStart = Time.realtimeSinceStartup + 5f;
             var promptRevealStart = Time.realtimeSinceStartup + 1f;
@@ -281,7 +301,7 @@ namespace Moodium.Opening
             VideoPlayer.EventHandler onSeekCompleted = _ => previewSeekCompleted = true;
             player.seekCompleted += onSeekCompleted;
             var previewLoopCount = 0;
-            while (!gate.IsActivated)
+            while (!gate.IsActivated && !skipRequested)
             {
                 noInteractionElapsed += Time.unscaledDeltaTime;
                 if (previewSeekCompleted && gate.TryCompletePreviewSeek(player.time))
@@ -318,9 +338,18 @@ namespace Moodium.Opening
                 yield return null;
             }
 
+            if (skipRequested)
+            {
+                player.seekCompleted -= onSeekCompleted;
+                SkipToStickerSelection(player, display.transform, subtitleObject, skipButton,
+                    leftGuide, rightGuide, prompt, material, renderTexture, false);
+                yield break;
+            }
+
             var languageChoice = CreateVideoLanguageChoice(display.transform, m_HandPromptFont, m_LanguageButtonRoundedSprite);
             languageChoice.SetActive(false);
             var languageChoiceController = languageChoice.GetComponent<OpeningVideoLanguageChoice>();
+            var selectedEnglish = false;
             var languagePromptShownAt = -1f;
             var languageGate = new IntroVideoGate(languageStart, System.Math.Min(languageEnd, videoClip.length));
             var languageSeekCompleted = false;
@@ -329,6 +358,8 @@ namespace Moodium.Opening
             while (languageGate.ShouldKeepSelectionPromptVisible(
                 languageChoiceController.HasSelection))
             {
+                if (skipRequested)
+                    break;
                 // Some visionOS video backends report isPlaying=false for a frame
                 // after a seek or when the clip reaches its end. That must not be
                 // interpreted as an answer to the language question.
@@ -352,15 +383,23 @@ namespace Moodium.Opening
                 }
                 if (languageChoiceController.HasSelection)
                 {
-                    while (!languageChoiceController.IsReadyForVideoTransition)
+                    while (!languageChoiceController.IsReadyForVideoTransition && !skipRequested)
                         yield return null;
+                    if (skipRequested)
+                        break;
                     var selectedLanguage = languageChoiceController.SelectedLanguage;
+                    selectedEnglish = string.Equals(selectedLanguage, "English", System.StringComparison.OrdinalIgnoreCase);
+                    // World-space UI created later (calibration and environment prompts) has no
+                    // direct OpeningVideoSession reference, so persist the user choice here.
+                    PlayerPrefs.SetString("Moodium.Language", selectedEnglish ? "English" : "Chinese");
+                    PlayerPrefs.Save();
                     languageGate.Activate();
                     languageChoice.SetActive(false);
                     yield return PlayHardwareTutorial(
                         player,
                         display.transform,
-                        string.Equals(selectedLanguage, "English", System.StringComparison.OrdinalIgnoreCase));
+                        selectedEnglish,
+                        () => skipRequested);
                     break;
                 }
                 if (languageSeekCompleted && languageGate.TryCompletePreviewSeek(player.time))
@@ -377,26 +416,97 @@ namespace Moodium.Opening
             }
             player.seekCompleted -= onLanguageSeekCompleted;
             player.seekCompleted -= onSeekCompleted;
+            if (skipRequested)
+            {
+                Destroy(languageChoice);
+                SkipToStickerSelection(player, display.transform, subtitleObject, skipButton,
+                    leftGuide, rightGuide, prompt, material, renderTexture, selectedEnglish);
+                yield break;
+            }
             if (m_TutorialFlowGate != null && !m_TutorialFlowGate.CanEnterWorldSelection)
             {
                 player.Stop();
                 ShowTutorialLoadFailure(display.transform, m_HandPromptFont);
                 yield break;
             }
-            player.Stop();
-            Debug.Log("[Moodium Opening] Intro and hardware tutorial completed; opening World selection.");
-            player.targetTexture = null;
-            Destroy(leftGuide);
-            Destroy(rightGuide);
-            Destroy(prompt);
-            Destroy(languageChoice);
-            Destroy(display);
-            Destroy(material);
-            renderTexture.Release();
-            Destroy(renderTexture);
+            var session = new OpeningVideoSession(
+                player,
+                display.transform,
+                subtitleObject,
+                selectedEnglish,
+                () =>
+                {
+                    player.Stop();
+                    player.targetTexture = null;
+                    Destroy(leftGuide);
+                    Destroy(rightGuide);
+                    Destroy(prompt);
+                    Destroy(languageChoice);
+                    Destroy(subtitleObject);
+                    Destroy(display);
+                    Destroy(material);
+                    renderTexture.Release();
+                    Destroy(renderTexture);
+                });
+            Debug.Log("[Moodium Opening] Tutorial completed; handing video to sticker world selection.");
+            PlayerPrefs.SetInt(OpeningCompletedKey, 1);
+            PlayerPrefs.Save();
+            m_OpeningVideoHandedToStickerSelection = true;
+            m_AppFlow?.BeginStickerWorldSelection(session);
         }
 
-        IEnumerator PlayHardwareTutorial(VideoPlayer player, Transform display, bool english)
+        GameObject CreateSkipButton(Transform display, System.Action onSkip)
+        {
+            var root = new GameObject("Opening Video Skip Button", typeof(RectTransform));
+            root.name = "Opening Video Skip Button";
+            root.transform.SetParent(display, false);
+            root.transform.localPosition = new Vector3(.30f, .589f, -.03f);
+            var scale = display.localScale;
+            root.transform.localScale = new Vector3(
+                SafeScaleDivide(.0012f, scale.x), SafeScaleDivide(.0012f, scale.y), SafeScaleDivide(.0012f, scale.z));
+            var canvas = root.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = Camera.main;
+            root.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
+            root.AddComponent<GraphicRaycaster>();
+            var rect = root.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(170f, 75f);
+            var target = root.AddComponent<Image>();
+            // Keep this imperceptibly non-zero instead of fully transparent.
+            // PolySpatial can omit a completely transparent UI graphic from its
+            // spatial hit-test representation, which made Skip look visible
+            // (through its label) but impossible to press on device.
+            target.color = new Color(1f, 1f, 1f, .001f); // visually no background
+            var label = new GameObject("Label", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            label.transform.SetParent(root.transform, false);
+            label.rectTransform.anchorMin = Vector2.zero;
+            label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.offsetMin = Vector2.zero;
+            label.rectTransform.offsetMax = Vector2.zero;
+            label.text = "Skip"; label.font = m_HandPromptFont; label.fontSize = 30f;
+            label.alignment = TextAlignmentOptions.Center; label.color = Color.white;
+            label.outlineWidth = .08f;
+            label.outlineColor = new Color(.08f, .02f, .16f, .85f);
+            var spatialButton = root.AddComponent<OpeningVideoSpatialButton>();
+            spatialButton.Configure(_ => onSkip());
+            var button = root.AddComponent<Button>();
+            button.targetGraphic = target;
+            button.onClick.AddListener(() => spatialButton.OnPointerClick(null));
+            var collider = root.AddComponent<BoxCollider>();
+            // A deliberately forgiving invisible hit target: this is a text
+            // action, not a small visual button, and must work for gaze+pinch,
+            // direct touch, and Editor mouse clicks throughout the tutorial.
+            collider.size = new Vector3(220f, 100f, 2f);
+            root.AddComponent<MoodiumSpatialButton>().Configure(label, null, onSkip);
+            root.AddComponent<OpeningVideoSpatialUIInputManager>();
+            return root;
+        }
+
+        IEnumerator PlayHardwareTutorial(
+            VideoPlayer player,
+            Transform display,
+            bool english,
+            System.Func<bool> skipRequested)
         {
             // Reaching the language screen proves this same player has already
             // decoded the combined clip. Do not re-validate transient backend
@@ -420,29 +530,46 @@ namespace Moodium.Opening
                                    Mathf.Max(2f, (float)OpeningVideoTimeline.FrameToSeconds(
                                        timeline.QuestionLoop.StartFrame - timeline.EntryFrame) + 5f);
             while (CurrentFrame(player) < timeline.QuestionLoop.StartFrame &&
-                   Time.realtimeSinceStartup < questionDeadline)
+                   Time.realtimeSinceStartup < questionDeadline && !skipRequested())
             {
                 if (!player.isPlaying)
                     player.Play();
                 yield return null;
             }
+            if (skipRequested())
+            {
+                Destroy(choiceObject);
+                yield break;
+            }
 
             choiceObject.SetActive(true);
             var hardwareChoice = choiceObject.GetComponent<OpeningVideoHardwareChoice>();
-            while (!hardwareChoice.HasSelection || !hardwareChoice.IsReadyForVideoTransition)
+            while ((!hardwareChoice.HasSelection || !hardwareChoice.IsReadyForVideoTransition) && !skipRequested())
             {
                 if (CurrentFrame(player) >= timeline.QuestionLoop.EndFrame || !player.isPlaying)
                     yield return SeekToFrameAndPlay(player, timeline.QuestionLoop.StartFrame);
                 yield return null;
             }
+            if (skipRequested())
+            {
+                Destroy(choiceObject);
+                yield break;
+            }
 
             choiceObject.SetActive(false);
             var branch = hardwareChoice.HasHardware ? timeline.Yes : timeline.No;
             yield return SeekToFrameAndPlay(player, branch.StartFrame);
+            if (hardwareChoice.HasHardware)
+                OpeningBagIntroPlayback.CreateAndPlay(m_VideoSequenceConfig?.BagIntroClip, display);
             var branchDeadline = Time.realtimeSinceStartup + Mathf.Max(2f,
                 (float)OpeningVideoTimeline.FrameToSeconds(branch.EndFrame - branch.StartFrame) + 3f);
             while (CurrentFrame(player) < branch.EndFrame && Time.realtimeSinceStartup < branchDeadline)
             {
+                if (skipRequested())
+                {
+                    Destroy(choiceObject);
+                    yield break;
+                }
                 if (!player.isPlaying)
                     player.Play();
                 yield return null;
@@ -450,6 +577,50 @@ namespace Moodium.Opening
             player.Stop();
             Destroy(choiceObject);
             m_TutorialFlowGate?.MarkTutorialCompleted();
+        }
+
+        static void HideIntroGuidance(GameObject leftGuide, GameObject rightGuide, GameObject prompt)
+        {
+            if (leftGuide != null) leftGuide.SetActive(false);
+            if (rightGuide != null) rightGuide.SetActive(false);
+            if (prompt != null) prompt.SetActive(false);
+        }
+
+        void SkipToStickerSelection(
+            VideoPlayer player,
+            Transform display,
+            GameObject subtitleObject,
+            GameObject skipButton,
+            GameObject leftGuide,
+            GameObject rightGuide,
+            GameObject prompt,
+            Material material,
+            RenderTexture renderTexture,
+            bool english)
+        {
+            HideIntroGuidance(leftGuide, rightGuide, prompt);
+            // Skipping bypasses the language buttons; use the branch language passed by
+            // the caller so later world-space prompts are never left with a stale choice.
+            PlayerPrefs.SetString("Moodium.Language", english ? "English" : "Chinese");
+            PlayerPrefs.Save();
+            Destroy(leftGuide);
+            Destroy(rightGuide);
+            Destroy(prompt);
+            Destroy(skipButton);
+            player.time = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
+            player.Play();
+            var skippedSession = new OpeningVideoSession(player, display, subtitleObject, english, () =>
+            {
+                player.Stop();
+                player.targetTexture = null;
+                Destroy(subtitleObject);
+                Destroy(display.gameObject);
+                Destroy(material);
+                renderTexture.Release();
+                Destroy(renderTexture);
+            });
+            m_OpeningVideoHandedToStickerSelection = true;
+            m_AppFlow?.BeginStickerWorldSelection(skippedSession);
         }
 
         static long CurrentFrame(VideoPlayer player)

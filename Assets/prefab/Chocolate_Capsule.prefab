@@ -59,6 +59,7 @@ MonoBehaviour:
   m_SquashXZ: 1.06
   m_ReleaseOvershoot: 1.05
   m_InteractionEnabled: 0
+  m_AllowSpatialPointer: 1
 --- !u!82 &3109000101263825955
 AudioSource:
   m_ObjectHideFlags: 0

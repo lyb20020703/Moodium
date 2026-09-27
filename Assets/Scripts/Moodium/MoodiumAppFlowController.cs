@@ -11,6 +11,7 @@ using Moodium.CandyWorld;
 using Moodium.Flow.ObjectPicker;
 using Moodium.Opening;
 using Moodium.Reality;
+using Moodium.Calibration;
 
 namespace Moodium.Flow
 {
@@ -39,6 +40,8 @@ namespace Moodium.Flow
         [Header("Reality Enhancement tracked soft objects")]
         [SerializeField] GameObject m_RealityCandySoftPrefab;
         [SerializeField] GameObject m_RealityNatureSoftPrefab;
+        [SerializeField] GameObject m_PushLeftHandGuidePrefab;
+        [SerializeField] GameObject m_PushRightHandGuidePrefab;
 
         [Header("Nature World forest growth")]
         [Tooltip("Static tree prefabs with LODGroup components. Spawned progressively only in Nature World.")]
@@ -58,6 +61,10 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_SpatialTablePrefab;
         [SerializeField] GameObject m_CandyTransformationPreviewPrefab;
         [SerializeField] Material m_CandyTransformationMaterial;
+        [Tooltip("Transparent white crack texture placed on Candy-wrapped spatial surfaces after hand impact.")]
+        [SerializeField] Texture2D m_CandyWrapperCrackTexture;
+        [SerializeField] Material m_CandyWrapperCrackMaterial;
+        [SerializeField] GameObject m_CandyWrapperCrackPrefab;
         [SerializeField] Sprite m_WristHudRoundedSprite;
         [SerializeField] Sprite m_WristHudCircleSprite;
         [SerializeField] GameObject m_CandyFrostPrefab;
@@ -83,6 +90,12 @@ namespace Moodium.Flow
         CandyWorldManager m_CandyWorldManager;
         RealitySpatialTableManager m_RealitySpatialTableManager;
         RealityEnhancementFlowController m_RealityEnhancementFlow;
+        StickerWorldSelectionController m_StickerWorldSelection;
+        SensoryBagCalibrationCoordinator m_CalibrationCoordinator;
+        bool m_UseCalibratedImageBag;
+        OpeningVideoSession m_OpeningVideoSession;
+        StickerWorldEntry m_SelectedStickerEntry;
+        Coroutine m_StickerTrackingWarmupRoutine;
         GameObject m_CandyTransformationPreviewInstance;
         Camera m_MainCamera;
         bool m_LoggedMissingFont;
@@ -117,6 +130,45 @@ namespace Moodium.Flow
         public void ShowObjectWorldSelectionFromOpening()
         {
             ShowObjectWorldSelection();
+        }
+
+        public void BeginStickerWorldSelection(OpeningVideoSession session)
+        {
+            if (session == null)
+                return;
+            m_UseCalibratedImageBag = false;
+            ExitCreativeSpaceIfNeeded();
+            StopCandyWorldExperience();
+            m_OpeningVideoSession = session;
+            SetMode(MoodiumMode.ObjectTracking);
+            HideAllPanels();
+            m_PortalEntrance?.HideImmediate();
+            var imageSpawner = FindFirstObjectByType<ImageTrackingCapsuleSpawner>(FindObjectsInactive.Include);
+            imageSpawner?.ClearRuntimeInstances();
+            if (imageSpawner != null)
+                imageSpawner.enabled = false;
+            if (m_TrackedObjectManager != null)
+                m_TrackedObjectManager.enabled = false;
+            EnsureStickerWorldSelection();
+            m_CalibrationCoordinator?.ClearPresentations();
+            var candy = FindRealityWorld("candy");
+            var nature = FindRealityWorld("nature");
+            m_StickerWorldSelection.Configure(
+                m_TrackedImageManager,
+                m_RealityCandyWorldModelPrefab,
+                m_RealityNatureWorldModelPrefab,
+                candy,
+                nature);
+            m_StickerWorldSelection.ConfigureFonts(m_ChineseFontAsset, m_FontAsset);
+            m_StickerWorldSelection.End();
+            // Subscribe before enabling the manager. This mirrors the previously working
+            // world flow and prevents visionOS's first image-anchor event being missed.
+            m_StickerWorldSelection.Begin(session);
+            if (m_TrackedImageManager != null)
+                m_TrackedImageManager.enabled = true;
+            StartStickerTrackingWarmup();
+            session.SetVisible(true);
+            Debug.Log($"[Moodium Flow] Video-backed sticker world selection started. Image manager enabled={m_TrackedImageManager != null && m_TrackedImageManager.enabled}; candy prefab={m_RealityCandyWorldModelPrefab != null}; nature prefab={m_RealityNatureWorldModelPrefab != null}; candy world={candy != null}; nature world={nature != null}.");
         }
 
         void Awake()
@@ -368,7 +420,7 @@ namespace Moodium.Flow
                 "Back",
                 new Vector3(0f, 0.834f, 0f),
                 new Vector2(0.18f, 0.07f),
-                ShowObjectWorldSelection);
+                ReturnToStickerWorldSelection);
             m_ObjectPanel.SetActive(false);
         }
 
@@ -500,6 +552,10 @@ namespace Moodium.Flow
         void ShowObjectWorldSelection()
         {
             ExitCreativeSpaceIfNeeded();
+            // The Back button routes here. Stop the current world before showing the picker so
+            // Nature's runtime-grown trees (and every other world-specific runtime effect) do
+            // not remain in the user's space after leaving the experience.
+            StopCandyWorldExperience();
             SetMode(MoodiumMode.ObjectTracking);
             SetExistingModules(false, false);
             m_PortalEntrance?.HideImmediate();
@@ -509,6 +565,117 @@ namespace Moodium.Flow
             if (m_ObjectWorldCarousel != null)
                 m_ObjectWorldCarousel.ResetToFirstAvailable();
             Debug.Log("[Moodium Flow] Reality Enhancement Mode world selection shown.");
+        }
+
+        void ReturnToStickerWorldSelection()
+        {
+            if (m_OpeningVideoSession == null || m_OpeningVideoSession.IsDisposed)
+            {
+                ShowObjectWorldSelection();
+                return;
+            }
+            BeginStickerWorldSelection(m_OpeningVideoSession);
+        }
+
+        void EnsureStickerWorldSelection()
+        {
+            if (m_StickerWorldSelection == null)
+                m_StickerWorldSelection = GetComponent<StickerWorldSelectionController>();
+            if (m_StickerWorldSelection == null)
+                m_StickerWorldSelection = gameObject.AddComponent<StickerWorldSelectionController>();
+            m_StickerWorldSelection.WorldEntrySelected -= OnStickerWorldEntrySelected;
+            m_StickerWorldSelection.WorldEntrySelected += OnStickerWorldEntrySelected;
+            if (m_CalibrationCoordinator == null)
+                m_CalibrationCoordinator = GetComponent<SensoryBagCalibrationCoordinator>();
+            if (m_CalibrationCoordinator == null)
+                m_CalibrationCoordinator = gameObject.AddComponent<SensoryBagCalibrationCoordinator>();
+            m_CalibrationCoordinator.CalibrationCompleted -= OnCalibrationCompleted;
+            m_CalibrationCoordinator.CalibrationCompleted += OnCalibrationCompleted;
+        }
+
+        void StartStickerTrackingWarmup()
+        {
+            StopStickerTrackingWarmup();
+            m_StickerTrackingWarmupRoutine = StartCoroutine(RefreshStickerTrackingAfterEnable());
+        }
+
+        void StopStickerTrackingWarmup()
+        {
+            if (m_StickerTrackingWarmupRoutine == null)
+                return;
+            StopCoroutine(m_StickerTrackingWarmupRoutine);
+            m_StickerTrackingWarmupRoutine = null;
+        }
+
+        IEnumerator RefreshStickerTrackingAfterEnable()
+        {
+            // On visionOS image anchors may be created in the same frame as a manager
+            // is enabled. Polling the authoritative ARFoundation collection for a small,
+            // bounded number of frames makes the hand-off deterministic without creating
+            // another tracking session or changing the existing tracking pipeline.
+            for (var frame = 0; frame < 12; frame++)
+            {
+                yield return null;
+                if (m_StickerWorldSelection == null || !m_StickerWorldSelection.IsSelectionActive)
+                    break;
+                m_StickerWorldSelection.RefreshTrackedImages();
+            }
+            m_StickerTrackingWarmupRoutine = null;
+        }
+
+        void OnStickerWorldEntrySelected(StickerWorldEntry entry)
+        {
+            if (entry == null)
+                return;
+            m_SelectedStickerEntry = entry;
+            StopStickerTrackingWarmup();
+            m_StickerWorldSelection?.End();
+            m_OpeningVideoSession?.SetVisible(false);
+            m_OpeningVideoSession?.Player?.Pause();
+            var imageSpawner = FindFirstObjectByType<ImageTrackingCapsuleSpawner>(FindObjectsInactive.Include);
+            imageSpawner?.ClearRuntimeInstances();
+            imageSpawner?.Configure(m_TrackedImageManager, null);
+            if (imageSpawner != null)
+                imageSpawner.enabled = true;
+            var softPrefab = entry.World != null && entry.World.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase)
+                ? m_RealityNatureSoftPrefab
+                : m_RealityCandySoftPrefab;
+            m_CalibrationCoordinator?.ConfigureVisualPrefab(
+                entry.World != null && entry.World.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase)
+                    ? SensoryBagWorldKind.Nature
+                    : SensoryBagWorldKind.Candy,
+                softPrefab);
+            m_CalibrationCoordinator?.ConfigurePushHandGuides(
+                m_PushLeftHandGuidePrefab,
+                m_PushRightHandGuidePrefab);
+            m_CalibrationCoordinator?.ConfigureFonts(m_ChineseFontAsset, m_FontAsset);
+            m_CalibrationCoordinator?.ConfigureButtonStyle(m_WristHudRoundedSprite);
+            m_CalibrationCoordinator?.ConfigureFrameAdjustingTutorial(m_OpeningVideoSession);
+            m_UseCalibratedImageBag = true;
+            m_CalibrationCoordinator?.BeginCalibration(entry);
+            Debug.Log($"[Moodium Flow] Selected sticker world: {entry.World.DisplayName}; calibration started.");
+        }
+
+        void OnCalibrationCompleted(StickerWorldEntry entry, SensoryBagCalibrationData data)
+        {
+            if (entry == null || entry != m_SelectedStickerEntry)
+                return;
+            m_CalibrationCoordinator?.EndCalibrationMode();
+            m_SelectedStickerEntry = null;
+            SelectObjectWorld(entry.World);
+        }
+
+        MoodiumWorldDefinition FindRealityWorld(string worldId)
+        {
+            if (m_WorldDatabase != null && m_WorldDatabase.Worlds != null)
+                foreach (var world in m_WorldDatabase.Worlds)
+                    if (world != null && world.WorldId.Equals(worldId, System.StringComparison.OrdinalIgnoreCase))
+                        return world;
+            if (m_Worlds != null)
+                foreach (var world in m_Worlds)
+                    if (world != null && world.WorldId.Equals(worldId, System.StringComparison.OrdinalIgnoreCase))
+                        return world;
+            return null;
         }
 
         void SelectObjectWorld(MoodiumWorldDefinition world)
@@ -553,7 +720,7 @@ namespace Moodium.Flow
             objectSpawner?.ClearRuntimeInstances();
             imageSpawner?.ClearRuntimeInstances();
             objectSpawner?.Configure(m_TrackedObjectManager, prefab);
-            imageSpawner?.Configure(m_TrackedImageManager, prefab);
+            imageSpawner?.Configure(m_TrackedImageManager, m_UseCalibratedImageBag ? null : prefab);
         }
 
         void SetCreativeSpacePhysicsEnabled(bool enabled)
@@ -601,7 +768,11 @@ namespace Moodium.Flow
                 m_CandyTransformationMaterial,
                 m_WristHudRoundedSprite,
                 m_WristHudCircleSprite,
-                m_CandyFrostPrefab);
+                m_CandyFrostPrefab,
+                m_CandyWrapperCrackTexture,
+                m_CandyWrapperCrackMaterial,
+                m_CandyWrapperCrackPrefab);
+            m_CandyWorldManager.ConfigureEnvironmentPromptFonts(m_ChineseFontAsset, m_FontAsset);
             m_CandyWorldManager.ConfigureNatureForestTrees(m_NatureForestTreePrefabs);
             m_CandyWorldManager.ConfigureNatureIvy(m_NatureIvyGeneratorPrefab, m_NatureIvyGrowMaterial);
         }
@@ -651,7 +822,9 @@ namespace Moodium.Flow
                 m_MainCamera,
                 m_GlassPanelPrefab,
                 m_FontAsset,
-                m_ChineseFontAsset);
+                m_ChineseFontAsset,
+                m_PushLeftHandGuidePrefab,
+                m_PushRightHandGuidePrefab);
         }
 
         void SetExistingModules(bool objectTracking, bool spatialPhysics)

@@ -18,18 +18,18 @@ public sealed class MoodiumPortalFlowTests
     }
 
     [Test]
-    public void OpeningHandsControlDirectlyToObjectWorldSelection()
+    public void OpeningHandsCompletedTutorialVideoToStickerWorldSelection()
     {
         var source = File.ReadAllText(OpeningPath);
 
-        StringAssert.Contains("ShowObjectWorldSelectionFromOpening", source);
+        StringAssert.Contains("BeginStickerWorldSelection(session)", source);
     }
 
     [Test]
-    public void RealityBackReturnsToRealityWorldSelection()
+    public void RealityBackReturnsToStickerWorldSelectionWhenOpeningVideoExists()
     {
         var source = File.ReadAllText(FlowPath);
 
-        StringAssert.Contains("ShowObjectWorldSelection);", source);
+        StringAssert.Contains("ReturnToStickerWorldSelection", source);
     }
 }

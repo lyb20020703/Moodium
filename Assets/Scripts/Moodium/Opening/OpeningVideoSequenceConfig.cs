@@ -8,10 +8,18 @@ namespace Moodium.Opening
     public sealed class OpeningVideoSequenceConfig : ScriptableObject
     {
         [SerializeField] VideoClip m_VideoClip;
+        [SerializeField] VideoClip m_BagIntroClip;
+        [Header("Bag calibration tutorial")]
+        [SerializeField] VideoClip m_FrameAdjustingChineseClip;
+        [SerializeField] VideoClip m_FrameAdjustingEnglishClip;
+        [Header("Moodi emergence")]
+        [SerializeField] GameObject m_MoodiEmergencePrefab;
+        [SerializeField] AnimationClip m_MoodiEmergenceClip;
+        [SerializeField, Min(0.001f)] float m_MoodiEmergenceScale = 0.01f;
         [SerializeField, Min(0f)] float m_IntroLoopStartTime;
         [SerializeField, Min(0.1f)] float m_IntroLoopEndTime = 3.08f;
         [SerializeField, Min(0f)] float m_LanguageLoopStartTime = 24.466667f;
-        [SerializeField, Min(0.1f)] float m_LanguageLoopEndTime = 32.3f;
+        [SerializeField, Min(0.1f)] float m_LanguageLoopEndTime = 32.266667f;
         [Header("Eye-relative placement")]
         [SerializeField, Min(0.2f)] float m_DistanceFromUser = 1.35f;
         [SerializeField] float m_HeightOffset = -0.05f;
@@ -31,6 +39,12 @@ namespace Moodium.Opening
         [SerializeField, Min(0.1f)] float m_EnglishHardwareNoEndTime = 50.20f;
 
         public VideoClip VideoClip => m_VideoClip;
+        public VideoClip BagIntroClip => m_BagIntroClip;
+        public VideoClip FrameAdjustingChineseClip => m_FrameAdjustingChineseClip;
+        public VideoClip FrameAdjustingEnglishClip => m_FrameAdjustingEnglishClip;
+        public GameObject MoodiEmergencePrefab => m_MoodiEmergencePrefab;
+        public AnimationClip MoodiEmergenceClip => m_MoodiEmergenceClip;
+        public float MoodiEmergenceScale => m_MoodiEmergenceScale;
         public float IntroLoopStartTime => m_IntroLoopStartTime;
         public float IntroLoopEndTime => Mathf.Max(m_IntroLoopStartTime + 0.01f, m_IntroLoopEndTime);
         public float LanguageLoopStartTime => m_LanguageLoopStartTime;

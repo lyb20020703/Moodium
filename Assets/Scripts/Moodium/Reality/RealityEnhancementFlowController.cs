@@ -25,6 +25,7 @@ namespace Moodium.Reality
         [Header("Timing")]
         [SerializeField, Min(2f)] float m_GuideDuration = 4f;
         [SerializeField, Min(0.2f)] float m_GenerationDuration = 0.5f;
+        [SerializeField] bool m_ShowLegacyInitialGuide;
 
         TissueObjectTrackingSpawner m_Spawner;
         ImageTrackingCapsuleSpawner m_ImageSpawner;
@@ -32,15 +33,19 @@ namespace Moodium.Reality
         GameObject m_GlassPanelPrefab;
         TMP_FontAsset m_Font;
         TMP_FontAsset m_ChineseFont;
+        GameObject m_PushLeftHandPrefab;
+        GameObject m_PushRightHandPrefab;
         RealityEnhancementFlowState m_State;
         GameObject m_Guide;
         Coroutine m_GuideRoutine;
         readonly HashSet<ChocolateCapsuleInteraction> m_InteractiveCapsules = new();
+        readonly HashSet<PushHandInteractionGuide> m_PushHandGuides = new();
         readonly Dictionary<ChocolateCapsuleInteraction, Coroutine> m_PresentationRoutines = new();
         bool m_Running;
 
         public RealityEnhancementFlowState State => m_State;
         public int InteractiveCapsuleCount => m_InteractiveCapsules.Count;
+        public bool ShowLegacyInitialGuide => m_ShowLegacyInitialGuide;
 
         public void Configure(
             TissueObjectTrackingSpawner spawner,
@@ -48,7 +53,9 @@ namespace Moodium.Reality
             Camera camera,
             GameObject glassPanelPrefab,
             TMP_FontAsset font,
-            TMP_FontAsset chineseFont)
+            TMP_FontAsset chineseFont,
+            GameObject pushLeftHandPrefab = null,
+            GameObject pushRightHandPrefab = null)
         {
             m_Spawner = spawner;
             m_ImageSpawner = imageSpawner;
@@ -56,6 +63,8 @@ namespace Moodium.Reality
             m_GlassPanelPrefab = glassPanelPrefab;
             m_Font = font;
             m_ChineseFont = chineseFont;
+            m_PushLeftHandPrefab = pushLeftHandPrefab;
+            m_PushRightHandPrefab = pushRightHandPrefab;
             var legacyThumbBend = GetComponent<BimanualThumbBendGestureController>();
             if (legacyThumbBend != null)
             {
@@ -87,7 +96,11 @@ namespace Moodium.Reality
                 m_ImageSpawner.CapsuleAvailable += OnCapsuleAvailable;
                 m_ImageSpawner.CapsuleUnavailable += OnCapsuleUnavailable;
             }
-            m_GuideRoutine = StartCoroutine(ShowInitialGuide());
+            // The experience now begins through the sticker-selection / bag-calibration
+            // flow. Keep this legacy object-tracking card off by default so it does not
+            // overlap the current Candy World entry UI.
+            if (m_ShowLegacyInitialGuide)
+                m_GuideRoutine = StartCoroutine(ShowInitialGuide());
             Debug.Log("[Reality Flow] Waiting for an object or reference image.");
         }
 
@@ -119,6 +132,7 @@ namespace Moodium.Reality
             m_GuideRoutine = null;
             m_PresentationRoutines.Clear();
             m_InteractiveCapsules.Clear();
+            DestroyPushHandGuides();
             DestroyPresentationObjects();
         }
 
@@ -219,6 +233,12 @@ namespace Moodium.Reality
         {
             if (capsule == null || !m_InteractiveCapsules.Add(capsule))
                 return;
+            if (m_PushLeftHandPrefab != null || m_PushRightHandPrefab != null)
+            {
+                var guide = new GameObject("Push Hand Interaction Guide").AddComponent<PushHandInteractionGuide>();
+                guide.Configure(capsule, m_PushLeftHandPrefab, m_PushRightHandPrefab);
+                m_PushHandGuides.Add(guide);
+            }
             m_State = RealityEnhancementFlowState.Interactive;
         }
 
@@ -238,6 +258,14 @@ namespace Moodium.Reality
             if (m_GuideRoutine != null) StopCoroutine(m_GuideRoutine);
             m_GuideRoutine = null;
             DestroySafe(ref m_Guide);
+        }
+
+        void DestroyPushHandGuides()
+        {
+            foreach (var guide in m_PushHandGuides)
+                if (guide != null)
+                    Destroy(guide.gameObject);
+            m_PushHandGuides.Clear();
         }
 
         GameObject CreateGlassCard(string name, string text, Vector2 size, TextAlignmentOptions alignment)

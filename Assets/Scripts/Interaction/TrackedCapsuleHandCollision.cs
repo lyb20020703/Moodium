@@ -13,6 +13,8 @@ namespace Moodium.Interaction
     public sealed class TrackedCapsuleHandCollision : MonoBehaviour
     {
         [SerializeField, Min(0.005f)] float m_JointProbeRadius = 0.025f;
+        [SerializeField, Min(0f)] float m_ContactReleaseGraceSeconds = 0.18f;
+        [SerializeField, Min(0f)] float m_InteractionCooldownSeconds = 0.35f;
 
         static readonly XRHandJointID[] HandJointIds =
         {
@@ -35,12 +37,15 @@ namespace Moodium.Interaction
         XROrigin m_XROrigin;
         bool m_Touching;
         bool m_LoggedMissingSubsystem;
+        HandContactStabilityGate m_ContactGate;
 
         public bool IsTouching => m_Touching;
 
         void Awake()
         {
             m_Capsule = GetComponent<ChocolateCapsuleInteraction>();
+            m_ContactGate = new HandContactStabilityGate(
+                m_ContactReleaseGraceSeconds, m_InteractionCooldownSeconds);
         }
 
         void OnEnable()
@@ -59,7 +64,7 @@ namespace Moodium.Interaction
             if (m_HandSubsystem != null)
                 m_HandSubsystem.updatedHands -= OnHandsUpdated;
             m_HandSubsystem = null;
-            SetTouching(false);
+            ForceRelease();
         }
 
         void TrySubscribe()
@@ -90,13 +95,13 @@ namespace Moodium.Interaction
             if (updateType != XRHandSubsystem.UpdateType.Dynamic ||
                 m_Capsule == null || !m_Capsule.InteractionEnabled || !isActiveAndEnabled)
             {
-                SetTouching(false);
+                ApplyStableContact(false, default);
                 return;
             }
 
             var touching = HandTouchesCapsule(subsystem.leftHand, out var contactPosition) ||
                            HandTouchesCapsule(subsystem.rightHand, out contactPosition);
-            SetTouching(touching, contactPosition);
+            ApplyStableContact(touching, contactPosition);
         }
 
         bool HandTouchesCapsule(XRHand hand, out Vector3 contactPosition)
@@ -159,6 +164,81 @@ namespace Moodium.Interaction
                 m_Capsule.HandContactStarted(contactPosition);
             else
                 m_Capsule.PalmContactEnded();
+        }
+
+        void ApplyStableContact(bool touching, Vector3 contactPosition)
+        {
+            m_ContactGate ??= new HandContactStabilityGate(
+                m_ContactReleaseGraceSeconds, m_InteractionCooldownSeconds);
+            var wasTouching = m_Touching;
+            var triggerFeedback = m_ContactGate.Update(touching, Time.unscaledTime);
+            m_Touching = m_ContactGate.IsContactActive;
+
+            if (!wasTouching && m_Touching)
+            {
+                if (triggerFeedback)
+                    m_Capsule?.HandContactStarted(contactPosition);
+                return;
+            }
+            if (wasTouching && !m_Touching)
+            {
+                m_Capsule?.PalmContactEnded();
+                return;
+            }
+            if (m_Touching)
+                m_Capsule?.HandContactHeld(contactPosition);
+        }
+
+        void ForceRelease()
+        {
+            m_ContactGate?.Reset();
+            if (!m_Touching)
+                return;
+            m_Touching = false;
+            m_Capsule?.PalmContactEnded();
+        }
+    }
+
+    /// <summary>Keeps a physical hand contact stable through brief tracking gaps.</summary>
+    public sealed class HandContactStabilityGate
+    {
+        readonly float m_ReleaseGraceSeconds;
+        readonly float m_CooldownSeconds;
+        float m_LastTouchTime = float.NegativeInfinity;
+        float m_NextAllowedStartTime = float.NegativeInfinity;
+
+        public bool IsContactActive { get; private set; }
+
+        public HandContactStabilityGate(float releaseGraceSeconds, float cooldownSeconds)
+        {
+            m_ReleaseGraceSeconds = Mathf.Max(0f, releaseGraceSeconds);
+            m_CooldownSeconds = Mathf.Max(0f, cooldownSeconds);
+        }
+
+        /// <returns>True only when this contact edge may trigger feedback.</returns>
+        public bool Update(bool isTouching, float currentTime)
+        {
+            if (isTouching)
+            {
+                m_LastTouchTime = currentTime;
+                if (IsContactActive)
+                    return false;
+                IsContactActive = true;
+                if (currentTime < m_NextAllowedStartTime)
+                    return false;
+                m_NextAllowedStartTime = currentTime + m_CooldownSeconds;
+                return true;
+            }
+
+            if (IsContactActive && currentTime - m_LastTouchTime >= m_ReleaseGraceSeconds)
+                IsContactActive = false;
+            return false;
+        }
+
+        public void Reset()
+        {
+            IsContactActive = false;
+            m_LastTouchTime = float.NegativeInfinity;
         }
     }
 }

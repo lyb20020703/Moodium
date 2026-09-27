@@ -109,6 +109,47 @@ namespace Moodium.NatureWorld
             return false;
         }
 
+        /// <summary>
+        /// Called by the shared spatial-pointer path when a pinch begins on scanned room geometry.
+        /// The pointer's target collider is preserved so this does not have to guess a different
+        /// surface from the camera-to-pointer ray.
+        /// </summary>
+        public bool TryGrowFromSpatialPointer(Collider targetCollider, Vector3 interactionPosition)
+        {
+            if (!m_Running || m_Camera == null || m_Generator == null)
+            {
+                Debug.Log("[Nature Ivy] Ignored spatial pinch: generator is not running.");
+                return false;
+            }
+            if (!IsSpatialMeshCollider(targetCollider))
+            {
+                Debug.Log("[Nature Ivy] Ignored spatial pinch: pointer target is not an AR mesh collider.");
+                return false;
+            }
+
+            var contact = targetCollider.ClosestPoint(interactionPosition);
+            var ray = new Ray(m_Camera.transform.position, contact - m_Camera.transform.position);
+            if (ray.direction.sqrMagnitude > .0001f && targetCollider.Raycast(ray, out var hit, 8f))
+            {
+                var grown = TryGrowAtSpatialHit(hit);
+                Debug.Log($"[Nature Ivy] Spatial pinch {(grown ? "grew ivy" : "did not grow ivy")} at {hit.point}.");
+                return grown;
+            }
+
+            Debug.Log("[Nature Ivy] Pointer target was valid, but a surface hit could not be resolved.");
+            return false;
+        }
+
+        /// <summary>True only for colliders supplied by the room mesh, never tracked bag visuals.</summary>
+        public bool IsSpatialMeshCollider(Collider collider)
+        {
+            if (collider == null)
+                return false;
+            if (Time.time - m_LastColliderRefresh > 1f)
+                RefreshSpatialColliders();
+            return m_SpatialColliders.Contains(collider);
+        }
+
         public bool TryGrowAtSpatialHit(RaycastHit hit)
         {
             if (!m_Running || m_Generator == null || m_GrownStrokeCount >= m_MaxStrokes ||

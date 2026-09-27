@@ -11,7 +11,23 @@ namespace Moodium.NatureWorld
     public sealed class NatureForestGrowthController : MonoBehaviour
     {
         static readonly float[] SpawnThresholds = { 0.35f, 0.55f, 0.75f, 0.9f, 1f };
-        static readonly float[] HorizontalOffsets = { -0.78f, 0.74f, -0.4f, 0.42f, 0f };
+        // Local X is viewer-right and local Y is viewer-forward. Keep the central forward
+        // lane open for the sensory bag, with the front trees farther away than the side trees.
+        static readonly Vector2[] ViewerRelativeSpawnOffsets =
+        {
+            new(-2.1f, 3.9f), // distant front-left
+            new(2.1f, 3.9f),  // distant front-right
+            new(-3.5f, 0.45f), // left side
+            new(3.5f, 0.45f),  // right side
+            new(0f, -3.0f)     // behind the viewer
+        };
+        // Trees were already reduced to half their prefab scale. Nature World now
+        // needs one third of that displayed size, i.e. one sixth of prefab scale.
+        const float TreeScaleMultiplier = 1f / 6f;
+
+        [Header("Ground placement")]
+        [Tooltip("visionOS world-space floor height used only while the spatial mesh is unavailable.")]
+        [SerializeField] float m_FallbackGroundY = 0f;
 
         readonly List<GameObject> m_TreePrefabs = new();
         readonly List<GameObject> m_SpawnedTrees = new();
@@ -21,6 +37,7 @@ namespace Moodium.NatureWorld
         bool m_Running;
 
         public int SpawnedTreeCount => m_SpawnedTrees.Count;
+        public Transform ForestRoot => m_ForestRoot;
 
         public void Configure(Transform viewer, GameObject[] treePrefabs)
         {
@@ -77,7 +94,9 @@ namespace Moodium.NatureWorld
             if (m_ForestRoot == null)
             {
                 var root = new GameObject("Nature Forest Growth");
-                root.transform.SetParent(transform, false);
+                // Trees belong to the real room, not to an image anchor, calibrated bag,
+                // or any world-flow transform. A scene-root parent prevents a later
+                // tracked-parent rotation/scale update from making the grove lean.
                 m_ForestRoot = root.transform;
             }
 
@@ -86,15 +105,18 @@ namespace Moodium.NatureWorld
                 forward = Vector3.forward;
             forward.Normalize();
             var right = Vector3.Cross(Vector3.up, forward).normalized;
-            var distance = 2.15f + (index % 2) * 0.55f;
-            var horizontal = HorizontalOffsets[index % HorizontalOffsets.Length];
-            var desiredPosition = m_Viewer.position + forward * distance + right * horizontal;
+            var spawnOffset = ViewerRelativeSpawnOffsets[index % ViewerRelativeSpawnOffsets.Length];
+            var desiredPosition = m_Viewer.position + right * spawnOffset.x + forward * spawnOffset.y;
             var position = FindGroundPosition(desiredPosition);
-            var rotation = Quaternion.LookRotation(-forward, Vector3.up) *
-                           Quaternion.Euler(0f, (index * 47f) % 360f, 0f);
+            // Lock the tree's up vector to gravity. Only yaw is allowed to vary;
+            // no image-anchor, camera-roll, or mesh-normal rotation may tilt a tree.
+            var baseYaw = Mathf.Atan2(-forward.x, -forward.z) * Mathf.Rad2Deg;
+            var rotation = Quaternion.Euler(0f, baseYaw + (index * 47f) % 360f, 0f);
             var prefab = m_TreePrefabs[index % m_TreePrefabs.Count];
             var instance = Instantiate(prefab, position, rotation, m_ForestRoot);
             instance.name = $"{prefab.name} (Nature Forest {index + 1})";
+            instance.transform.rotation = rotation;
+            instance.transform.localScale *= TreeScaleMultiplier;
             m_SpawnedTrees.Add(instance);
             instance.AddComponent<NatureTreeGrowIn>();
         }
@@ -106,9 +128,10 @@ namespace Moodium.NatureWorld
                     QueryTriggerInteraction.Ignore))
                 return hit.point;
 
-            // Spatial meshes can be unavailable for a moment at session start. Keep the tree
-            // beneath the viewer rather than placing it at eye level until the mesh is present.
-            return desiredPosition + Vector3.down * 1.15f;
+            // Spatial meshes can be unavailable for a moment at session start. The previous
+            // eye-relative fallback left trees visibly floating for seated users. Keep their
+            // roots on the world floor until a real mesh hit is available instead.
+            return new Vector3(desiredPosition.x, m_FallbackGroundY, desiredPosition.z);
         }
 
         void OnDisable() => StopAndClear();

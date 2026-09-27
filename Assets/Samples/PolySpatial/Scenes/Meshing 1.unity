@@ -258,6 +258,7 @@ GameObject:
   - component: {fileID: 339371881}
   - component: {fileID: 339371882}
   - component: {fileID: 339371883}
+  - component: {fileID: 339371884}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -400,6 +401,8 @@ MonoBehaviour:
   m_RealityFallbackWorldModelPrefab: {fileID: 1243638243325089260, guid: 9b7f48995c0634708b12f6eddad122fc, type: 3}
   m_RealityCandySoftPrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
   m_RealityNatureSoftPrefab: {fileID: 7753623436516282245, guid: 304ef1a166c654b98808d9c59f5bb5b9, type: 3}
+  m_PushLeftHandGuidePrefab: {fileID: 1295767573294396060, guid: d91edd1b833fa4c4ab87eea899094818, type: 3}
+  m_PushRightHandGuidePrefab: {fileID: 605822695627310339, guid: 21c1ad5e8f325426088bf3fe267c238f, type: 3}
   m_NatureForestTreePrefabs:
   - {fileID: 392179945897341202, guid: 0f9361eeb4922a04882096919c996ba9, type: 3}
   - {fileID: 7294295943489037214, guid: 3f7a9cf2c689a8c4995faa003bda87c3, type: 3}
@@ -416,6 +419,9 @@ MonoBehaviour:
   m_SpatialTablePrefab: {fileID: 4265207437153172898, guid: 8d753ebf2073a412aa7d843142b35721, type: 3}
   m_CandyTransformationPreviewPrefab: {fileID: 5293898643689223911, guid: af7bbf8c360a84b4896517595e16196d, type: 3}
   m_CandyTransformationMaterial: {fileID: 2100000, guid: 013e49c7b4d024bccb1b4be6f47df942, type: 2}
+  m_CandyWrapperCrackTexture: {fileID: 2800000, guid: b821f110d36a8443cb86c8bfb5c365ef, type: 3}
+  m_CandyWrapperCrackMaterial: {fileID: 2100000, guid: 6dfbba17f12b48f184df0afca71916ba, type: 2}
+  m_CandyWrapperCrackPrefab: {fileID: 2033645325062927100, guid: 3573433dc92c47b1b8820bc188ed0693, type: 3}
   m_WristHudRoundedSprite: {fileID: 21300000, guid: 485a3f92515ed4d1dae5811a5ad83e37, type: 3}
   m_WristHudCircleSprite: {fileID: 21300000, guid: 3817d28d333db46d7a549d32cac870f1, type: 3}
   m_CandyFrostPrefab: {fileID: 1984035739642887215, guid: d882278a24ef2452f854c8ef70b879ac, type: 3}
@@ -477,6 +483,30 @@ MonoBehaviour:
   m_ChocolatePrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalEulerAngles: {x: 0, y: 0, z: 0}
+  m_CalibrationCoordinator: {fileID: 339371884}
+--- !u!114 &339371884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339371872}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9080e2e688e824588a1a8eed98077534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ImageSpawner: {fileID: 339371883}
+  m_CandyReferenceImageName: CandyWorldPhoneTracking
+  m_NatureReferenceImageName: NatureWorldPhoneTracking
+  m_DefaultWidth: 0.25
+  m_DefaultHeight: 0.17
+  m_DefaultDepth: 0.05
+  m_DefaultCenterOffset: {x: 0, y: 0}
+  m_MinWidth: 0.08
+  m_MaxWidth: 0.6
+  m_MinHeight: 0.06
+  m_MaxHeight: 0.45
 --- !u!1001 &679955422
 PrefabInstance:
   m_ObjectHideFlags: 0

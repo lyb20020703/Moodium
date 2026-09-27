@@ -13,13 +13,19 @@ MonoBehaviour:
   m_Name: OpeningVideoSequenceConfig
   m_EditorClassIdentifier: 
   m_VideoClip: {fileID: 32900000, guid: 25c81c93cd0db4c97a212bc0110d7a1f, type: 3}
+  m_BagIntroClip: {fileID: 32900000, guid: a7489a730b19e4809a3314c0814cf5b4, type: 3}
+  m_FrameAdjustingChineseClip: {fileID: 32900000, guid: 825d651fd6f7c47cb81564befdb286e4, type: 3}
+  m_FrameAdjustingEnglishClip: {fileID: 32900000, guid: 8f618511c2a964b39a13036a28eb4dbd, type: 3}
+  m_MoodiEmergencePrefab: {fileID: 1983304832228171783, guid: 6153ad677d6bc4eb88bbecb9b426c07f, type: 3}
+  m_MoodiEmergenceClip: {fileID: 5406842849461195049, guid: 92e18aa29a30f463299a731a79d8ebeb, type: 3}
+  m_MoodiEmergenceScale: 0.01
   m_IntroLoopStartTime: 0
   m_IntroLoopEndTime: 3.08
   m_LanguageLoopStartTime: 24.466667
   m_LanguageLoopEndTime: 32.3
   m_DistanceFromUser: 1.35
   m_HeightOffset: -0.05
-  m_WorldPositionY: 1
+  m_WorldPositionY: 1.15
   m_ChineseTutorialClip: {fileID: 32900000, guid: 25c81c93cd0db4c97a212bc0110d7a1f, type: 3}
   m_EnglishTutorialClip: {fileID: 32900000, guid: 25c81c93cd0db4c97a212bc0110d7a1f, type: 3}
   m_ChineseHardwareQuestionTime: 9.04
