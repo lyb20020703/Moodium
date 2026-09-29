@@ -404,11 +404,18 @@ MonoBehaviour:
   m_PushLeftHandGuidePrefab: {fileID: 1295767573294396060, guid: d91edd1b833fa4c4ab87eea899094818, type: 3}
   m_PushRightHandGuidePrefab: {fileID: 605822695627310339, guid: 21c1ad5e8f325426088bf3fe267c238f, type: 3}
   m_NatureForestTreePrefabs:
-  - {fileID: 392179945897341202, guid: 0f9361eeb4922a04882096919c996ba9, type: 3}
-  - {fileID: 7294295943489037214, guid: 3f7a9cf2c689a8c4995faa003bda87c3, type: 3}
-  - {fileID: 8916691322274730802, guid: ba3d3ee8f3ee9764a9a4b156896c0b6f, type: 3}
-  - {fileID: 7460352013013813171, guid: 0fa75777d520af24495d9f3e8f7516b6, type: 3}
-  - {fileID: 133151556428898140, guid: 22ffea230304c0048846b7a1735ed5a2, type: 3}
+  - {fileID: 8338100853971841445, guid: 42639e27cb175d8488974c697fdf13d4, type: 3}
+  - {fileID: 8811476789416005125, guid: 867151643308bbc458d63f0412bd3a54, type: 3}
+  - {fileID: 8338100853971841445, guid: 42639e27cb175d8488974c697fdf13d4, type: 3}
+  - {fileID: 8811476789416005125, guid: 867151643308bbc458d63f0412bd3a54, type: 3}
+  - {fileID: 8338100853971841445, guid: 42639e27cb175d8488974c697fdf13d4, type: 3}
+  m_NatureBurstPrefabs:
+  - {fileID: 481030001, guid: 0ccf480805cf43ffb31491b78960ab8e, type: 3}
+  - {fileID: 481020001, guid: ef0bc5e54ce249b49ad7bf686d5c4772, type: 3}
+  - {fileID: 481040001, guid: 54e422f949db4b5a80997273b27c9813, type: 3}
+  m_ForceNatureBurstOnStart: 0
+  m_ForceNatureBurstPrefab: 0
+  m_UseCandyBurstPrefabsInNatureForDebug: 0
   m_NatureIvyGeneratorPrefab: {fileID: 3475717432368046239, guid: b517e3b496411404d9b665d70cc3e259, type: 3}
   m_NatureIvyGrowMaterial: {fileID: 2100000, guid: 536d76ee6e9f93e419f5417e44c26bb9, type: 2}
   m_CreativePrefabScaleConfigs: []
@@ -425,6 +432,7 @@ MonoBehaviour:
   m_WristHudRoundedSprite: {fileID: 21300000, guid: 485a3f92515ed4d1dae5811a5ad83e37, type: 3}
   m_WristHudCircleSprite: {fileID: 21300000, guid: 3817d28d333db46d7a549d32cac870f1, type: 3}
   m_CandyFrostPrefab: {fileID: 1984035739642887215, guid: d882278a24ef2452f854c8ef70b879ac, type: 3}
+  m_NatureLeafFallPrefab: {fileID: 1363029145903867714, guid: b845cc5bbde33413fac5af1b2534ab8b, type: 3}
   m_CreativeSpaceModeArtwork: {fileID: 21300000, guid: f01336ac660af444bbe0ecb8fa6cfe5c, type: 3}
   m_RealityEnhancementModeArtwork: {fileID: 21300000, guid: 0e15b0e260ab94646bb21d096df182fb, type: 3}
 --- !u!114 &339371881

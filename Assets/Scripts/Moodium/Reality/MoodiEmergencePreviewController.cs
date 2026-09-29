@@ -90,9 +90,19 @@ namespace Moodium.Reality
             visual.transform.localRotation = Quaternion.identity;
             visual.transform.localScale = Vector3.one * .12f;
 
-            var emergence = root.gameObject.AddComponent<MoodiEmergenceController>();
-            emergence.ConfigurePreview(root, m_MoodiPrefab, m_EmergenceClip, m_MoodiScale);
+            // The Soft remains under the stable bag root. Moodi alone belongs to
+            // this motion root, exactly like the Vision runtime's separate root.
+            var emergenceRoot = CreateEmergenceMotionRoot(root);
+            var emergence = emergenceRoot.gameObject.AddComponent<MoodiEmergenceController>();
+            emergence.ConfigurePreview(emergenceRoot, root, m_MoodiPrefab, m_EmergenceClip, m_MoodiScale);
             CreateLabel(label, position + Vector3.back * .18f + Vector3.up * .03f);
+        }
+
+        public static Transform CreateEmergenceMotionRoot(Transform bagRoot)
+        {
+            var motionRoot = new GameObject("Moodi Emergence Motion Root").transform;
+            motionRoot.SetParent(bagRoot, false);
+            return motionRoot;
         }
 
         static void CreateLabel(string message, Vector3 position)

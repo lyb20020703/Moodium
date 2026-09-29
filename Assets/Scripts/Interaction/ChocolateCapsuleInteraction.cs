@@ -126,6 +126,29 @@ namespace Moodium.Interaction
                 m_SoftDeformation?.TouchHold(contactPosition);
         }
 
+        /// <summary>
+        /// Plays the authored ShellCrack sequence for a falling energy reward. This is intentionally
+        /// separate from the tracked capsule's squeeze flow: the reward is activated only by real
+        /// hand contact and is removed by its caller after the animation reaches its end pose.
+        /// </summary>
+        public bool PlayShellCrackForReward(Action onComplete)
+        {
+            if (m_Animator == null || m_Animator.runtimeAnimatorController == null ||
+                !m_Animator.HasState(0, m_CrackStateHash))
+                return false;
+
+            m_NormalShell?.SetActive(false);
+            m_CrackPiecesRoot?.SetActive(true);
+            RestorePiecePose();
+            m_Animator.enabled = true;
+            m_Animator.speed = 1f;
+            m_Animator.Play(m_CrackStateHash, 0, 0f);
+            m_Animator.Update(0f);
+            StartCoroutine(CompleteRewardShellCrack(GetCrackDuration(), onComplete));
+            Debug.Log("[Moodium Energy Release] Chocolate reward touched; playing ShellCrack.");
+            return true;
+        }
+
         public void PalmContactEnded()
         {
             if (m_IsPinched && m_ActivePointerId < 0)
@@ -211,6 +234,20 @@ namespace Moodium.Interaction
 
             if (logReset)
                 Debug.Log("Chocolate Capsule Reset");
+        }
+
+        float GetCrackDuration()
+        {
+            foreach (var clip in m_Animator.runtimeAnimatorController.animationClips)
+                if (clip != null && clip.name == "ChocolateCrack_Combined")
+                    return Mathf.Max(.01f, clip.length);
+            return Mathf.Max(.01f, m_Animator.GetCurrentAnimatorStateInfo(0).length);
+        }
+
+        IEnumerator CompleteRewardShellCrack(float duration, Action onComplete)
+        {
+            yield return new WaitForSeconds(duration);
+            onComplete?.Invoke();
         }
 
         void CaptureBurstCenter()

@@ -1,4 +1,5 @@
 using Moodium.Audio;
+using Moodium.Flow;
 using Moodium.Interaction;
 using TMPro;
 using UnityEngine;
@@ -35,6 +36,7 @@ namespace Moodium.CandyWorld
         TMP_Text m_Title;
         TMP_Text m_Feedback;
         Image[] m_Sparkles;
+        GameObject m_ReleaseButtonRoot;
         Sprite m_RoundedSprite;
         Sprite m_CircleSprite;
 
@@ -45,11 +47,13 @@ namespace Moodium.CandyWorld
         float m_LastTargetEnergy;
         float m_FeedbackTime = -1f;
         bool m_Completed;
+        bool m_ReleaseAvailable;
         bool m_Built;
         string m_WorldEnergyTitle = "Candy Energy";
 
         public float DisplayedProgress => m_DisplayedProgress;
         public bool HandTracked { get; private set; }
+        public event System.Action ReleasePressed;
 
         public void Build(Camera camera, TMP_FontAsset font, Sprite roundedSprite, Sprite circleSprite)
         {
@@ -103,9 +107,51 @@ namespace Moodium.CandyWorld
             m_Sparkles[1] = CreateImage("Sparkle 2", m_CanvasRect, new Vector2(115f, 45f), new Vector2(7f, 7f), m_CircleSprite, Color.clear);
             m_Sparkles[2] = CreateImage("Sparkle 3", m_CanvasRect, new Vector2(150f, -40f), new Vector2(6f, 6f), m_CircleSprite, Color.clear);
 
+            CreateReleaseButton(font);
+
             m_Built = true;
             m_CanvasGroup.alpha = 0f;
             SetProgress(0f, 0f);
+        }
+
+        public void SetReleaseAvailable(bool available)
+        {
+            m_ReleaseAvailable = available;
+            if (m_ReleaseButtonRoot != null)
+                m_ReleaseButtonRoot.SetActive(available);
+        }
+
+        void CreateReleaseButton(TMP_FontAsset font)
+        {
+            m_ReleaseButtonRoot = new GameObject("Energy Release Button", typeof(RectTransform), typeof(Image), typeof(BoxCollider));
+            m_ReleaseButtonRoot.transform.SetParent(m_CanvasRect, false);
+            var rect = (RectTransform)m_ReleaseButtonRoot.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+            rect.anchoredPosition = new Vector2(112f, 54f);
+            rect.sizeDelta = new Vector2(136f, 48f);
+            var image = m_ReleaseButtonRoot.GetComponent<Image>();
+            image.sprite = m_RoundedSprite;
+            image.type = m_RoundedSprite != null && m_RoundedSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+            image.color = new Color(.93f, .72f, 1f, .96f);
+            image.raycastTarget = false;
+
+            var collider = m_ReleaseButtonRoot.GetComponent<BoxCollider>();
+            collider.size = new Vector3(136f, 48f, 20f);
+            collider.center = Vector3.zero;
+
+            var label = CreateText("Release", m_ReleaseButtonRoot.transform, Vector2.zero, new Vector2(126f, 40f), 18f,
+                font, new Color(.10f, .065f, .18f, 1f));
+            var button = m_ReleaseButtonRoot.AddComponent<MoodiumSpatialButton>();
+            button.Configure(label, null, PressRelease);
+            m_ReleaseButtonRoot.SetActive(false);
+        }
+
+        void PressRelease()
+        {
+            if (!m_ReleaseAvailable)
+                return;
+            SetReleaseAvailable(false);
+            ReleasePressed?.Invoke();
         }
 
         /// <summary>Updates the wording only; progress tracking stays shared by both worlds.</summary>

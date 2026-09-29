@@ -11,10 +11,11 @@ public sealed class WorldEnvironmentPromptPolicyTests
     }
 
     [Test]
-    public void NaturePrompt_AppearsAfterTheFirstBagInteraction()
+    public void NaturePrompt_AppearsOnlyWhenEnvironmentPinchBecomesAvailable()
     {
         Assert.That(WorldEnvironmentPromptPolicy.ShouldShow(true, 0f, false), Is.False);
-        Assert.That(WorldEnvironmentPromptPolicy.ShouldShow(true, 0f, true), Is.True);
+        Assert.That(WorldEnvironmentPromptPolicy.ShouldShow(true, .99f, true), Is.False);
+        Assert.That(WorldEnvironmentPromptPolicy.ShouldShow(true, 1f, true), Is.True);
     }
 
     [Test]

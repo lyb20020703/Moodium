@@ -52,4 +52,17 @@ public sealed class NatureIvySpatialGrowthControllerTests
         Assert.That(controller.GrownStrokeCount, Is.EqualTo(1));
         Assert.That(controller.TryGrowAtSpatialHit(hit), Is.False);
     }
+
+    [Test]
+    public void VisionOSIvyPreservesThePrefab3DGeometryAndDoesNotInjectTheGrowShader()
+    {
+        Assert.That(NatureIvySpatialGrowthController.ShouldForceFlatIvyGeometry(), Is.False);
+        Assert.That(NatureIvySpatialGrowthController.ShouldUseRuntimeGrowShader(), Is.False);
+    }
+
+    [Test]
+    public void VisionOSIvyUsesTheDedicatedLeafVisualLayerInsteadOfIvyStudiosLeafPrefabs()
+    {
+        Assert.That(NatureIvySpatialGrowthController.ShouldUseIvyStudioAutoLeaves(), Is.False);
+    }
 }

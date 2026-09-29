@@ -12,6 +12,9 @@ namespace Moodium.Opening
         [Header("Bag calibration tutorial")]
         [SerializeField] VideoClip m_FrameAdjustingChineseClip;
         [SerializeField] VideoClip m_FrameAdjustingEnglishClip;
+        [Header("World squeeze progress videos")]
+        [SerializeField] VideoClip m_CandySqueezeClip;
+        [SerializeField] VideoClip m_NatureSqueezeClip;
         [Header("Moodi emergence")]
         [SerializeField] GameObject m_MoodiEmergencePrefab;
         [SerializeField] AnimationClip m_MoodiEmergenceClip;
@@ -42,6 +45,8 @@ namespace Moodium.Opening
         public VideoClip BagIntroClip => m_BagIntroClip;
         public VideoClip FrameAdjustingChineseClip => m_FrameAdjustingChineseClip;
         public VideoClip FrameAdjustingEnglishClip => m_FrameAdjustingEnglishClip;
+        public VideoClip CandySqueezeClip => m_CandySqueezeClip;
+        public VideoClip NatureSqueezeClip => m_NatureSqueezeClip;
         public GameObject MoodiEmergencePrefab => m_MoodiEmergencePrefab;
         public AnimationClip MoodiEmergenceClip => m_MoodiEmergenceClip;
         public float MoodiEmergenceScale => m_MoodiEmergenceScale;

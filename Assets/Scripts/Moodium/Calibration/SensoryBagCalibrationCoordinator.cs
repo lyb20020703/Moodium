@@ -261,7 +261,6 @@ namespace Moodium.Calibration
             root.transform.SetParent(transform, false);
             var presentation = root.AddComponent<CalibratedSensoryBagPresentation>();
             presentation.Configure(anchor, data, prefab);
-            CreateMoodiEmergence(presentation);
             var capsule = presentation.GetComponentInChildren<Moodium.Interaction.ChocolateCapsuleInteraction>();
             if (capsule == null && presentation.VisualRoot.childCount > 0)
             {
@@ -275,24 +274,6 @@ namespace Moodium.Calibration
                 m_PushHandGuides.Add(guide);
             }
             m_Presentations[trackableId] = presentation;
-        }
-
-        static void CreateMoodiEmergence(CalibratedSensoryBagPresentation presentation)
-        {
-            var config = Resources.Load<OpeningVideoSequenceConfig>("MoodiumOpening/OpeningVideoSequenceConfig");
-            if (presentation == null || config == null || config.MoodiEmergencePrefab == null ||
-                config.MoodiEmergenceClip == null)
-            {
-                Debug.LogWarning("[Moodi Emergence] Prefab or animation clip is not assigned.");
-                return;
-            }
-
-            var controller = presentation.gameObject.AddComponent<Moodium.Reality.MoodiEmergenceController>();
-            controller.Configure(
-                presentation,
-                config.MoodiEmergencePrefab,
-                config.MoodiEmergenceClip,
-                config.MoodiEmergenceScale);
         }
 
         bool TryGetWorldKind(string referenceImageName, out SensoryBagWorldKind worldKind)

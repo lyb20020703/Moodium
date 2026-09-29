@@ -195,25 +195,15 @@ namespace Moodium.Opening
             renderTexture.Create();
             var display = GameObject.CreatePrimitive(PrimitiveType.Quad);
             display.name = "Moodium Opening Video Display";
-            var viewForward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
-            if (viewForward.sqrMagnitude < 0.01f)
-                viewForward = camera.transform.forward.normalized;
             // The sequence asset is the single source of truth for placement.
             // This object is created at runtime, so editing its Play Mode
             // transform would otherwise be discarded on the next launch.
-            var videoDistance = sequence != null ? sequence.DistanceFromUser : m_PreOpeningVideoDistanceFromUser;
-            var videoHeight = sequence != null ? sequence.HeightOffset : m_PreOpeningVideoHeightOffset;
-            var videoPosition = camera.transform.position + viewForward * videoDistance +
-                                Vector3.up * videoHeight;
-            // Explicit world Y is intentional: the display is a runtime object
-            // and the requested placement must not drift with head-pose height.
-            if (sequence != null)
-                videoPosition.y = sequence.WorldPositionY;
-            display.transform.position = videoPosition;
-            // A Unity Quad faces its local -Z axis. Align local +Z with the view
-            // direction so its rendered face points back toward the viewer.
-            display.transform.rotation = Quaternion.LookRotation(camera.transform.forward, camera.transform.up);
-            display.transform.localScale = new Vector3(1.28f, 0.72f, 1f);
+            OpeningVideoDisplayPlacement.Apply(
+                display.transform,
+                camera,
+                sequence,
+                m_PreOpeningVideoDistanceFromUser,
+                m_PreOpeningVideoHeightOffset);
             Destroy(display.GetComponent<Collider>());
             // VideoPlayer updates happen outside Camera.Render. PolySpatial cannot
             // detect those RenderTexture changes automatically, so Vision Pro would

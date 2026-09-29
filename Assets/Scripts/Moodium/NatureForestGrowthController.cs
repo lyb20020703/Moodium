@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR.ARFoundation;
 
 namespace Moodium.NatureWorld
 {
@@ -11,15 +12,15 @@ namespace Moodium.NatureWorld
     public sealed class NatureForestGrowthController : MonoBehaviour
     {
         static readonly float[] SpawnThresholds = { 0.35f, 0.55f, 0.75f, 0.9f, 1f };
-        // Local X is viewer-right and local Y is viewer-forward. Keep the central forward
-        // lane open for the sensory bag, with the front trees farther away than the side trees.
+        // Local X is viewer-right and local Y is viewer-forward. Keep only one tree in
+        // the forward view; distribute the remainder along the sides and behind the viewer.
         static readonly Vector2[] ViewerRelativeSpawnOffsets =
         {
-            new(-2.1f, 3.9f), // distant front-left
-            new(2.1f, 3.9f),  // distant front-right
-            new(-3.5f, 0.45f), // left side
-            new(3.5f, 0.45f),  // right side
-            new(0f, -3.0f)     // behind the viewer
+            new(5.6f, -4.4f),  // one distant back-right tree
+            new(-3.8f, -0.6f), // side-back left
+            new(3.8f, -0.6f),  // side-back right
+            new(-2.5f, -3.7f), // rear-left
+            new(2.5f, -3.7f)   // rear-right
         };
         // Trees were already reduced to half their prefab scale. Nature World now
         // needs one third of that displayed size, i.e. one sixth of prefab scale.
@@ -28,10 +29,14 @@ namespace Moodium.NatureWorld
         [Header("Ground placement")]
         [Tooltip("visionOS world-space floor height used only while the spatial mesh is unavailable.")]
         [SerializeField] float m_FallbackGroundY = 0f;
+        [SerializeField, Min(0f)] float m_MinTreeSeparation = 3f;
+        [SerializeField, Range(0f, 1f)] float m_MinGroundNormalY = .55f;
+        [SerializeField, Min(0f)] float m_SurfaceOffset = .01f;
 
         readonly List<GameObject> m_TreePrefabs = new();
         readonly List<GameObject> m_SpawnedTrees = new();
         Transform m_Viewer;
+        ARMeshManager m_SpatialMeshManager;
         Transform m_ForestRoot;
         int m_NextThresholdIndex;
         bool m_Running;
@@ -39,9 +44,13 @@ namespace Moodium.NatureWorld
         public int SpawnedTreeCount => m_SpawnedTrees.Count;
         public Transform ForestRoot => m_ForestRoot;
 
-        public void Configure(Transform viewer, GameObject[] treePrefabs)
+        public static Vector2 GetViewerRelativeSpawnOffset(int index) =>
+            ViewerRelativeSpawnOffsets[index % ViewerRelativeSpawnOffsets.Length];
+
+        public void Configure(Transform viewer, GameObject[] treePrefabs, ARMeshManager spatialMeshManager = null)
         {
             m_Viewer = viewer;
+            m_SpatialMeshManager = spatialMeshManager;
             m_TreePrefabs.Clear();
             if (treePrefabs == null)
                 return;
@@ -105,33 +114,106 @@ namespace Moodium.NatureWorld
                 forward = Vector3.forward;
             forward.Normalize();
             var right = Vector3.Cross(Vector3.up, forward).normalized;
-            var spawnOffset = ViewerRelativeSpawnOffsets[index % ViewerRelativeSpawnOffsets.Length];
-            var desiredPosition = m_Viewer.position + right * spawnOffset.x + forward * spawnOffset.y;
-            var position = FindGroundPosition(desiredPosition);
+            var desiredPosition = FindSeparatedDesiredPosition(index, right, forward);
+            var ground = FindGroundPosition(desiredPosition);
             // Lock the tree's up vector to gravity. Only yaw is allowed to vary;
             // no image-anchor, camera-roll, or mesh-normal rotation may tilt a tree.
             var baseYaw = Mathf.Atan2(-forward.x, -forward.z) * Mathf.Rad2Deg;
             var rotation = Quaternion.Euler(0f, baseYaw + (index * 47f) % 360f, 0f);
             var prefab = m_TreePrefabs[index % m_TreePrefabs.Count];
-            var instance = Instantiate(prefab, position, rotation, m_ForestRoot);
+            var instance = Instantiate(prefab, ground.Position, rotation, m_ForestRoot);
             instance.name = $"{prefab.name} (Nature Forest {index + 1})";
             instance.transform.rotation = rotation;
             instance.transform.localScale *= TreeScaleMultiplier;
+            if (ground.HasSpatialSurface)
+                AlignVisualBaseToSurface(instance, ground.Position.y);
             m_SpawnedTrees.Add(instance);
             instance.AddComponent<NatureTreeGrowIn>();
         }
 
-        Vector3 FindGroundPosition(Vector3 desiredPosition)
+        Vector3 FindSeparatedDesiredPosition(int index, Vector3 right, Vector3 forward)
+        {
+            var spawnOffset = GetViewerRelativeSpawnOffset(index);
+            var desired = m_Viewer.position + right * spawnOffset.x + forward * spawnOffset.y;
+            if (HasMinimumHorizontalSeparation(desired, m_SpawnedTrees, m_MinTreeSeparation))
+                return desired;
+
+            // Preserve the intended sector while moving a conflicting tree farther from
+            // the viewer. This avoids a second trunk occupying the same visual space.
+            var direction = new Vector3(spawnOffset.x, 0f, spawnOffset.y).normalized;
+            for (var attempt = 1; attempt <= 4; attempt++)
+            {
+                var candidate = desired + (right * direction.x + forward * direction.z) * (attempt * m_MinTreeSeparation);
+                if (HasMinimumHorizontalSeparation(candidate, m_SpawnedTrees, m_MinTreeSeparation))
+                    return candidate;
+            }
+            return desired;
+        }
+
+        public static bool HasMinimumHorizontalSeparation(Vector3 candidate, Vector3 existing, float minimumDistance)
+        {
+            candidate.y = 0f;
+            existing.y = 0f;
+            return Vector3.Distance(candidate, existing) >= minimumDistance;
+        }
+
+        static bool HasMinimumHorizontalSeparation(Vector3 candidate, IEnumerable<GameObject> spawnedTrees, float minimumDistance)
+        {
+            foreach (var tree in spawnedTrees)
+                if (tree != null && !HasMinimumHorizontalSeparation(candidate, tree.transform.position, minimumDistance))
+                    return false;
+            return true;
+        }
+
+        readonly struct GroundPlacement
+        {
+            public GroundPlacement(Vector3 position, bool hasSpatialSurface)
+            {
+                Position = position;
+                HasSpatialSurface = hasSpatialSurface;
+            }
+
+            public Vector3 Position { get; }
+            public bool HasSpatialSurface { get; }
+        }
+
+        GroundPlacement FindGroundPosition(Vector3 desiredPosition)
         {
             var origin = desiredPosition + Vector3.up * 4f;
-            if (Physics.Raycast(origin, Vector3.down, out var hit, 8f, Physics.DefaultRaycastLayers,
-                    QueryTriggerInteraction.Ignore))
-                return hit.point;
+            var hits = Physics.RaycastAll(origin, Vector3.down, 8f, Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+            foreach (var hit in hits)
+            {
+                if (!IsSpatialGround(hit.collider, hit.normal))
+                    continue;
+                return new GroundPlacement(hit.point + hit.normal * m_SurfaceOffset, true);
+            }
 
             // Spatial meshes can be unavailable for a moment at session start. The previous
             // eye-relative fallback left trees visibly floating for seated users. Keep their
             // roots on the world floor until a real mesh hit is available instead.
-            return new Vector3(desiredPosition.x, m_FallbackGroundY, desiredPosition.z);
+            return new GroundPlacement(new Vector3(desiredPosition.x, m_FallbackGroundY, desiredPosition.z), false);
+        }
+
+        bool IsSpatialGround(Collider collider, Vector3 normal)
+        {
+            return collider is MeshCollider && normal.y >= m_MinGroundNormalY &&
+                   m_SpatialMeshManager != null &&
+                   collider.GetComponentInParent<ARMeshManager>() == m_SpatialMeshManager;
+        }
+
+        static void AlignVisualBaseToSurface(GameObject tree, float surfaceY)
+        {
+            var renderers = tree.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+                return;
+            var lowestY = float.PositiveInfinity;
+            foreach (var renderer in renderers)
+                if (renderer.enabled)
+                    lowestY = Mathf.Min(lowestY, renderer.bounds.min.y);
+            if (!float.IsPositiveInfinity(lowestY))
+                tree.transform.position += Vector3.up * (surfaceY - lowestY);
         }
 
         void OnDisable() => StopAndClear();

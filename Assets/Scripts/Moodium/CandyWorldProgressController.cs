@@ -93,7 +93,6 @@ namespace Moodium.CandyWorld
             if (!m_Running)
                 return;
             var progress = Mathf.Clamp01(normalizedProgress);
-            MoodiEmergenceController.SetAllProgress(progress);
             if (m_SpatialTransformationEnabled)
                 m_SpatialTransformation?.SetProgress(energy, progress);
             m_Frost?.UpdateFrostIntensity(energy, progress);
@@ -107,8 +106,7 @@ namespace Moodium.CandyWorld
             if (!m_CompletionTriggered && progress >= 0.999f)
             {
                 m_CompletionTriggered = true;
-                m_RainReward?.PlayReward();
-                Debug.Log("[Candy Progress] Candy World Awakening reached 100%.");
+                Debug.Log("[Candy Progress] Candy World Awakening reached 100%; reward rain is now waiting for Release.");
             }
         }
 

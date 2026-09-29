@@ -6,7 +6,7 @@ namespace Moodium.Reality
         public const float CandyActivationProgress = .2f;
 
         public static bool ShouldShow(bool natureWorld, float progress, bool hasBagInteraction) =>
-            natureWorld ? hasBagInteraction : progress >= CandyActivationProgress;
+            natureWorld ? progress >= 1f : progress >= CandyActivationProgress;
 
         public static string Message(bool natureWorld, bool english)
         {

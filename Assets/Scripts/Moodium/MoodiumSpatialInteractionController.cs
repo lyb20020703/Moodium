@@ -7,7 +7,6 @@ using UnityEngine.InputSystem.LowLevel;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using Moodium.Flow.ObjectPicker;
 using Moodium.Calibration;
-using Moodium.NatureWorld;
 
 namespace Moodium.Flow
 {
@@ -53,12 +52,6 @@ namespace Moodium.Flow
                     var target = pointer.targetObject;
                     if (target != null)
                     {
-                        var ivy = FindFirstObjectByType<NatureIvySpatialGrowthController>();
-                        var targetCollider = target.GetComponentInParent<Collider>();
-                        if (ivy != null && ivy.IsSpatialMeshCollider(targetCollider) &&
-                            ivy.TryGrowFromSpatialPointer(targetCollider, pointer.interactionPosition))
-                            continue;
-
                         var pickerItem = target.GetComponentInParent<MoodiumObjectPickerItem>();
                         if (pickerItem != null)
                         {

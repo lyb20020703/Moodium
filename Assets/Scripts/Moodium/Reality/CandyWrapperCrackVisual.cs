@@ -32,9 +32,12 @@ namespace Moodium.Reality
             Texture texture, float surfaceOffset, float animationDuration, float overshoot,
             float lifetime, float fadeDuration)
         {
-            transform.SetParent(surface, true);
-            transform.position = point + normal * surfaceOffset;
-            transform.rotation = Quaternion.LookRotation(normal) * Quaternion.AngleAxis(roll, Vector3.forward);
+            // Store the pose in mesh-local space. AR mesh transforms can receive small
+            // tracking corrections; keeping only the world pose made cracks drift in air.
+            transform.SetParent(surface, false);
+            var localPose = CandyWrapperCrackMath.ToSurfaceLocalPose(surface, point, normal, surfaceOffset, roll);
+            transform.localPosition = localPose.LocalPosition;
+            transform.localRotation = localPose.LocalRotation;
             m_Size = Mathf.Max(.001f, size);
             m_AnimationDuration = Mathf.Max(.01f, animationDuration);
             m_Overshoot = Mathf.Max(1f, overshoot);

@@ -16,6 +16,8 @@ MonoBehaviour:
   m_BagIntroClip: {fileID: 32900000, guid: a7489a730b19e4809a3314c0814cf5b4, type: 3}
   m_FrameAdjustingChineseClip: {fileID: 32900000, guid: 825d651fd6f7c47cb81564befdb286e4, type: 3}
   m_FrameAdjustingEnglishClip: {fileID: 32900000, guid: 8f618511c2a964b39a13036a28eb4dbd, type: 3}
+  m_CandySqueezeClip: {fileID: 32900000, guid: 585440493c2424c5cbed0c621fe9f2ed, type: 3}
+  m_NatureSqueezeClip: {fileID: 32900000, guid: fb76f47b9d35349d282b968e31f1bb89, type: 3}
   m_MoodiEmergencePrefab: {fileID: 1983304832228171783, guid: 6153ad677d6bc4eb88bbecb9b426c07f, type: 3}
   m_MoodiEmergenceClip: {fileID: 5406842849461195049, guid: 92e18aa29a30f463299a731a79d8ebeb, type: 3}
   m_MoodiEmergenceScale: 0.01

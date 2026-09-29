@@ -13,7 +13,22 @@ namespace Moodium.Interaction
         [SerializeField, Min(0f)] float m_ArmingDelay = 0.15f;
 
         bool m_Disappearing;
+        bool m_AlwaysSpawnCircularBurst;
         float m_ReadyAt;
+        ChocolateCapsuleInteraction m_ShellCrackCapsule;
+
+        /// <summary>
+        /// Enables the compact circular pop in addition to the object's normal touch feedback.
+        /// Used only by the full-energy reward rain.
+        /// </summary>
+        public void ConfigureRewardBurstFeedback() => m_AlwaysSpawnCircularBurst = true;
+
+        /// <summary>Changes this release reward's hand-contact response to its authored ShellCrack animation.</summary>
+        public void ConfigureShellCrackFeedback(ChocolateCapsuleInteraction capsule) =>
+            m_ShellCrackCapsule = capsule;
+
+        /// <summary>Allows a reward lifecycle to dismiss an untouched grounded object.</summary>
+        public void DisappearAutomatically() => BeginDisappear();
 
         void OnEnable()
         {
@@ -58,6 +73,7 @@ namespace Moodium.Interaction
             if (touchAudio != null)
                 touchAudio.Play();
 
+            var spawnedCircularBurst = false;
             var particleFeedback = GetComponent<TouchParticleFeedback>();
             if (particleFeedback != null && particleFeedback.HasParticle)
                 particleFeedback.Play();
@@ -71,7 +87,14 @@ namespace Moodium.Interaction
                 {
                     effect = ParticleBurstEffect.Spawn(GetVisualCenter());
                     MoodiumRuntimeObjectRegistry.RegisterCreative(effect);
+                    spawnedCircularBurst = true;
                 }
+            }
+
+            if (m_AlwaysSpawnCircularBurst && !spawnedCircularBurst)
+            {
+                var circularBurst = ParticleBurstEffect.Spawn(GetVisualCenter());
+                MoodiumRuntimeObjectRegistry.RegisterCreative(circularBurst);
             }
 
             foreach (var collider in GetComponentsInChildren<Collider>(true))
@@ -84,6 +107,10 @@ namespace Moodium.Interaction
                 body.useGravity = false;
                 body.isKinematic = true;
             }
+
+            if (m_ShellCrackCapsule != null &&
+                m_ShellCrackCapsule.PlayShellCrackForReward(() => StartCoroutine(Disappear())))
+                return;
 
             StartCoroutine(Disappear());
             Debug.Log($"[Moodium Physics] Hand touched falling object: {name}");

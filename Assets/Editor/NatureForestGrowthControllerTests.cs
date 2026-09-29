@@ -1,9 +1,12 @@
+using System.IO;
 using Moodium.NatureWorld;
 using NUnit.Framework;
 using UnityEngine;
 
 public sealed class NatureForestGrowthControllerTests
 {
+    const string MeshingScenePath = "Assets/Samples/PolySpatial/Scenes/Meshing 1.unity";
+
     GameObject m_Root;
     GameObject m_TreePrefab;
 
@@ -82,7 +85,7 @@ public sealed class NatureForestGrowthControllerTests
     }
 
     [Test]
-    public void FullGrowthPlacesTreesAroundViewerWithClearDistantFrontSpace()
+    public void FullGrowthDistributesMoreTreesBehindThanInFront()
     {
         var controller = m_Root.AddComponent<NatureForestGrowthController>();
         var viewer = new GameObject("Nature Viewer").transform;
@@ -97,13 +100,31 @@ public sealed class NatureForestGrowthControllerTests
         var forestRoot = controller.ForestRoot;
         Assert.That(forestRoot.childCount, Is.EqualTo(5));
 
-        // The first two trees leave the central forward view open and stay well beyond
-        // the interactive bag area. The final tree completes the ring behind the viewer.
-        Assert.That(forestRoot.GetChild(0).position.z, Is.GreaterThan(3.5f));
-        Assert.That(forestRoot.GetChild(1).position.z, Is.GreaterThan(3.5f));
-        Assert.That(Mathf.Abs(forestRoot.GetChild(0).position.x), Is.GreaterThan(1.5f));
-        Assert.That(Mathf.Abs(forestRoot.GetChild(1).position.x), Is.GreaterThan(1.5f));
-        Assert.That(forestRoot.GetChild(4).position.z, Is.LessThan(-2f));
+        var frontCount = 0;
+        var backCount = 0;
+        for (var i = 0; i < forestRoot.childCount; i++)
+        {
+            if (forestRoot.GetChild(i).position.z > 0f) frontCount++;
+            if (forestRoot.GetChild(i).position.z < 0f) backCount++;
+        }
+        Assert.That(frontCount, Is.EqualTo(1));
+        Assert.That(backCount, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void FirstForestTreeIsPlacedToTheViewersBackRight()
+    {
+        Assert.That(NatureForestGrowthController.GetViewerRelativeSpawnOffset(0),
+            Is.EqualTo(new Vector2(5.6f, -4.4f)));
+    }
+
+    [Test]
+    public void NatureForest_UsesAnimatedBirchAndOakPrefabs()
+    {
+        var scene = File.ReadAllText(MeshingScenePath);
+
+        Assert.That(scene, Does.Contain("guid: 42639e27cb175d8488974c697fdf13d4"));
+        Assert.That(scene, Does.Contain("guid: 867151643308bbc458d63f0412bd3a54"));
     }
 
     [Test]
@@ -137,5 +158,14 @@ public sealed class NatureForestGrowthControllerTests
         controller.SetProgress(0.35f);
 
         Assert.That(Vector3.Dot(controller.ForestRoot.GetChild(0).up, Vector3.up), Is.GreaterThan(.999f));
+    }
+
+    [Test]
+    public void MinimumHorizontalSeparationRejectsOverlappingTreePositions()
+    {
+        Assert.That(NatureForestGrowthController.HasMinimumHorizontalSeparation(
+            new Vector3(0f, 0f, 0f), new Vector3(1.9f, 10f, 0f), 2f), Is.False);
+        Assert.That(NatureForestGrowthController.HasMinimumHorizontalSeparation(
+            new Vector3(0f, 0f, 0f), new Vector3(2f, 10f, 0f), 2f), Is.True);
     }
 }

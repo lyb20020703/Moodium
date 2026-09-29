@@ -56,10 +56,10 @@ namespace Moodium.Reality
         [Header("Crack visuals")]
         [SerializeField] Texture2D[] m_SmallCrackTextures;
         [SerializeField] Texture2D[] m_LargeCrackTextures;
-        [SerializeField, Min(.01f)] float m_SmallCrackMinSize = .06f;
-        [SerializeField, Min(.01f)] float m_SmallCrackMaxSize = .12f;
-        [SerializeField, Min(.01f)] float m_LargeCrackMinSize = .15f;
-        [SerializeField, Min(.01f)] float m_LargeCrackMaxSize = .30f;
+        [SerializeField, Min(.01f)] float m_SmallCrackMinSize = .03f;
+        [SerializeField, Min(.01f)] float m_SmallCrackMaxSize = .06f;
+        [SerializeField, Min(.01f)] float m_LargeCrackMinSize = .07f;
+        [SerializeField, Min(.01f)] float m_LargeCrackMaxSize = .14f;
         [SerializeField, Min(0f)] float m_SurfaceOffset = .002f;
         [SerializeField, Range(.04f, .3f)] float m_SpawnAnimationDuration = .14f;
         [SerializeField, Range(1f, 1.4f)] float m_OvershootScale = 1.16f;
@@ -143,6 +143,38 @@ namespace Moodium.Reality
             foreach (var visual in m_Pool)
                 if (visual != null) visual.Despawn();
             m_ActiveCrackCount = 0;
+        }
+
+        /// <summary>
+        /// Late-world gaze/pinch path. It deliberately bypasses velocity/contact-zone
+        /// heuristics, but still requires an active candy wrapper on AR mesh geometry.
+        /// </summary>
+        public bool TrySpawnFromGazeHit(RaycastHit hit)
+        {
+            if (!m_InteractionEnabled || m_Wrapper == null || !m_Wrapper.IsInteractionReady ||
+                hit.collider == null || !IsSpatialMeshCollider(hit.collider) ||
+                !m_Wrapper.IsOverlayActive(hit.collider))
+                return false;
+
+            var texture = PickTexture(m_LargeCrackTextures);
+            if (texture == null)
+            {
+                m_LastDecision = "Missing Crack Texture";
+                return false;
+            }
+            var visual = GetVisual();
+            var size = Mathf.Lerp(m_LargeCrackMinSize, m_LargeCrackMaxSize, .65f);
+            visual.Spawn(hit.collider.transform, hit.point, hit.normal, size, Random.Range(0f, 360f), texture,
+                m_SurfaceOffset, m_SpawnAnimationDuration, m_OvershootScale, m_Lifetime, m_FadeDuration);
+            m_LastContactPoint = hit.point;
+            m_LastSurfaceNormal = hit.normal;
+            m_LastImpactStrength = .65f;
+            m_LastClusterJointCount = 0;
+            m_LastDecision = "Gaze Large Crack";
+            UpdateVisualCount();
+            if (m_DebugMode)
+                Debug.Log($"[Candy Crack] Gaze Large Crack at {hit.point}.");
+            return true;
         }
 
         void Update()
@@ -306,7 +338,7 @@ namespace Moodium.Reality
                 for (var i = 0; i < hitCount; i++)
                 {
                     var hit = m_RaycastResults[i];
-                    if (hit.collider == null || !m_SpatialColliders.Contains(hit.collider)) continue;
+                    if (hit.collider == null || !IsSpatialMeshCollider(hit.collider)) continue;
                     var hitDistance = Vector3.Distance(position, hit.point);
                     if (hitDistance > m_ReleaseDistance || hitDistance > distance) continue;
                     found = hit.collider;
@@ -316,7 +348,7 @@ namespace Moodium.Reality
                 }
                 if (found != null)
                 {
-                    if (Vector3.Dot(normal, velocity) > 0f) normal = -normal;
+                    if (Vector3.Dot(normal, position - point) < 0f) normal = -normal;
                     return true;
                 }
             }
@@ -325,17 +357,36 @@ namespace Moodium.Reality
             for (var i = 0; i < count; i++)
             {
                 var candidate = m_OverlapResults[i];
-                if (candidate == null || !m_SpatialColliders.Contains(candidate)) continue;
+                if (candidate == null || !IsSpatialMeshCollider(candidate)) continue;
                 var closest = candidate.ClosestPoint(position);
                 var candidateDistance = Vector3.Distance(position, closest);
                 if (candidateDistance > distance) continue;
                 found = candidate; point = closest; distance = candidateDistance;
             }
-            if (found == null) return false;
-            var toJoint = position - point;
-            normal = toJoint.sqrMagnitude > .000001f ? toJoint.normalized : -velocity.normalized;
-            if (normal.sqrMagnitude < .5f)
-                normal = Camera.main != null ? -Camera.main.transform.forward : Vector3.up;
+            if (found == null)
+                return false;
+
+            // ClosestPoint has no triangle normal. The previous code substituted the
+            // vector from mesh to hand here, which tilted cracks when a hand approached
+            // a wall diagonally. Probe the selected collider itself so every spawned
+            // crack uses a real RaycastHit.normal from the spatial mesh triangle.
+            var handSide = position - point;
+            if (handSide.sqrMagnitude < .000001f)
+            {
+                m_LastDecision = "Surface Normal Unavailable";
+                return false;
+            }
+            var probe = CandyWrapperCrackMath.BuildSurfaceNormalProbe(point, position, .004f);
+            if (!found.Raycast(probe, out var authoritativeHit, m_ReleaseDistance * 3f))
+            {
+                m_LastDecision = "Surface Normal Unavailable";
+                return false;
+            }
+            point = authoritativeHit.point;
+            normal = authoritativeHit.normal;
+            if (Vector3.Dot(normal, position - point) < 0f)
+                normal = -normal;
+            distance = Vector3.Distance(position, point);
             return true;
         }
 
@@ -459,10 +510,24 @@ namespace Moodium.Reality
         {
             m_LastColliderRefresh = Time.unscaledTime;
             m_SpatialColliders.Clear();
-            if (m_MeshManager == null) return;
-            foreach (var filter in m_MeshManager.GetComponentsInChildren<MeshFilter>(true))
-                foreach (var collider in filter.GetComponentsInChildren<Collider>(true))
+            if (m_MeshManager != null)
+                foreach (var filter in m_MeshManager.GetComponentsInChildren<MeshFilter>(true))
+                    foreach (var collider in filter.GetComponentsInChildren<Collider>(true))
+                        m_SpatialColliders.Add(collider);
+            if (m_SpatialColliders.Count == 0)
+                foreach (var collider in FindObjectsByType<MeshCollider>(
+                             FindObjectsInactive.Include, FindObjectsSortMode.None))
                     m_SpatialColliders.Add(collider);
+        }
+
+        bool IsSpatialMeshCollider(Collider collider)
+        {
+            if (collider == null)
+                return false;
+            if (m_SpatialColliders.Contains(collider))
+                return true;
+            return m_MeshManager != null &&
+                   collider.GetComponentInParent<ARMeshManager>() == m_MeshManager;
         }
 
         void UpdateVisualCount()

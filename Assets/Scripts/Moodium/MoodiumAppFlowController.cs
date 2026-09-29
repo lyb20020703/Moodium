@@ -46,6 +46,14 @@ namespace Moodium.Flow
         [Header("Nature World forest growth")]
         [Tooltip("Static tree prefabs with LODGroup components. Spawned progressively only in Nature World.")]
         [SerializeField] GameObject[] m_NatureForestTreePrefabs;
+        [Tooltip("Nature World burst prefabs emitted from the calibrated soft model.")]
+        [SerializeField] GameObject[] m_NatureBurstPrefabs;
+        [Header("Nature Burst Debug")]
+        [Tooltip("One-shot diagnostic: when NatureSoft becomes available, force a pure Candy-pipeline Nature burst without progress or pinch.")]
+        [SerializeField] bool m_ForceNatureBurstOnStart;
+        [SerializeField] NatureBurstDebugPrefabSelection m_ForceNatureBurstPrefab = NatureBurstDebugPrefabSelection.Random;
+        [Tooltip("Temporary diagnostic: Nature World squeezes emit Candy prefabs through the normal, proven Candy burst path.")]
+        [SerializeField] bool m_UseCandyBurstPrefabsInNatureForDebug;
         [SerializeField] GameObject m_NatureIvyGeneratorPrefab;
         [SerializeField] Material m_NatureIvyGrowMaterial;
 
@@ -68,6 +76,8 @@ namespace Moodium.Flow
         [SerializeField] Sprite m_WristHudRoundedSprite;
         [SerializeField] Sprite m_WristHudCircleSprite;
         [SerializeField] GameObject m_CandyFrostPrefab;
+        [Tooltip("Nature-only falling leaves shown after the sensory-bag journey reaches 100%.")]
+        [SerializeField] GameObject m_NatureLeafFallPrefab;
         [SerializeField] Sprite m_CreativeSpaceModeArtwork;
         [SerializeField] Sprite m_RealityEnhancementModeArtwork;
 
@@ -771,9 +781,14 @@ namespace Moodium.Flow
                 m_CandyFrostPrefab,
                 m_CandyWrapperCrackTexture,
                 m_CandyWrapperCrackMaterial,
-                m_CandyWrapperCrackPrefab);
+                m_CandyWrapperCrackPrefab,
+                m_NatureLeafFallPrefab);
             m_CandyWorldManager.ConfigureEnvironmentPromptFonts(m_ChineseFontAsset, m_FontAsset);
             m_CandyWorldManager.ConfigureNatureForestTrees(m_NatureForestTreePrefabs);
+            m_CandyWorldManager.ConfigureCandyBurstPrefabs(FindRealityWorld("candy")?.Prefabs);
+            m_CandyWorldManager.ConfigureNatureBurstPrefabs(m_NatureBurstPrefabs);
+            m_CandyWorldManager.ConfigureNatureBurstPrefabSource(m_UseCandyBurstPrefabsInNatureForDebug);
+            m_CandyWorldManager.ConfigureNatureBurstDebug(m_ForceNatureBurstOnStart, m_ForceNatureBurstPrefab);
             m_CandyWorldManager.ConfigureNatureIvy(m_NatureIvyGeneratorPrefab, m_NatureIvyGrowMaterial);
         }
 

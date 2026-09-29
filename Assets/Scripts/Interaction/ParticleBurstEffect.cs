@@ -8,6 +8,7 @@ namespace Moodium.Interaction
     {
         ParticleSystem m_Particles;
         Material m_RuntimeMaterial;
+        Texture2D m_RuntimeCircleTexture;
 
         public static GameObject Spawn(Vector3 position)
         {
@@ -76,11 +77,25 @@ namespace Moodium.Interaction
             if (shader != null)
             {
                 m_RuntimeMaterial = new Material(shader) { name = "Moodium Burst Material (Runtime)" };
+                m_RuntimeCircleTexture = CreateRuntimeCircleTexture(64);
                 var color = Color.white;
+                if (m_RuntimeMaterial.HasProperty("_BaseMap"))
+                    m_RuntimeMaterial.SetTexture("_BaseMap", m_RuntimeCircleTexture);
+                if (m_RuntimeMaterial.HasProperty("_MainTex"))
+                    m_RuntimeMaterial.SetTexture("_MainTex", m_RuntimeCircleTexture);
                 if (m_RuntimeMaterial.HasProperty("_BaseColor"))
                     m_RuntimeMaterial.SetColor("_BaseColor", color);
                 if (m_RuntimeMaterial.HasProperty("_Color"))
                     m_RuntimeMaterial.SetColor("_Color", color);
+                m_RuntimeMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m_RuntimeMaterial.SetOverrideTag("RenderType", "Transparent");
+                m_RuntimeMaterial.renderQueue = (int)RenderQueue.Transparent;
+                if (m_RuntimeMaterial.HasProperty("_Surface"))
+                    m_RuntimeMaterial.SetFloat("_Surface", 1f);
+                if (m_RuntimeMaterial.HasProperty("_Blend"))
+                    m_RuntimeMaterial.SetFloat("_Blend", 1f);
+                if (m_RuntimeMaterial.HasProperty("_ZWrite"))
+                    m_RuntimeMaterial.SetFloat("_ZWrite", 0f);
                 renderer.sharedMaterial = m_RuntimeMaterial;
             }
 
@@ -88,10 +103,38 @@ namespace Moodium.Interaction
             Destroy(gameObject, 1.25f);
         }
 
+        /// <summary>
+        /// Creates the same soft circular alpha mask as the authored Moodium particle texture,
+        /// without relying on an editor-only asset lookup at runtime.
+        /// </summary>
+        public static Texture2D CreateRuntimeCircleTexture(int resolution)
+        {
+            resolution = Mathf.Max(4, resolution);
+            var texture = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false, true)
+            {
+                name = "Moodium Runtime White Circle",
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+            var radius = (resolution - 1) * .5f;
+            var center = radius;
+            for (var y = 0; y < resolution; y++)
+            for (var x = 0; x < resolution; x++)
+            {
+                var distance = Vector2.Distance(new Vector2(x, y), new Vector2(center, center)) / radius;
+                var alpha = Mathf.Clamp01((1f - distance) / .12f);
+                texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+            texture.Apply(false, true);
+            return texture;
+        }
+
         void OnDestroy()
         {
             if (m_RuntimeMaterial != null)
                 Destroy(m_RuntimeMaterial);
+            if (m_RuntimeCircleTexture != null)
+                Destroy(m_RuntimeCircleTexture);
         }
     }
 }

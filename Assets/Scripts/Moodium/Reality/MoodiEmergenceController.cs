@@ -23,6 +23,13 @@ namespace Moodium.Reality
         AnimationClipPlayable m_Playable;
         bool m_Configured;
         Renderer[] m_Renderers;
+        Vector3 m_PreviewBaseWorldPosition;
+        float m_SoftWorldThickness;
+
+        [Header("Progress-driven vertical emergence")]
+        [SerializeField, Range(0f, 1f)] float m_LiftStartProgress = .08f;
+        [SerializeField, Range(0f, 1f)] float m_LiftEndProgress = .92f;
+        [SerializeField, Range(0f, .5f)] float m_SoftThicknessToLift = .45f;
 
         public float Progress { get; private set; }
 
@@ -45,6 +52,7 @@ namespace Moodium.Reality
             m_Clip = clip;
             m_FollowRoot = new GameObject("Moodi Emergence Root").transform;
             m_FollowRoot.SetParent(presentation.transform.parent, false);
+            m_SoftWorldThickness = CalculateVisualWorldThickness(presentation.VisualRoot);
             SyncToBagCenter();
             CreateAndConfigureMoodi(moodiPrefab, scale);
         }
@@ -54,13 +62,20 @@ namespace Moodium.Reality
         /// XR interaction stack. This is intentionally limited to the editor
         /// orientation preview.
         /// </summary>
-        public void ConfigurePreview(Transform followRoot, GameObject moodiPrefab, AnimationClip clip, float scale)
+        public void ConfigurePreview(
+            Transform followRoot,
+            Transform bagVisualRoot,
+            GameObject moodiPrefab,
+            AnimationClip clip,
+            float scale)
         {
-            if (followRoot == null || moodiPrefab == null || clip == null)
+            if (followRoot == null || bagVisualRoot == null || moodiPrefab == null || clip == null)
                 return;
 
             m_Clip = clip;
             m_FollowRoot = followRoot;
+            m_PreviewBaseWorldPosition = followRoot.position;
+            m_SoftWorldThickness = CalculateVisualWorldThickness(bagVisualRoot);
             CreateAndConfigureMoodi(moodiPrefab, scale);
         }
 
@@ -71,6 +86,7 @@ namespace Moodium.Reality
             Progress = Mathf.Clamp01(normalizedProgress);
             m_Playable.SetTime(MoodiEmergenceProgress.ToAnimationTime(Progress, m_Clip.length));
             m_Graph.Evaluate(0f);
+            SyncToBagCenter();
             // Keep the GameObject active.  Deactivating it at progress zero can stop
             // Playables from applying their first visible pose when it is re-enabled.
             SetRenderersVisible(MoodiEmergenceProgress.ShouldBeVisible(Progress));
@@ -114,11 +130,59 @@ namespace Moodium.Reality
 
         void SyncToBagCenter()
         {
-            if (m_Presentation == null || m_FollowRoot == null)
+            if (m_FollowRoot == null)
                 return;
+
+            var lift = MoodiEmergenceProgress.CalculateVerticalLift(
+                Progress,
+                m_LiftStartProgress,
+                m_LiftEndProgress,
+                CalculateSurfaceLimitedWorldLift());
+
+            if (m_Presentation == null)
+            {
+                m_FollowRoot.position = m_PreviewBaseWorldPosition + Vector3.up * lift;
+                return;
+            }
+
             m_FollowRoot.SetPositionAndRotation(
-                m_Presentation.CenterWorldPosition,
+                m_Presentation.CenterWorldPosition + Vector3.up * lift,
                 MoodiEmergenceProgress.ResolveVisualOrientation(m_Presentation.VisualRoot.rotation));
+            // The bag face may be calibrated non-uniformly on X/Z. Moodi should
+            // share the bag's overall size without inheriting that anisotropy,
+            // which would squash the mascot's face as the user resizes one edge.
+            m_FollowRoot.localScale = Vector3.one * MoodiEmergenceProgress.CalculateUniformBagScale(
+                m_Presentation.VisualRoot.lossyScale);
+        }
+
+        float CalculateSurfaceLimitedWorldLift()
+        {
+            return MoodiEmergenceProgress.CalculateSurfaceLimitedLift(
+                m_SoftWorldThickness,
+                m_SoftThicknessToLift);
+        }
+
+        static float CalculateVisualWorldThickness(Transform root)
+        {
+            if (root == null)
+                return 0f;
+
+            var renderers = root.GetComponentsInChildren<Renderer>(true);
+            var hasBounds = false;
+            var bounds = new Bounds();
+            foreach (var renderer in renderers)
+            {
+                if (renderer == null)
+                    continue;
+                if (hasBounds)
+                    bounds.Encapsulate(renderer.bounds);
+                else
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+            }
+            return hasBounds ? bounds.size.y : 0f;
         }
 
         void SetRenderersVisible(bool visible)
@@ -142,7 +206,40 @@ namespace Moodium.Reality
 
     public static class MoodiEmergenceProgress
     {
-        public static Quaternion AuthoredLocalRotation => Quaternion.Euler(-90f, 0f, 0f);
+        public static Quaternion AuthoredLocalRotation => Quaternion.Euler(-90f, 0f, 180f);
+
+        /// <summary>
+        /// Maps the calibrated tabletop face scale (X/Z) to a single mascot
+        /// scale. The geometric mean matches the bag's existing depth-fitting
+        /// policy while preserving Moodi's authored proportions.
+        /// </summary>
+        public static float CalculateUniformBagScale(Vector3 visualWorldScale) =>
+            Mathf.Sqrt(Mathf.Max(.0001f, Mathf.Abs(visualWorldScale.x * visualWorldScale.z)));
+
+        /// <summary>
+        /// Moodi begins at the Soft centre, so the surface is half of the Soft's
+        /// vertical thickness away. Clamp the ratio to that surface distance: it
+        /// must emerge from the bag, never rise above it like a floating object.
+        /// </summary>
+        public static float CalculateSurfaceLimitedLift(float worldThickness, float thicknessFraction) =>
+            Mathf.Max(0f, worldThickness) * Mathf.Clamp(thicknessFraction, 0f, .5f);
+
+        /// <summary>
+        /// The authored pose alone does not move Moodi outside the Soft mesh.
+        /// This adds a smooth world-up emergence that is independent of a bag's
+        /// local axes and therefore remains upright on every tracked table plane.
+        /// </summary>
+        public static float CalculateVerticalLift(
+            float normalizedProgress,
+            float liftStartProgress,
+            float liftEndProgress,
+            float maximumLiftMeters)
+        {
+            var start = Mathf.Clamp01(liftStartProgress);
+            var end = Mathf.Max(start + .0001f, Mathf.Clamp01(liftEndProgress));
+            var interpolation = Mathf.InverseLerp(start, end, Mathf.Clamp01(normalizedProgress));
+            return Mathf.SmoothStep(0f, 1f, interpolation) * Mathf.Max(0f, maximumLiftMeters);
+        }
 
         public static float ToAnimationTime(float normalizedProgress, float clipLength) =>
             Mathf.Clamp01(normalizedProgress) * Mathf.Max(0f, clipLength);
