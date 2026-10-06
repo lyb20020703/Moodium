@@ -55,6 +55,8 @@ public sealed class NatureLeafParticleControllerTests
     {
         Assert.That(CandyRainRewardController.ReleaseScaleMultiplier(false), Is.EqualTo(.15f));
         Assert.That(CandyRainRewardController.ReleaseScaleMultiplier(true), Is.EqualTo(.375f));
+        Assert.That(CandyRainRewardController.GetReleaseScaleMultiplier(false, "Chocolate_Capsule"), Is.EqualTo(.75f));
+        Assert.That(CandyRainRewardController.GetReleaseScaleMultiplier(false, "StarPrefab"), Is.EqualTo(.15f));
     }
 
     [Test]

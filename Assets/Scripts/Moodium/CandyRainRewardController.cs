@@ -37,6 +37,16 @@ namespace Moodium.CandyWorld
 
         public static float ReleaseScaleMultiplier(bool natureWorld) => natureWorld ? .375f : .15f;
 
+        public static float GetReleaseScaleMultiplier(bool natureWorld, string prefabName)
+        {
+            // Chocolate Capsule is a Candy Release reward and needs a larger
+            // presentation scale than the regular Candy reward prefabs.
+            if (!natureWorld && IsShellCrackReward(prefabName))
+                return ReleaseScaleMultiplier(natureWorld) * 5f;
+
+            return ReleaseScaleMultiplier(natureWorld);
+        }
+
         /// <summary>Only the authored Chocolate_Capsule reward uses its shell-crack animation on hand contact.</summary>
         public static bool IsShellCrackReward(string prefabName)
         {
@@ -129,7 +139,7 @@ namespace Moodium.CandyWorld
             lifecycle.Configure(touch, m_GroundedRewardLifetime);
 
             var drift = right * Random.Range(-0.08f, 0.08f) + flatForward * Random.Range(-0.05f, 0.05f);
-            var multiplier = ReleaseScaleMultiplier(m_NatureRewardPool);
+            var multiplier = GetReleaseScaleMultiplier(m_NatureRewardPool, prefab.name);
             projectile.Launch(Vector3.down * Random.Range(0.02f, 0.08f) + drift, multiplier);
             m_ActiveRewardCandies.Add(instance);
         }
