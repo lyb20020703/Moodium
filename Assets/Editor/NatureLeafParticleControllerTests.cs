@@ -29,6 +29,13 @@ public sealed class NatureLeafParticleControllerTests
     }
 
     [Test]
+    public void ReleaseToggle_RemainsAvailableAfterItHasBeenStarted()
+    {
+        Assert.That(EnergyReleasePolicy.ShouldShowToggle(.99f), Is.False);
+        Assert.That(EnergyReleasePolicy.ShouldShowToggle(1f), Is.True);
+    }
+
+    [Test]
     public void LeafVariantsSplitTheTotalEmissionBudgetInsteadOfTriplingIt()
     {
         Assert.That(NatureLeafParticleController.GetEmissionRatePerVariant(18f, 3), Is.EqualTo(6f));

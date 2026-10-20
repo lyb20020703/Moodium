@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using Moodium.Audio;
 using Moodium.Flow;
 using Moodium.Interaction;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
@@ -10,335 +12,375 @@ using Unity.XR.CoreUtils;
 
 namespace Moodium.CandyWorld
 {
+    /// <summary>Wrist-tracked energy UI whose progress is a physical tube-shaped ring.</summary>
     public sealed class CandyEnergyWristUI : MonoBehaviour
     {
-        static readonly Color LowColor = FromHex(0xD8B4FE);
-        static readonly Color HighColor = FromHex(0xF0ABFC);
+        const float FullCircleDegrees = 360f;
+        static readonly Color BackgroundRingColor = new(1f, 1f, 1f, .48f);
+        static readonly Color CandyRingColor = new(1f, 91f / 255f, 157f / 255f, 1f);
+        static readonly Color NatureRingColor = new(141f / 255f, 220f / 255f, 135f / 255f, 1f);
 
-        readonly string[] m_Encouragements =
-        {
-            "Nice!", "Sweet moment", "Keep going", "Beautiful", "Almost blooming"
-        };
-
-        [SerializeField] Vector3 m_WristOffset = new(-0.035f, 0.055f, 0.015f);
+        [Header("Wrist Ring Layout")]
+        [SerializeField] Vector3 m_WristPositionOffset = new(0f, .018f, 0f);
+        [SerializeField] Vector3 m_RingRotationOffset = Vector3.zero;
+        [SerializeField, Min(.02f)] float m_RingRadius = .055f;
+        [SerializeField, Min(.002f)] float m_RingThickness = .010f;
+        [SerializeField, Range(.05f, 1f)] float m_RingOpacity = .9f;
+        [SerializeField, Range(20, 96)] int m_RingSegments = 56;
+        [SerializeField, Range(4, 16)] int m_TubeSides = 8;
         [SerializeField, Min(1f)] float m_FollowResponsiveness = 14f;
+
+        [Header("Wrist Overlay Layout")]
+        [SerializeField, Min(0f)] float m_OverlayClearance = .025f;
+        [SerializeField] float m_TitleVerticalOffset = .012f;
+        [SerializeField] float m_PercentageVerticalOffset = 0f;
+        [SerializeField] float m_ReleaseVerticalOffset = -.017f;
 
         Camera m_Camera;
         XRHandSubsystem m_HandSubsystem;
         XROrigin m_XROrigin;
         CanvasGroup m_CanvasGroup;
         RectTransform m_CanvasRect;
-        RectTransform m_FillRect;
-        Image m_Background;
-        Image m_Glow;
-        Image m_Fill;
         TMP_Text m_Percentage;
         TMP_Text m_Title;
-        TMP_Text m_Feedback;
-        Image[] m_Sparkles;
+        TMP_Text m_ReleaseLabel;
         GameObject m_ReleaseButtonRoot;
+        GameObject m_ReleaseKnobRoot;
         Sprite m_RoundedSprite;
         Sprite m_CircleSprite;
-
+        Transform m_RingRoot;
+        Mesh m_BackgroundRingMesh;
+        Mesh m_ProgressRingMesh;
+        Material m_BackgroundMaterial;
+        Material m_ProgressMaterial;
         float m_TargetProgress;
         float m_DisplayedProgress;
         float m_TargetEnergy;
         float m_DisplayedEnergy;
-        float m_LastTargetEnergy;
-        float m_FeedbackTime = -1f;
+        float m_LastBuiltArcDegrees = -1f;
+        float m_VisualAlpha;
         bool m_Completed;
         bool m_ReleaseAvailable;
+        bool m_ReleaseEnabled;
         bool m_Built;
+        bool m_NatureWorld;
         string m_WorldEnergyTitle = "Candy Energy";
 
         public float DisplayedProgress => m_DisplayedProgress;
         public bool HandTracked { get; private set; }
         public event System.Action ReleasePressed;
 
+        public static float ProgressToArcDegrees(float normalizedProgress) => Mathf.Clamp01(normalizedProgress) * FullCircleDegrees;
+        public static Color GetProgressRingColor(bool natureWorld) => natureWorld ? NatureRingColor : CandyRingColor;
+        public static float CalculateOverlayVerticalAnchor(float ringRadius, float ringThickness, float clearance, float canvasScale)
+        {
+            return (Mathf.Max(0f, ringRadius) + Mathf.Max(0f, ringThickness) * .5f + Mathf.Max(0f, clearance)) /
+                   Mathf.Max(.000001f, canvasScale);
+        }
+
         public void Build(Camera camera, TMP_FontAsset font, Sprite roundedSprite, Sprite circleSprite)
         {
             m_Camera = camera != null ? camera : Camera.main;
             m_RoundedSprite = roundedSprite;
-            m_CircleSprite = circleSprite != null ? circleSprite : roundedSprite;
-
-            var canvasObject = new GameObject(
-                "Candy Energy Wrist World Space Canvas",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GraphicRaycaster),
-                typeof(CanvasGroup));
-            canvasObject.transform.SetParent(transform, false);
-            m_CanvasRect = (RectTransform)canvasObject.transform;
-            m_CanvasRect.sizeDelta = new Vector2(430f, 108f);
-            m_CanvasRect.localScale = Vector3.one * 0.00029f;
-            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
-            m_CanvasGroup = canvasObject.GetComponent<CanvasGroup>();
-
-            m_Glow = CreateImage("Soft Purple Glow", m_CanvasRect, Vector2.zero, new Vector2(438f, 116f), roundedSprite,
-                new Color(0.68f, 0.34f, 1f, 0.17f));
-            m_Background = CreateImage("Glass Capsule", m_CanvasRect, Vector2.zero, new Vector2(420f, 96f), roundedSprite,
-                new Color(0.10f, 0.065f, 0.18f, 0.78f));
-
-            CreateImage("Avatar Placeholder", m_CanvasRect, new Vector2(-170f, 0f), new Vector2(64f, 64f), m_CircleSprite,
-                new Color(0.83f, 0.71f, 1f, 0.95f));
-            CreateText("M", m_CanvasRect, new Vector2(-170f, 0f), new Vector2(54f, 54f), 25f, font, Color.white);
-            m_Title = CreateText(m_WorldEnergyTitle, m_CanvasRect, new Vector2(-53f, 21f), new Vector2(210f, 28f), 19f, font,
-                new Color(1f, 1f, 1f, 0.93f));
-
-            CreateImage("Progress Track", m_CanvasRect, new Vector2(39f, -17f), new Vector2(250f, 30f), roundedSprite,
-                new Color(0.05f, 0.035f, 0.09f, 0.78f));
-            m_Fill = CreateImage("Progress Fill", m_CanvasRect, new Vector2(-83f, -17f), new Vector2(6f, 26f), roundedSprite, LowColor);
-            m_FillRect = m_Fill.rectTransform;
-            m_FillRect.pivot = new Vector2(0f, 0.5f);
-            m_Percentage = CreateText("0%", m_CanvasRect, new Vector2(39f, -17f), new Vector2(245f, 30f), 17f, font,
-                Color.white);
-
-            CreateImage("Completion Badge", m_CanvasRect, new Vector2(184f, 0f), new Vector2(45f, 45f), m_CircleSprite,
-                new Color(0.66f, 0.46f, 0.88f, 0.62f));
-            CreateText("✦", m_CanvasRect, new Vector2(184f, 1f), new Vector2(38f, 38f), 22f, font, Color.white);
-
-            m_Feedback = CreateText(string.Empty, m_CanvasRect, new Vector2(0f, 67f), new Vector2(360f, 70f), 20f, font,
-                new Color(0.94f, 0.72f, 1f, 0f));
-            m_Feedback.alignment = TextAlignmentOptions.Center;
-
-            m_Sparkles = new Image[3];
-            m_Sparkles[0] = CreateImage("Sparkle 1", m_CanvasRect, new Vector2(-115f, 48f), new Vector2(10f, 10f), m_CircleSprite, Color.clear);
-            m_Sparkles[1] = CreateImage("Sparkle 2", m_CanvasRect, new Vector2(115f, 45f), new Vector2(7f, 7f), m_CircleSprite, Color.clear);
-            m_Sparkles[2] = CreateImage("Sparkle 3", m_CanvasRect, new Vector2(150f, -40f), new Vector2(6f, 6f), m_CircleSprite, Color.clear);
-
-            CreateReleaseButton(font);
-
+            m_CircleSprite = circleSprite;
+            BuildRingVisual();
+            BuildTextAndReleaseOverlay(font);
             m_Built = true;
             m_CanvasGroup.alpha = 0f;
             SetProgress(0f, 0f);
+            ApplyRingColors();
         }
 
         public void SetReleaseAvailable(bool available)
         {
             m_ReleaseAvailable = available;
-            if (m_ReleaseButtonRoot != null)
-                m_ReleaseButtonRoot.SetActive(available);
+            if (!available) m_ReleaseEnabled = false;
+            if (m_ReleaseButtonRoot != null) m_ReleaseButtonRoot.SetActive(available);
+            UpdateReleaseToggleVisual();
         }
 
-        void CreateReleaseButton(TMP_FontAsset font)
+        public void SetReleaseToggleState(bool enabled)
         {
-            m_ReleaseButtonRoot = new GameObject("Energy Release Button", typeof(RectTransform), typeof(Image), typeof(BoxCollider));
-            m_ReleaseButtonRoot.transform.SetParent(m_CanvasRect, false);
-            var rect = (RectTransform)m_ReleaseButtonRoot.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
-            rect.anchoredPosition = new Vector2(112f, 54f);
-            rect.sizeDelta = new Vector2(136f, 48f);
-            var image = m_ReleaseButtonRoot.GetComponent<Image>();
-            image.sprite = m_RoundedSprite;
-            image.type = m_RoundedSprite != null && m_RoundedSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
-            image.color = new Color(.93f, .72f, 1f, .96f);
-            image.raycastTarget = false;
-
-            var collider = m_ReleaseButtonRoot.GetComponent<BoxCollider>();
-            collider.size = new Vector3(136f, 48f, 20f);
-            collider.center = Vector3.zero;
-
-            var label = CreateText("Release", m_ReleaseButtonRoot.transform, Vector2.zero, new Vector2(126f, 40f), 18f,
-                font, new Color(.10f, .065f, .18f, 1f));
-            var button = m_ReleaseButtonRoot.AddComponent<MoodiumSpatialButton>();
-            button.Configure(label, null, PressRelease);
-            m_ReleaseButtonRoot.SetActive(false);
+            m_ReleaseEnabled = enabled;
+            UpdateReleaseToggleVisual();
         }
 
-        void PressRelease()
-        {
-            if (!m_ReleaseAvailable)
-                return;
-            SetReleaseAvailable(false);
-            ReleasePressed?.Invoke();
-        }
-
-        /// <summary>Updates the wording only; progress tracking stays shared by both worlds.</summary>
         public void SetWorldTheme(bool natureWorld)
         {
+            m_NatureWorld = natureWorld;
             m_WorldEnergyTitle = natureWorld ? "Nature Energy" : "Candy Energy";
-            if (m_Title != null)
-                m_Title.text = m_WorldEnergyTitle;
+            if (m_Title != null) m_Title.text = m_WorldEnergyTitle;
+            ApplyRingColors();
         }
 
         public void SetProgress(float energy, float normalized)
         {
             m_TargetProgress = Mathf.Clamp01(normalized);
             m_TargetEnergy = Mathf.Max(0f, energy);
-            var gained = m_TargetEnergy - m_LastTargetEnergy;
-            if (m_Built && gained > 0.01f)
-                ShowFeedbackText(gained);
-            m_LastTargetEnergy = m_TargetEnergy;
-
-            if (!m_Completed && m_TargetProgress >= 0.999f)
+            if (!m_Completed && m_TargetProgress >= .999f)
             {
                 m_Completed = true;
-                ShowFeedbackText(gained, true);
                 MoodiumAudioManager.Play(MoodiumAudioCue.CandyEnergyComplete, transform.position);
                 MoodiumInteractionVFXManager.PlayInteractionEffect(transform.position, transform.rotation, gameObject);
             }
-            else if (m_TargetProgress < 0.999f)
+            else if (m_TargetProgress < .999f) m_Completed = false;
+        }
+
+        void BuildRingVisual()
+        {
+            var root = new GameObject("Wrist 3D Ring Progress");
+            root.transform.SetParent(transform, false);
+            m_RingRoot = root.transform;
+            m_BackgroundRingMesh = new Mesh { name = "Wrist Ring Background Mesh" };
+            m_ProgressRingMesh = new Mesh { name = "Wrist Ring Progress Mesh" };
+            CreateRingRenderer("Background Ring", m_BackgroundRingMesh, out m_BackgroundMaterial);
+            CreateRingRenderer("Progress Ring", m_ProgressRingMesh, out m_ProgressMaterial);
+            BuildTubeArc(m_BackgroundRingMesh, FullCircleDegrees);
+            BuildTubeArc(m_ProgressRingMesh, 0f);
+        }
+
+        void CreateRingRenderer(string name, Mesh mesh, out Material material)
+        {
+            var ring = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            ring.transform.SetParent(m_RingRoot, false);
+            ring.GetComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = ring.GetComponent<MeshRenderer>();
+            material = CreateTransparentRingMaterial(name);
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
+        static Material CreateTransparentRingMaterial(string name)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+            var material = new Material(shader) { name = name };
+            if (material.HasProperty("_Surface")) material.SetFloat("_Surface", 1f);
+            if (material.HasProperty("_Blend")) material.SetFloat("_Blend", 0f);
+            if (material.HasProperty("_ZWrite")) material.SetFloat("_ZWrite", 0f);
+            material.renderQueue = (int)RenderQueue.Transparent;
+            return material;
+        }
+
+        void BuildTextAndReleaseOverlay(TMP_FontAsset font)
+        {
+            var canvasObject = new GameObject("Wrist Ring Text and Release Canvas", typeof(RectTransform), typeof(Canvas),
+                typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
+            canvasObject.transform.SetParent(transform, false);
+            m_CanvasRect = (RectTransform)canvasObject.transform;
+            m_CanvasRect.sizeDelta = new Vector2(420f, 800f);
+            m_CanvasRect.localScale = Vector3.one * .00023f;
+            canvasObject.GetComponent<Canvas>().renderMode = RenderMode.WorldSpace;
+            m_CanvasGroup = canvasObject.GetComponent<CanvasGroup>();
+            var canvasScale = m_CanvasRect.localScale.y;
+            var anchor = CalculateOverlayVerticalAnchor(m_RingRadius, m_RingThickness, m_OverlayClearance, canvasScale);
+            m_Title = CreateText(m_WorldEnergyTitle, m_CanvasRect,
+                new Vector2(0f, anchor + m_TitleVerticalOffset / canvasScale), new Vector2(220f, 28f), 16f, font, Color.white);
+            m_Percentage = CreateText("0%", m_CanvasRect,
+                new Vector2(0f, anchor + m_PercentageVerticalOffset / canvasScale), new Vector2(135f, 45f), 27f, font, Color.white);
+            CreateReleaseButton(font, anchor + m_ReleaseVerticalOffset / canvasScale);
+        }
+
+        void CreateReleaseButton(TMP_FontAsset font, float verticalPosition)
+        {
+            m_ReleaseButtonRoot = new GameObject("Energy Release Button", typeof(RectTransform), typeof(Image), typeof(BoxCollider));
+            m_ReleaseButtonRoot.transform.SetParent(m_CanvasRect, false);
+            var rect = (RectTransform)m_ReleaseButtonRoot.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+            rect.anchoredPosition = new Vector2(0f, verticalPosition);
+            rect.sizeDelta = new Vector2(136f, 48f);
+            var image = m_ReleaseButtonRoot.GetComponent<Image>();
+            image.sprite = m_RoundedSprite;
+            image.type = m_RoundedSprite != null && m_RoundedSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+            image.color = new Color(.96f, .96f, 1f, .96f);
+            image.raycastTarget = false;
+            m_ReleaseButtonRoot.GetComponent<BoxCollider>().size = new Vector3(136f, 48f, 20f);
+            m_ReleaseLabel = CreateText("Release", m_ReleaseButtonRoot.transform, Vector2.zero, new Vector2(126f, 40f), 18f,
+                font, new Color(.08f, .08f, .12f, 1f));
+            m_ReleaseKnobRoot = new GameObject("Release Toggle Knob", typeof(RectTransform), typeof(Image));
+            m_ReleaseKnobRoot.transform.SetParent(m_ReleaseButtonRoot.transform, false);
+            var knobRect = (RectTransform)m_ReleaseKnobRoot.transform;
+            knobRect.anchorMin = knobRect.anchorMax = new Vector2(1f, .5f);
+            knobRect.sizeDelta = new Vector2(32f, 32f);
+            var knobImage = m_ReleaseKnobRoot.GetComponent<Image>();
+            knobImage.sprite = m_CircleSprite;
+            knobImage.color = Color.white;
+            knobImage.raycastTarget = false;
+            var button = m_ReleaseButtonRoot.AddComponent<MoodiumSpatialButton>();
+            button.Configure(m_ReleaseLabel, null, PressRelease);
+            m_ReleaseButtonRoot.SetActive(false);
+        }
+
+        void UpdateReleaseToggleVisual()
+        {
+            if (m_ReleaseLabel != null)
+                m_ReleaseLabel.text = m_ReleaseEnabled ? "Release On" : "Release Off";
+            var image = m_ReleaseButtonRoot != null ? m_ReleaseButtonRoot.GetComponent<Image>() : null;
+            if (image != null)
+                image.color = m_ReleaseEnabled ? new Color(.55f, .86f, .55f, .96f) : new Color(.96f, .96f, 1f, .96f);
+            if (m_ReleaseKnobRoot != null)
             {
-                m_Completed = false;
+                var knobRect = (RectTransform)m_ReleaseKnobRoot.transform;
+                knobRect.anchoredPosition = new Vector2(m_ReleaseEnabled ? -20f : -116f, 0f);
             }
         }
 
-        public void ShowFeedbackText(float gained, bool completed = false)
+        void PressRelease()
         {
-            if (m_Feedback == null)
-                return;
-            if (completed)
-                m_Feedback.text = $"Wonderful!\nYour {(m_WorldEnergyTitle == "Nature Energy" ? "nature" : "candy")} world is blooming";
-            else
-            {
-                var index = Mathf.Clamp(Mathf.FloorToInt(m_TargetProgress * m_Encouragements.Length), 0, m_Encouragements.Length - 1);
-                m_Feedback.text = $"{m_Encouragements[index]}\n+{Mathf.RoundToInt(gained)} {m_WorldEnergyTitle}";
-            }
-            m_FeedbackTime = 0f;
+            if (!m_ReleaseAvailable) return;
+            ReleasePressed?.Invoke();
         }
 
         void LateUpdate()
         {
-            if (!m_Built)
-                return;
+            if (!m_Built) return;
             UpdateWristPose();
             UpdateProgressAnimation();
-            UpdateFeedbackAnimation();
-            UpdateStateVisuals();
+            UpdateOverlayFacing();
+            ApplyRingColors();
         }
 
         void UpdateWristPose()
         {
-            // Use the left wrist when possible, but do not hide the entire HUD just
-            // because visionOS is currently reporting only the user's right hand.
-            var tracked = TryGetWristPose(out var wristPose);
+            var tracked = TryGetWristFrame(out var wristPose, out var armAxis);
 #if UNITY_EDITOR
             if (!tracked && m_Camera != null)
             {
                 var forward = Vector3.ProjectOnPlane(m_Camera.transform.forward, Vector3.up).normalized;
-                wristPose = new Pose(m_Camera.transform.position + forward * 0.65f - Vector3.up * 0.20f, Quaternion.identity);
+                wristPose = new Pose(m_Camera.transform.position + forward * .65f - Vector3.up * .20f, Quaternion.identity);
+                armAxis = Vector3.forward;
                 tracked = true;
             }
 #endif
             HandTracked = tracked;
-            m_CanvasGroup.alpha = Mathf.MoveTowards(m_CanvasGroup.alpha, tracked ? 1f : 0f, Time.deltaTime * 8f);
-            if (!tracked)
-                return;
-
-            var targetPosition = wristPose.position + wristPose.rotation * m_WristOffset;
+            m_VisualAlpha = Mathf.MoveTowards(m_VisualAlpha, tracked ? 1f : 0f, Time.deltaTime * 8f);
+            m_CanvasGroup.alpha = m_VisualAlpha;
+            if (!tracked) return;
+            var ringRotation = Quaternion.FromToRotation(Vector3.up, armAxis) * Quaternion.Euler(m_RingRotationOffset);
+            var targetPosition = wristPose.position + ringRotation * m_WristPositionOffset;
             transform.position = Vector3.Lerp(transform.position, targetPosition, 1f - Mathf.Exp(-m_FollowResponsiveness * Time.deltaTime));
-            if (m_Camera != null)
-            {
-                var awayFromUser = Vector3.ProjectOnPlane(targetPosition - m_Camera.transform.position, Vector3.up).normalized;
-                if (awayFromUser.sqrMagnitude > 0.001f)
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(awayFromUser, Vector3.up),
-                        1f - Mathf.Exp(-m_FollowResponsiveness * Time.deltaTime));
-            }
+            transform.rotation = Quaternion.Slerp(transform.rotation, ringRotation,
+                1f - Mathf.Exp(-m_FollowResponsiveness * Time.deltaTime));
         }
 
-        bool TryGetWristPose(out Pose pose)
+        bool TryGetWristFrame(out Pose wristPose, out Vector3 armAxis)
         {
-            pose = Pose.identity;
+            wristPose = Pose.identity;
+            armAxis = Vector3.up;
             if (m_HandSubsystem == null)
                 m_HandSubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRHandSubsystem>();
-            if (m_HandSubsystem == null || !m_HandSubsystem.running)
-                return false;
+            if (m_HandSubsystem == null || !m_HandSubsystem.running) return false;
             var flags = m_HandSubsystem.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
-            if (!TryGetWristPose(m_HandSubsystem.leftHand,
-                    flags & XRHandSubsystem.UpdateSuccessFlags.LeftHandJoints,
-                    out pose) &&
-                !TryGetWristPose(m_HandSubsystem.rightHand,
-                    flags & XRHandSubsystem.UpdateSuccessFlags.RightHandJoints,
-                    out pose))
-                return false;
-            // visionOS XR Hands reports tracking-space poses. Convert them exactly as the
-            // physical bag and wrapper-contact systems do before placing a world-space HUD.
-            if (m_XROrigin == null)
-                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
-            pose = PalmPressGestureController.TransformTrackingPose(
-                pose, m_XROrigin != null ? m_XROrigin.Origin.transform : null);
-            return true;
+            if (!TryGetWristFrame(m_HandSubsystem.leftHand, flags & XRHandSubsystem.UpdateSuccessFlags.LeftHandJoints, out wristPose, out armAxis) &&
+                !TryGetWristFrame(m_HandSubsystem.rightHand, flags & XRHandSubsystem.UpdateSuccessFlags.RightHandJoints, out wristPose, out armAxis)) return false;
+            if (m_XROrigin == null) m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            var origin = m_XROrigin != null ? m_XROrigin.Origin.transform : null;
+            var trackingWrist = wristPose;
+            var trackingPalmPoint = new Pose(wristPose.position + armAxis, Quaternion.identity);
+            wristPose = PalmPressGestureController.TransformTrackingPose(trackingWrist, origin);
+            var worldPalm = PalmPressGestureController.TransformTrackingPose(trackingPalmPoint, origin).position;
+            armAxis = (worldPalm - wristPose.position).normalized;
+            return armAxis.sqrMagnitude > .0001f;
         }
 
-        static bool TryGetWristPose(XRHand hand, XRHandSubsystem.UpdateSuccessFlags handUpdated, out Pose pose)
+        static bool TryGetWristFrame(XRHand hand, XRHandSubsystem.UpdateSuccessFlags updated, out Pose wristPose, out Vector3 armAxis)
         {
-            pose = Pose.identity;
-            if (handUpdated == 0 && !hand.isTracked)
-                return false;
+            wristPose = Pose.identity;
+            armAxis = Vector3.up;
+            if (updated == 0 && !hand.isTracked) return false;
             var wrist = hand.GetJoint(XRHandJointID.Wrist);
-            return wrist.trackingState != XRHandJointTrackingState.None && wrist.TryGetPose(out pose);
+            var middle = hand.GetJoint(XRHandJointID.MiddleMetacarpal);
+            if (wrist.trackingState == XRHandJointTrackingState.None || !wrist.TryGetPose(out wristPose) || !middle.TryGetPose(out var middlePose)) return false;
+            armAxis = middlePose.position - wristPose.position;
+            return armAxis.sqrMagnitude > .000001f;
         }
 
         void UpdateProgressAnimation()
         {
             m_DisplayedProgress = Mathf.Lerp(m_DisplayedProgress, m_TargetProgress, 1f - Mathf.Exp(-5.5f * Time.deltaTime));
             m_DisplayedEnergy = Mathf.MoveTowards(m_DisplayedEnergy, m_TargetEnergy, Time.deltaTime * 24f);
-            var width = Mathf.Lerp(6f, 244f, m_DisplayedProgress);
-            m_FillRect.sizeDelta = new Vector2(width, 26f);
-            var color = Color.Lerp(LowColor, HighColor, Mathf.SmoothStep(0f, 1f, m_DisplayedProgress));
-            color.a = 0.96f;
-            m_Fill.color = color;
             m_Percentage.text = $"{Mathf.RoundToInt(m_DisplayedEnergy)}%";
-        }
-
-        void UpdateFeedbackAnimation()
-        {
-            if (m_FeedbackTime < 0f)
-                return;
-            m_FeedbackTime += Time.deltaTime;
-            var progress = Mathf.Clamp01(m_FeedbackTime / 1.35f);
-            var alpha = progress < 0.18f ? progress / 0.18f : 1f - Mathf.InverseLerp(0.62f, 1f, progress);
-            var color = new Color(0.94f, 0.72f, 1f, Mathf.Clamp01(alpha));
-            m_Feedback.color = color;
-            m_Feedback.rectTransform.anchoredPosition = new Vector2(0f, Mathf.Lerp(48f, 92f, progress));
-            if (progress >= 1f)
-                m_FeedbackTime = -1f;
-        }
-
-        void UpdateStateVisuals()
-        {
-            var enhanced = Mathf.InverseLerp(0.5f, 1f, m_DisplayedProgress);
-            var anticipation = Mathf.InverseLerp(0.8f, 1f, m_DisplayedProgress);
-            m_Glow.color = new Color(0.69f, 0.35f, 1f, Mathf.Lerp(0.12f, 0.35f, enhanced));
-            m_Background.color = new Color(0.10f, 0.065f, 0.18f, Mathf.Lerp(0.72f, 0.88f, enhanced));
-            var pulse = 1f + anticipation * (Mathf.Sin(Time.unscaledTime * 4.2f) * 0.018f);
-            m_CanvasRect.localScale = Vector3.one * (0.00029f * pulse);
-            for (var i = 0; i < m_Sparkles.Length; i++)
+            var arcDegrees = ProgressToArcDegrees(m_DisplayedProgress);
+            if (Mathf.Abs(arcDegrees - m_LastBuiltArcDegrees) > .35f)
             {
-                var sparkle = Mathf.Clamp01(enhanced * (0.55f + 0.45f * Mathf.Sin(Time.unscaledTime * (2.1f + i * 0.35f) + i)));
-                m_Sparkles[i].color = new Color(0.95f, 0.76f, 1f, sparkle * 0.75f);
+                BuildTubeArc(m_ProgressRingMesh, arcDegrees);
+                m_LastBuiltArcDegrees = arcDegrees;
             }
         }
 
-        static Image CreateImage(string name, Transform parent, Vector2 position, Vector2 size, Sprite sprite, Color color)
+        void UpdateOverlayFacing()
         {
-            var item = new GameObject(name, typeof(RectTransform), typeof(Image));
-            item.transform.SetParent(parent, false);
-            var rect = (RectTransform)item.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var image = item.GetComponent<Image>();
-            image.sprite = sprite;
-            image.type = sprite != null && sprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
-            image.color = color;
-            image.raycastTarget = false;
-            return image;
+            if (m_Camera == null || m_CanvasRect == null) return;
+            var toCamera = m_Camera.transform.position - m_CanvasRect.position;
+            if (toCamera.sqrMagnitude > .0001f) m_CanvasRect.rotation = Quaternion.LookRotation(-toCamera.normalized, Vector3.up);
         }
 
-        static TMP_Text CreateText(string value, Transform parent, Vector2 position, Vector2 size, float fontSize,
-            TMP_FontAsset font, Color color)
+        void ApplyRingColors()
+        {
+            if (m_BackgroundMaterial == null || m_ProgressMaterial == null) return;
+            var background = BackgroundRingColor;
+            background.a *= m_RingOpacity * m_VisualAlpha;
+            var progress = GetProgressRingColor(m_NatureWorld);
+            progress.a *= m_RingOpacity * m_VisualAlpha;
+            SetMaterialColor(m_BackgroundMaterial, background);
+            SetMaterialColor(m_ProgressMaterial, progress);
+        }
+
+        static void SetMaterialColor(Material material, Color color)
+        {
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+        }
+
+        void BuildTubeArc(Mesh mesh, float arcDegrees)
+        {
+            mesh.Clear();
+            if (arcDegrees <= .01f) return;
+            var segmentCount = Mathf.Max(1, Mathf.CeilToInt(m_RingSegments * arcDegrees / FullCircleDegrees));
+            var vertices = new List<Vector3>((segmentCount + 1) * m_TubeSides);
+            var normals = new List<Vector3>((segmentCount + 1) * m_TubeSides);
+            var triangles = new List<int>(segmentCount * m_TubeSides * 6);
+            var halfThickness = m_RingThickness * .5f;
+            for (var segment = 0; segment <= segmentCount; segment++)
+            {
+                var angle = Mathf.Deg2Rad * arcDegrees * segment / segmentCount;
+                var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                var center = outward * m_RingRadius;
+                for (var side = 0; side < m_TubeSides; side++)
+                {
+                    var crossAngle = Mathf.PI * 2f * side / m_TubeSides;
+                    var normal = (outward * Mathf.Cos(crossAngle) + Vector3.up * Mathf.Sin(crossAngle)).normalized;
+                    vertices.Add(center + normal * halfThickness);
+                    normals.Add(normal);
+                }
+            }
+            for (var segment = 0; segment < segmentCount; segment++)
+            for (var side = 0; side < m_TubeSides; side++)
+            {
+                var nextSide = (side + 1) % m_TubeSides;
+                var a = segment * m_TubeSides + side;
+                var b = segment * m_TubeSides + nextSide;
+                var c = (segment + 1) * m_TubeSides + side;
+                var d = (segment + 1) * m_TubeSides + nextSide;
+                triangles.Add(a); triangles.Add(c); triangles.Add(b);
+                triangles.Add(b); triangles.Add(c); triangles.Add(d);
+            }
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetTriangles(triangles, 0, true);
+            mesh.RecalculateBounds();
+        }
+
+        static TMP_Text CreateText(string value, Transform parent, Vector2 position, Vector2 size, float fontSize, TMP_FontAsset font, Color color)
         {
             var item = new GameObject($"Text - {value}", typeof(RectTransform), typeof(TextMeshProUGUI));
             item.transform.SetParent(parent, false);
             var rect = (RectTransform)item.transform;
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
             var text = item.GetComponent<TextMeshProUGUI>();
-            if (font != null)
-                text.font = font;
+            if (font != null) text.font = font;
             text.text = value;
             text.fontSize = fontSize;
             text.alignment = TextAlignmentOptions.Center;
@@ -347,10 +389,12 @@ namespace Moodium.CandyWorld
             return text;
         }
 
-        static Color FromHex(uint rgb) => new(
-            ((rgb >> 16) & 0xFF) / 255f,
-            ((rgb >> 8) & 0xFF) / 255f,
-            (rgb & 0xFF) / 255f,
-            1f);
+        void OnDestroy()
+        {
+            if (m_BackgroundRingMesh != null) Destroy(m_BackgroundRingMesh);
+            if (m_ProgressRingMesh != null) Destroy(m_ProgressRingMesh);
+            if (m_BackgroundMaterial != null) Destroy(m_BackgroundMaterial);
+            if (m_ProgressMaterial != null) Destroy(m_ProgressMaterial);
+        }
     }
 }

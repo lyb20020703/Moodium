@@ -21,16 +21,27 @@ namespace Moodium.CandyWorld
         CandyRainRewardController m_RainReward;
         CandyWorldProgressController m_ProgressController;
         NatureForestGrowthController m_NatureForestGrowth;
+        NatureFootstepGrassController m_NatureFootstepGrass;
+        NatureCompletionPanoramaController m_NatureCompletionPanorama;
+        CandyCompletionHouseController m_CandyCompletionHouse;
         NatureIvySpatialGrowthController m_NatureIvyGrowth;
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
         CandyHandOpenBurstGesture m_HandOpenBurstGesture;
         SqueezeProgressVideoController m_SqueezeProgressVideo;
         ARMeshManager m_SpatialMeshManager;
         GameObject[] m_NatureTreePrefabs;
+        GameObject m_NatureFootstepGrassPrefab;
+        GameObject m_NatureFootstepAlternatePrefab;
+        GameObject m_CandyFootstepBeanPrefab;
+        Texture2D m_NatureCompletionPanoramaTexture;
+        Texture2D m_CandyCompletionPanoramaTexture;
+        GameObject m_CandyCompletionHousePrefab;
+        GameObject m_CandyLittleCompletionHousePrefab;
         GameObject[] m_NatureBurstPrefabs;
         GameObject[] m_CandyBurstPrefabs;
         GameObject m_NatureIvyGeneratorPrefab;
         Material m_NatureIvyGrowMaterial;
+        AudioClip m_RewardTouchSound;
         bool m_NatureWorldActive;
         bool m_Running;
         bool m_RewardReleased;
@@ -48,6 +59,8 @@ namespace Moodium.CandyWorld
         TMP_FontAsset m_EnglishFont;
 
         public float Energy => m_Energy != null ? m_Energy.Energy : 0f;
+
+        public void ConfigureRewardTouchSound(AudioClip touchSound) => m_RewardTouchSound = touchSound;
 
         void Update()
         {
@@ -152,6 +165,15 @@ namespace Moodium.CandyWorld
             m_NatureForestGrowth = GetComponent<NatureForestGrowthController>();
             if (m_NatureForestGrowth == null)
                 m_NatureForestGrowth = gameObject.AddComponent<NatureForestGrowthController>();
+            m_NatureFootstepGrass = GetComponent<NatureFootstepGrassController>();
+            if (m_NatureFootstepGrass == null)
+                m_NatureFootstepGrass = gameObject.AddComponent<NatureFootstepGrassController>();
+            m_NatureCompletionPanorama = GetComponent<NatureCompletionPanoramaController>();
+            if (m_NatureCompletionPanorama == null)
+                m_NatureCompletionPanorama = gameObject.AddComponent<NatureCompletionPanoramaController>();
+            m_CandyCompletionHouse = GetComponent<CandyCompletionHouseController>();
+            if (m_CandyCompletionHouse == null)
+                m_CandyCompletionHouse = gameObject.AddComponent<CandyCompletionHouseController>();
             m_NatureIvyGrowth = GetComponent<NatureIvySpatialGrowthController>();
             if (m_NatureIvyGrowth == null)
                 m_NatureIvyGrowth = gameObject.AddComponent<NatureIvySpatialGrowthController>();
@@ -186,6 +208,7 @@ namespace Moodium.CandyWorld
             m_RainReward.Configure(Camera.main,
                 m_NatureWorldActive ? m_NatureBurstPrefabs : world != null ? world.Prefabs : null,
                 m_NatureWorldActive);
+            m_RainReward.ConfigureTouchAudio(m_RewardTouchSound);
             // The frosting particle system belongs exclusively to Candy World.  Do not
             // give it to Nature's progress controller, otherwise it can start emitting
             // behind the Nature-specific leaf atmosphere at completion.
@@ -212,6 +235,12 @@ namespace Moodium.CandyWorld
                 m_NatureForestGrowth.Configure(Camera.main != null ? Camera.main.transform : null, m_NatureTreePrefabs,
                     m_SpatialMeshManager);
                 m_NatureForestGrowth.StartGrowth();
+                m_NatureFootstepGrass.Configure(Camera.main != null ? Camera.main.transform : null,
+                    m_SpatialMeshManager, m_NatureFootstepGrassPrefab, m_NatureFootstepAlternatePrefab);
+                m_NatureFootstepGrass.StartTracking();
+                m_NatureCompletionPanorama.Configure(Camera.main, m_NatureCompletionPanoramaTexture);
+                m_NatureCompletionPanorama.StartDisplay();
+                m_CandyCompletionHouse.StopAndClear();
                 m_NatureIvyGrowth.Configure(
                     Camera.main,
                     m_SpatialMeshManager,
@@ -231,6 +260,14 @@ namespace Moodium.CandyWorld
                 if (m_Frost != null)
                     m_Frost.gameObject.SetActive(true);
                 m_NatureForestGrowth.StopAndClear();
+                m_NatureFootstepGrass.ConfigureCandy(Camera.main != null ? Camera.main.transform : null,
+                    m_SpatialMeshManager, m_CandyFootstepBeanPrefab);
+                m_NatureFootstepGrass.StartTracking();
+                m_NatureCompletionPanorama.Configure(Camera.main, m_CandyCompletionPanoramaTexture);
+                m_NatureCompletionPanorama.StartDisplay();
+                m_CandyCompletionHouse.Configure(Camera.main != null ? Camera.main.transform : null,
+                    m_SpatialMeshManager, m_CandyCompletionHousePrefab, m_CandyLittleCompletionHousePrefab);
+                m_CandyCompletionHouse.StartDisplay();
                 m_NatureIvyGrowth.StopAndClear();
             }
             m_Energy.ResetEnergy();
@@ -267,6 +304,9 @@ namespace Moodium.CandyWorld
             m_SqueezeProgressVideo?.ResetAndHide();
             m_NatureLeaves?.StopLeaves();
             m_NatureForestGrowth?.StopAndClear();
+            m_NatureFootstepGrass?.StopAndClear();
+            m_NatureCompletionPanorama?.StopAndClear();
+            m_CandyCompletionHouse?.StopAndClear();
             m_NatureIvyGrowth?.StopAndClear();
             m_BurstController?.StopAndClear();
         }
@@ -305,6 +345,7 @@ namespace Moodium.CandyWorld
             // scaling. Resolve the current world-space bounds now so every candy burst
             // starts in the visible middle of the calibrated Soft model.
             var visualCenter = ResolveCurrentCapsuleCenter(capsule, position);
+            m_SqueezeProgressVideo?.BindToSoft(capsule);
             m_ProgressController.SetOrigin(visualCenter);
             if (m_NatureWorldActive)
             {
@@ -375,6 +416,41 @@ namespace Moodium.CandyWorld
             m_NatureTreePrefabs = treePrefabs;
         }
 
+        public void ConfigureNatureFootstepGrass(GameObject grassPrefab)
+        {
+            m_NatureFootstepGrassPrefab = grassPrefab;
+        }
+
+        public void ConfigureNatureFootstepAlternate(GameObject alternatePrefab)
+        {
+            m_NatureFootstepAlternatePrefab = alternatePrefab;
+        }
+
+        public void ConfigureCandyFootstepBean(GameObject beanPrefab)
+        {
+            m_CandyFootstepBeanPrefab = beanPrefab;
+        }
+
+        public void ConfigureNatureCompletionPanorama(Texture2D panoramaTexture)
+        {
+            m_NatureCompletionPanoramaTexture = panoramaTexture;
+        }
+
+        public void ConfigureCandyCompletionPanorama(Texture2D panoramaTexture)
+        {
+            m_CandyCompletionPanoramaTexture = panoramaTexture;
+        }
+
+        public void ConfigureCandyCompletionHouse(GameObject housePrefab)
+        {
+            m_CandyCompletionHousePrefab = housePrefab;
+        }
+
+        public void ConfigureCandyLittleCompletionHouse(GameObject housePrefab)
+        {
+            m_CandyLittleCompletionHousePrefab = housePrefab;
+        }
+
         public void ConfigureNatureBurstPrefabs(GameObject[] prefabs)
         {
             m_NatureBurstPrefabs = prefabs;
@@ -409,27 +485,44 @@ namespace Moodium.CandyWorld
             m_EnergyUI.SetProgress(energy, normalizedProgress);
             m_ProgressController.SetProgress(energy, normalizedProgress);
             m_SqueezeProgressVideo?.SetProgress(normalizedProgress);
-            m_EnergyUI?.SetReleaseAvailable(EnergyReleasePolicy.ShouldOffer(normalizedProgress, m_RewardReleased));
+            m_EnergyUI?.SetReleaseAvailable(EnergyReleasePolicy.ShouldShowToggle(normalizedProgress));
             if (m_NatureWorldActive)
             {
                 m_NatureForestGrowth.SetProgress(normalizedProgress);
+                m_NatureFootstepGrass?.SetProgress(normalizedProgress);
+                m_NatureCompletionPanorama?.SetProgress(normalizedProgress);
                 m_NatureLeaves?.UpdateLeafIntensity(normalizedProgress);
                 if (m_LastNatureProgress < 1f && normalizedProgress >= 1f && m_LastNatureSoftOrigin != Vector3.zero)
                     m_NatureIvyGrowth?.TryStartCompletionBurst(m_LastNatureSoftOrigin);
                 m_LastNatureProgress = normalizedProgress;
             }
+            else
+            {
+                m_NatureFootstepGrass?.SetProgress(normalizedProgress);
+                m_CandyCompletionHouse?.SetProgress(normalizedProgress);
+                m_NatureCompletionPanorama?.SetProgress(normalizedProgress);
+            }
         }
 
         void ReleaseAccumulatedEnergy()
         {
-            if (!m_Running || m_RewardReleased || m_Energy == null ||
-                !EnergyReleasePolicy.ShouldOffer(m_Energy.NormalizedEnergy, false))
+            if (!m_Running || m_Energy == null ||
+                !EnergyReleasePolicy.ShouldShowToggle(m_Energy.NormalizedEnergy))
                 return;
 
-            m_RewardReleased = true;
-            m_EnergyUI?.SetReleaseAvailable(false);
-            m_RainReward?.PlayReward();
-            Debug.Log($"[Moodium Energy Release] { (m_NatureWorldActive ? "Nature" : "Candy") } energy released into a reward rain.");
+            if (m_RainReward == null) return;
+            if (m_RainReward.IsPlaying)
+            {
+                m_RainReward.StopAndClear();
+                m_EnergyUI?.SetReleaseToggleState(false);
+                Debug.Log($"[Moodium Energy Release] { (m_NatureWorldActive ? "Nature" : "Candy") } reward rain stopped.");
+            }
+            else
+            {
+                m_RainReward.PlayReward();
+                m_EnergyUI?.SetReleaseToggleState(true);
+                Debug.Log($"[Moodium Energy Release] { (m_NatureWorldActive ? "Nature" : "Candy") } reward rain started.");
+            }
         }
 
     }
@@ -438,5 +531,7 @@ namespace Moodium.CandyWorld
     {
         public static bool ShouldOffer(float normalizedProgress, bool hasReleased) =>
             normalizedProgress >= .999f && !hasReleased;
+
+        public static bool ShouldShowToggle(float normalizedProgress) => normalizedProgress >= .999f;
     }
 }

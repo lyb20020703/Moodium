@@ -46,6 +46,20 @@ namespace Moodium.Flow
         [Header("Nature World forest growth")]
         [Tooltip("Static tree prefabs with LODGroup components. Spawned progressively only in Nature World.")]
         [SerializeField] GameObject[] m_NatureForestTreePrefabs;
+        [Tooltip("Grass grown on the real floor beneath a walking player after Nature World reaches 100% energy.")]
+        [SerializeField] GameObject m_NatureFootstepGrassPrefab;
+        [Tooltip("Alternate Nature footstep ground prefab, alternated with the regular grass.")]
+        [SerializeField] GameObject m_NatureFootstepAlternatePrefab;
+        [Tooltip("Bean prefab grown on the real floor beneath a walking player after Candy World reaches 100% energy.")]
+        [SerializeField] GameObject m_CandyFootstepBeanPrefab;
+        [Tooltip("360-degree Nature World background shown only after Nature energy reaches 100%.")]
+        [SerializeField] Texture2D m_NatureCompletionPanoramaTexture;
+        [Tooltip("360-degree Candy World background shown only after Candy energy reaches 100%.")]
+        [SerializeField] Texture2D m_CandyCompletionPanoramaTexture;
+        [Tooltip("Candy World building shown once when the energy journey reaches 100%.")]
+        [SerializeField] GameObject m_CandyCompletionHousePrefab;
+        [Tooltip("Smaller Candy World building shown when the energy journey reaches 100%.")]
+        [SerializeField] GameObject m_CandyLittleCompletionHousePrefab;
         [Tooltip("Nature World burst prefabs emitted from the calibrated soft model.")]
         [SerializeField] GameObject[] m_NatureBurstPrefabs;
         [Header("Nature Burst Debug")]
@@ -78,6 +92,8 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_CandyFrostPrefab;
         [Tooltip("Nature-only falling leaves shown after the sensory-bag journey reaches 100%.")]
         [SerializeField] GameObject m_NatureLeafFallPrefab;
+        [Tooltip("Sound played when a full-energy release reward is touched and disappears.")]
+        [SerializeField] AudioClip m_ReleaseRewardTouchSound;
         [SerializeField] Sprite m_CreativeSpaceModeArtwork;
         [SerializeField] Sprite m_RealityEnhancementModeArtwork;
 
@@ -785,9 +801,17 @@ namespace Moodium.Flow
                 m_NatureLeafFallPrefab);
             m_CandyWorldManager.ConfigureEnvironmentPromptFonts(m_ChineseFontAsset, m_FontAsset);
             m_CandyWorldManager.ConfigureNatureForestTrees(m_NatureForestTreePrefabs);
+            m_CandyWorldManager.ConfigureNatureFootstepGrass(m_NatureFootstepGrassPrefab);
+            m_CandyWorldManager.ConfigureNatureFootstepAlternate(m_NatureFootstepAlternatePrefab);
+            m_CandyWorldManager.ConfigureCandyFootstepBean(m_CandyFootstepBeanPrefab);
+            m_CandyWorldManager.ConfigureNatureCompletionPanorama(m_NatureCompletionPanoramaTexture);
+            m_CandyWorldManager.ConfigureCandyCompletionPanorama(m_CandyCompletionPanoramaTexture);
+            m_CandyWorldManager.ConfigureCandyCompletionHouse(m_CandyCompletionHousePrefab);
+            m_CandyWorldManager.ConfigureCandyLittleCompletionHouse(m_CandyLittleCompletionHousePrefab);
             m_CandyWorldManager.ConfigureCandyBurstPrefabs(FindRealityWorld("candy")?.Prefabs);
             m_CandyWorldManager.ConfigureNatureBurstPrefabs(m_NatureBurstPrefabs);
             m_CandyWorldManager.ConfigureNatureBurstPrefabSource(m_UseCandyBurstPrefabsInNatureForDebug);
+            m_CandyWorldManager.ConfigureRewardTouchSound(m_ReleaseRewardTouchSound);
             m_CandyWorldManager.ConfigureNatureBurstDebug(m_ForceNatureBurstOnStart, m_ForceNatureBurstPrefab);
             m_CandyWorldManager.ConfigureNatureIvy(m_NatureIvyGeneratorPrefab, m_NatureIvyGrowMaterial);
         }

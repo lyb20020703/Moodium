@@ -409,6 +409,13 @@ MonoBehaviour:
   - {fileID: 8338100853971841445, guid: 42639e27cb175d8488974c697fdf13d4, type: 3}
   - {fileID: 8811476789416005125, guid: 867151643308bbc458d63f0412bd3a54, type: 3}
   - {fileID: 8338100853971841445, guid: 42639e27cb175d8488974c697fdf13d4, type: 3}
+  m_NatureFootstepGrassPrefab: {fileID: 8339034551514156341, guid: 7b6cf9f8d6c1748509c57bb8552bb919, type: 3}
+  m_NatureFootstepAlternatePrefab: {fileID: 5069931673927219942, guid: 0d5c5a33e95664db3a15e8ed7bb9bb3e, type: 3}
+  m_CandyFootstepBeanPrefab: {fileID: 7945770504910739097, guid: 7d9082502ea9745e78a38429f043b66b, type: 3}
+  m_NatureCompletionPanoramaTexture: {fileID: 2800000, guid: 14158703236c241dfa6454e4c4285e35, type: 3}
+  m_CandyCompletionPanoramaTexture: {fileID: 2800000, guid: 6ddbd26abb80a4d4bafba9873a8e18c8, type: 3}
+  m_CandyCompletionHousePrefab: {fileID: 1343903856503807044, guid: 00110a095b7124a01be82fa4dba39dd8, type: 3}
+  m_CandyLittleCompletionHousePrefab: {fileID: 2578324978599912021, guid: 70a7e18da0d674747a400b6c7c3a733e, type: 3}
   m_NatureBurstPrefabs:
   - {fileID: 481030001, guid: 0ccf480805cf43ffb31491b78960ab8e, type: 3}
   - {fileID: 481020001, guid: ef0bc5e54ce249b49ad7bf686d5c4772, type: 3}
@@ -433,6 +440,7 @@ MonoBehaviour:
   m_WristHudCircleSprite: {fileID: 21300000, guid: 3817d28d333db46d7a549d32cac870f1, type: 3}
   m_CandyFrostPrefab: {fileID: 1984035739642887215, guid: d882278a24ef2452f854c8ef70b879ac, type: 3}
   m_NatureLeafFallPrefab: {fileID: 1363029145903867714, guid: b845cc5bbde33413fac5af1b2534ab8b, type: 3}
+  m_ReleaseRewardTouchSound: {fileID: 8300000, guid: 2722086750a69aa4289a792be804c60b, type: 3}
   m_CreativeSpaceModeArtwork: {fileID: 21300000, guid: f01336ac660af444bbe0ecb8fa6cfe5c, type: 3}
   m_RealityEnhancementModeArtwork: {fileID: 21300000, guid: 0e15b0e260ab94646bb21d096df182fb, type: 3}
 --- !u!114 &339371881

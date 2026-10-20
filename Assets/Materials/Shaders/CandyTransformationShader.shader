@@ -24,6 +24,10 @@ Shader "Moodium/Candy Transformation Preview"
         _RippleWidth ("Ripple Width", Float) = 0.045
         _RippleStrength ("Ripple Strength", Range(0, 3)) = 0
         _ShaderTime ("Runtime Time", Float) = 0
+        _ShellThickness ("Soft Shell Thickness", Range(0, 0.02)) = 0.006
+        _PressRadius ("Press Radius", Range(0.01, 0.3)) = 0.14
+        _PressPointA ("Press Point A", Vector) = (0, -1000, 0, 0)
+        _PressPointB ("Press Point B", Vector) = (0, -1000, 0, 0)
     }
 
     SubShader
@@ -75,7 +79,19 @@ Shader "Moodium/Candy Transformation Preview"
                 float _RippleWidth;
                 float _RippleStrength;
                 float _ShaderTime;
+                float _ShellThickness;
+                float _PressRadius;
+                float4 _PressPointA;
+                float4 _PressPointB;
             CBUFFER_END
+
+            float SoftPress(float3 worldPosition, float4 pressPoint)
+            {
+                if (pressPoint.w <= 0.00001)
+                    return 0.0;
+                float t = 1.0 - saturate(distance(worldPosition, pressPoint.xyz) / max(_PressRadius, 0.0001));
+                return pressPoint.w * t * t * (3.0 - 2.0 * t);
+            }
 
             float Hash31(float3 p)
             {
@@ -98,7 +114,11 @@ Shader "Moodium/Candy Transformation Preview"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                VertexPositionInputs position = GetVertexPositionInputs(input.positionOS.xyz);
+                float3 worldPositionBeforeDeform = TransformObjectToWorld(input.positionOS.xyz);
+                float press = SoftPress(worldPositionBeforeDeform, _PressPointA) +
+                    SoftPress(worldPositionBeforeDeform, _PressPointB);
+                float3 deformedPositionOS = input.positionOS.xyz + input.normalOS * (_ShellThickness - press);
+                VertexPositionInputs position = GetVertexPositionInputs(deformedPositionOS);
                 output.positionCS = position.positionCS;
                 output.positionWS = position.positionWS;
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);

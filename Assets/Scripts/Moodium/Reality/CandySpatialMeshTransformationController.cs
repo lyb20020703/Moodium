@@ -1,7 +1,11 @@
 using System.Collections.Generic;
+using Moodium.Interaction;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR.ARFoundation;
+using Unity.XR.CoreUtils;
+using UnityEngine.XR.Hands;
+using UnityEngine.XR.Management;
 
 namespace Moodium.Reality
 {
@@ -20,6 +24,10 @@ namespace Moodium.Reality
         static readonly int IridescenceProperty = Shader.PropertyToID("_IridescenceStrength");
         static readonly int SparkleProperty = Shader.PropertyToID("_SparkleStrength");
         static readonly int ShaderTimeProperty = Shader.PropertyToID("_ShaderTime");
+        static readonly int ShellThicknessProperty = Shader.PropertyToID("_ShellThickness");
+        static readonly int PressRadiusProperty = Shader.PropertyToID("_PressRadius");
+        static readonly int PressPointAProperty = Shader.PropertyToID("_PressPointA");
+        static readonly int PressPointBProperty = Shader.PropertyToID("_PressPointB");
 
         sealed class OverlayEntry
         {
@@ -27,6 +35,7 @@ namespace Moodium.Reality
             public GameObject VisualObject;
             public MeshFilter VisualFilter;
             public MeshRenderer VisualRenderer;
+            public Collider[] SurfaceColliders;
         }
 
         [SerializeField] ARMeshManager m_MeshManager;
@@ -36,11 +45,26 @@ namespace Moodium.Reality
         [SerializeField] Color m_CandyViolet = new(0.68f, 0.55f, 1f, 1f);
         [SerializeField, Range(0.05f, 0.3f)] float m_MaximumAlpha = 0.24f;
 
+        [Header("Soft Candy Wrapper")]
+        [Tooltip("Small outward normal offset that gives the transparent wrapper a soft shell presence.")]
+        [SerializeField, Range(0f, 0.02f)] float m_ShellThickness = 0.006f;
+        [Tooltip("World-space radius of one hand press impression.")]
+        [SerializeField, Range(0.04f, 0.3f)] float m_PressRadius = 0.14f;
+        [Tooltip("Maximum inward displacement at the center of a direct press.")]
+        [SerializeField, Range(0f, 0.06f)] float m_MaxPressDepth = 0.024f;
+        [Tooltip("A fingertip must be this close to a real spatial-mesh collider to press the wrapper.")]
+        [SerializeField, Range(0.005f, 0.12f)] float m_HandContactDistance = 0.045f;
+        [SerializeField, Range(1f, 30f)] float m_PressReturnSpeed = 12f;
+
         readonly Dictionary<MeshFilter, OverlayEntry> m_Overlays = new();
         Material[] m_LevelMaterials;
         Vector3 m_Origin;
         float m_Progress;
         bool m_Running;
+        XRHandSubsystem m_HandSubsystem;
+        XROrigin m_XROrigin;
+        Vector4 m_CurrentPressA = new(0f, -1000f, 0f, 0f);
+        Vector4 m_CurrentPressB = new(0f, -1000f, 0f, 0f);
 
         public float Progress => m_Progress;
         public Vector3 Origin => m_Origin;
@@ -122,12 +146,27 @@ namespace Moodium.Reality
             Debug.Log($"[Candy Spatial Mesh] Transparent overlay progress={m_Progress:0.00}, origin={m_Origin}");
         }
 
+        /// <summary>
+        /// Returns the normal-direction displacement for one soft press. Negative values
+        /// move the visual wrapper inward. Kept public for a small regression test and so
+        /// press falloff remains independent from XR input availability.
+        /// </summary>
+        public static float ComputeSoftPressDisplacement(float distance, float radius, float strength)
+        {
+            if (radius <= 0f || strength <= 0f || distance >= radius)
+                return 0f;
+            var t = 1f - Mathf.Clamp01(distance / radius);
+            var smoothFalloff = t * t * (3f - 2f * t);
+            return -strength * smoothFalloff;
+        }
+
         void OnDestroy() => StopTransformation();
 
         void Update()
         {
             if (!m_Running || m_LevelMaterials == null)
                 return;
+            UpdateSoftShellPresses();
             foreach (var material in m_LevelMaterials)
                 if (material != null && material.HasProperty(ShaderTimeProperty))
                     material.SetFloat(ShaderTimeProperty, Time.time);
@@ -149,6 +188,7 @@ namespace Moodium.Reality
             if (m_Overlays.TryGetValue(source, out var existing))
             {
                 existing.VisualFilter.sharedMesh = source.sharedMesh;
+                existing.SurfaceColliders = source.GetComponentsInChildren<Collider>(true);
                 return;
             }
 
@@ -170,7 +210,8 @@ namespace Moodium.Reality
                 Source = source,
                 VisualObject = visual,
                 VisualFilter = visualFilter,
-                VisualRenderer = visualRenderer
+                VisualRenderer = visualRenderer,
+                SurfaceColliders = source.GetComponentsInChildren<Collider>(true)
             });
         }
 
@@ -256,6 +297,10 @@ namespace Moodium.Reality
                     material.EnableKeyword("_EMISSION");
                     material.SetColor("_EmissionColor", Color.Lerp(m_CandyPink, m_CandyViolet, progress) * (0.015f + progress * 0.04f));
                 }
+                if (material.HasProperty(ShellThicknessProperty))
+                    material.SetFloat(ShellThicknessProperty, m_ShellThickness);
+                if (material.HasProperty(PressRadiusProperty))
+                    material.SetFloat(PressRadiusProperty, m_PressRadius);
                 m_LevelMaterials[i] = material;
             }
             UpdateMaterialGlobals();
@@ -271,7 +316,93 @@ namespace Moodium.Reality
                     continue;
                 if (material.HasProperty(CandyOriginProperty))
                     material.SetVector(CandyOriginProperty, m_Origin);
+                if (material.HasProperty(PressPointAProperty))
+                    material.SetVector(PressPointAProperty, m_CurrentPressA);
+                if (material.HasProperty(PressPointBProperty))
+                    material.SetVector(PressPointBProperty, m_CurrentPressB);
             }
+        }
+
+        void UpdateSoftShellPresses()
+        {
+            var targetA = Vector4.zero;
+            var targetB = Vector4.zero;
+            if (m_Progress >= ActivationProgress && TryEnsureHands())
+            {
+                m_HandSubsystem.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
+                TryGetHandPress(m_HandSubsystem.leftHand, out targetA);
+                TryGetHandPress(m_HandSubsystem.rightHand, out targetB);
+            }
+
+            var lerp = 1f - Mathf.Exp(-m_PressReturnSpeed * Time.deltaTime);
+            m_CurrentPressA = Vector4.Lerp(m_CurrentPressA, targetA, lerp);
+            m_CurrentPressB = Vector4.Lerp(m_CurrentPressB, targetB, lerp);
+            if (targetA.w <= 0.0001f && m_CurrentPressA.w <= 0.0001f)
+                m_CurrentPressA = new Vector4(0f, -1000f, 0f, 0f);
+            if (targetB.w <= 0.0001f && m_CurrentPressB.w <= 0.0001f)
+                m_CurrentPressB = new Vector4(0f, -1000f, 0f, 0f);
+            UpdateMaterialGlobals();
+        }
+
+        bool TryEnsureHands()
+        {
+            if (m_HandSubsystem == null)
+                m_HandSubsystem = XRGeneralSettings.Instance?.Manager?.activeLoader
+                    ?.GetLoadedSubsystem<XRHandSubsystem>();
+            return m_HandSubsystem != null && m_HandSubsystem.running;
+        }
+
+        bool TryGetHandPress(XRHand hand, out Vector4 press)
+        {
+            press = Vector4.zero;
+            if (!hand.isTracked)
+                return false;
+            var indexTip = hand.GetJoint(XRHandJointID.IndexTip);
+            if (!indexTip.TryGetPose(out var trackingPose))
+                return false;
+            if (m_XROrigin == null)
+                m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
+            var origin = m_XROrigin != null ? m_XROrigin.Origin.transform : null;
+            var handPosition = PalmPressGestureController.TransformTrackingPose(trackingPose, origin).position;
+            if (!TryFindClosestOverlaySurface(handPosition, out var surfacePoint, out var distance))
+                return false;
+
+            var contact01 = 1f - Mathf.Clamp01(distance / Mathf.Max(.0001f, m_HandContactDistance));
+            var strength = m_MaxPressDepth * (contact01 * contact01 * (3f - 2f * contact01));
+            if (strength <= .00001f)
+                return false;
+            press = new Vector4(surfacePoint.x, surfacePoint.y, surfacePoint.z, strength);
+            return true;
+        }
+
+        bool TryFindClosestOverlaySurface(Vector3 handPosition, out Vector3 surfacePoint, out float distance)
+        {
+            surfacePoint = default;
+            distance = m_HandContactDistance;
+            var bestDistance = m_HandContactDistance;
+            foreach (var entry in m_Overlays.Values)
+            {
+                if (entry.Source == null || entry.VisualRenderer == null || !entry.VisualRenderer.enabled)
+                    continue;
+                var colliders = entry.SurfaceColliders;
+                if (colliders == null)
+                    continue;
+                foreach (var collider in colliders)
+                {
+                    if (collider == null || !collider.enabled)
+                        continue;
+                    var point = collider.ClosestPoint(handPosition);
+                    var candidateDistance = Vector3.Distance(handPosition, point);
+                    if (candidateDistance > bestDistance)
+                        continue;
+                    bestDistance = candidateDistance;
+                    surfacePoint = point;
+                }
+            }
+            if (bestDistance >= m_HandContactDistance)
+                return false;
+            distance = bestDistance;
+            return true;
         }
 
         static void ConfigureTransparentMaterial(Material material)

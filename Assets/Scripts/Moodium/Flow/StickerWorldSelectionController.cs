@@ -196,6 +196,7 @@ namespace Moodium.Flow
                 root.transform.localScale = m_EntryLocalScale;
                 root.AddComponent<StickerWorldEntryUprightFollower>()
                     .Configure(anchor, m_EntryLocalPosition, m_EntryLocalScale);
+                MoodiSelectionMascotController.AttachTo(root);
                 CreateEnterButton(root.transform, trackableId);
                 entry = new StickerWorldEntry(trackableId, referenceImageName, world, anchor, root);
                 m_Entries[trackableId] = entry;

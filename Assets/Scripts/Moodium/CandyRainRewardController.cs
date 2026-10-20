@@ -24,6 +24,7 @@ namespace Moodium.CandyWorld
         Camera m_Camera;
         Coroutine m_RainRoutine;
         bool m_NatureRewardPool;
+        AudioClip m_RewardTouchSound;
 
         public bool IsPlaying => m_RainRoutine != null;
         public int ActiveCandyCount
@@ -79,6 +80,8 @@ namespace Moodium.CandyWorld
             }
         }
 
+        public void ConfigureTouchAudio(AudioClip touchSound) => m_RewardTouchSound = touchSound;
+
         public void PlayReward()
         {
             if (m_RainRoutine != null || m_Camera == null || m_Prefabs.Count == 0)
@@ -130,6 +133,13 @@ namespace Moodium.CandyWorld
             if (touch == null)
                 touch = instance.AddComponent<DestroyOnTouch>();
             touch.ConfigureRewardBurstFeedback();
+            if (m_RewardTouchSound != null)
+            {
+                var touchAudio = instance.GetComponent<MoodiumTouchAudio>();
+                if (touchAudio == null)
+                    touchAudio = instance.AddComponent<MoodiumTouchAudio>();
+                touchAudio.Configure(m_RewardTouchSound);
+            }
             if (IsShellCrackReward(prefab.name))
                 touch.ConfigureShellCrackFeedback(instance.GetComponent<ChocolateCapsuleInteraction>());
 
