@@ -8,6 +8,7 @@ using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
 using UnityEngine.Video;
 using UnityEngine.UI;
+using Moodium.MoodCheck;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -204,6 +205,11 @@ namespace Moodium.Opening
                 sequence,
                 m_PreOpeningVideoDistanceFromUser,
                 m_PreOpeningVideoHeightOffset);
+            // The video display is also the parent of subtitles and opening UI.
+            // Install the drag handle now, rather than waiting for sticker selection,
+            // so the very first opening-video run can be repositioned as well.
+            m_AppFlow ??= FindFirstObjectByType<MoodiumAppFlowController>();
+            m_AppFlow?.EnsureOpeningWindowHandle(display.transform);
             Destroy(display.GetComponent<Collider>());
             // VideoPlayer updates happen outside Camera.Render. PolySpatial cannot
             // detect those RenderTexture changes automatically, so Vision Pro would
@@ -547,6 +553,20 @@ namespace Moodium.Opening
             }
 
             choiceObject.SetActive(false);
+            m_AppFlow?.BeginEntryMoodCheck(english);
+            while (m_AppFlow != null && OpeningMoodCheckPolicy.ShouldWait(
+                       m_AppFlow.MoodCheckInProgress, skipRequested()))
+            {
+                if (CurrentFrame(player) >= timeline.QuestionLoop.EndFrame || !player.isPlaying)
+                    yield return SeekToFrameAndPlay(player, timeline.QuestionLoop.StartFrame);
+                yield return null;
+            }
+            if (skipRequested())
+            {
+                m_AppFlow?.CancelMoodCheckImmediate();
+                Destroy(choiceObject);
+                yield break;
+            }
             var branch = hardwareChoice.HasHardware ? timeline.Yes : timeline.No;
             yield return SeekToFrameAndPlay(player, branch.StartFrame);
             if (hardwareChoice.HasHardware)

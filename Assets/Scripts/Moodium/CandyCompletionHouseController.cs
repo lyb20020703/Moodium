@@ -11,8 +11,12 @@ namespace Moodium.CandyWorld
         const float MainHouseProgress = .8f;
         const float LittleHouseProgress = .999f;
         const float HouseScaleMultiplier = 3f;
-        static readonly Vector2 ViewerRelativeSpawnOffset = new(1.2f, -2.75f);
-        static readonly Vector2 LittleHouseViewerRelativeSpawnOffset = new(-1.2f, -2.75f);
+        // Place both completion houses in the user's forward view first. The two
+        // offsets form the first arc around the viewer instead of hiding behind them.
+        // The houses are scaled three times at runtime. Keep a wide forward arc so
+        // their renderer bounds do not overlap even when both completion stages are visible.
+        static readonly Vector2 ViewerRelativeSpawnOffset = new(2.8f, 2.9f);
+        static readonly Vector2 LittleHouseViewerRelativeSpawnOffset = new(-2.8f, 2.9f);
 
         [SerializeField, Range(0f, 1f)] float m_MinGroundNormalY = .55f;
         [SerializeField, Min(0f)] float m_SurfaceOffset = .01f;
@@ -22,6 +26,10 @@ namespace Moodium.CandyWorld
         ARMeshManager m_SpatialMeshManager;
         GameObject m_HousePrefab;
         GameObject m_LittleHousePrefab;
+        GameObject m_HoneyJarPrefab;
+        GameObject m_HoneyJarInstance;
+        AudioClip m_PrefabSpawnSound;
+        AudioClip m_DeformationSound;
         GameObject m_HouseInstance;
         GameObject m_LittleHouseInstance;
         bool m_Started;
@@ -34,13 +42,18 @@ namespace Moodium.CandyWorld
             normalizedProgress >= LittleHouseProgress && !hasSpawned;
 
         public void Configure(Transform viewer, ARMeshManager spatialMeshManager, GameObject housePrefab,
-            GameObject littleHousePrefab)
+            GameObject littleHousePrefab, AudioClip prefabSpawnSound = null)
         {
             m_Viewer = viewer;
             m_SpatialMeshManager = spatialMeshManager;
             m_HousePrefab = housePrefab;
             m_LittleHousePrefab = littleHousePrefab;
+            m_PrefabSpawnSound = prefabSpawnSound;
         }
+
+        public void ConfigureDeformationSound(AudioClip sound) => m_DeformationSound = sound;
+
+        public void ConfigureHoneyJar(GameObject prefab) => m_HoneyJarPrefab = prefab;
 
         public void StartDisplay()
         {
@@ -55,6 +68,8 @@ namespace Moodium.CandyWorld
 
             if (m_HousePrefab != null && ShouldSpawnCandyHouse(normalizedProgress, m_HouseInstance != null))
                 m_HouseInstance = SpawnHouse(m_HousePrefab, "Candy Completion House", ViewerRelativeSpawnOffset);
+            if (m_HoneyJarPrefab != null && normalizedProgress >= .92f && m_HoneyJarInstance == null)
+                m_HoneyJarInstance = SpawnHouse(m_HoneyJarPrefab, "Candy Progress Honey Jar", new Vector2(0f, 2.2f), 1f);
             if (m_LittleHousePrefab != null &&
                 ShouldSpawnCandyLittleHouse(normalizedProgress, m_LittleHouseInstance != null))
                 m_LittleHouseInstance = SpawnHouse(m_LittleHousePrefab, "Candy Little Completion House",
@@ -64,6 +79,9 @@ namespace Moodium.CandyWorld
         public void StopAndClear()
         {
             m_Started = false;
+            if (m_HoneyJarInstance != null)
+                Destroy(m_HoneyJarInstance);
+            m_HoneyJarInstance = null;
             if (m_HouseInstance != null)
                 Destroy(m_HouseInstance);
             m_HouseInstance = null;
@@ -72,7 +90,8 @@ namespace Moodium.CandyWorld
             m_LittleHouseInstance = null;
         }
 
-        GameObject SpawnHouse(GameObject prefab, string instanceName, Vector2 spawnOffset)
+        GameObject SpawnHouse(GameObject prefab, string instanceName, Vector2 spawnOffset,
+            float scaleMultiplier = HouseScaleMultiplier)
         {
             var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up);
             if (forward.sqrMagnitude < .01f)
@@ -84,12 +103,15 @@ namespace Moodium.CandyWorld
             var yaw = Mathf.Atan2(-forward.x, -forward.z) * Mathf.Rad2Deg + 180f;
             var instance = Instantiate(prefab, ground.Position, Quaternion.Euler(0f, yaw, 0f));
             instance.name = $"{prefab.name} ({instanceName})";
-            instance.transform.localScale *= HouseScaleMultiplier;
+            if (m_PrefabSpawnSound != null)
+                AudioSource.PlayClipAtPoint(m_PrefabSpawnSound, ground.Position, 0.7f);
+            instance.transform.localScale *= scaleMultiplier;
             AlignVisualBaseToSurface(instance, ground.Position.y);
             var softInteraction = instance.GetComponent<CompletionHouseSoftInteraction>();
             if (softInteraction == null)
                 softInteraction = instance.AddComponent<CompletionHouseSoftInteraction>();
             softInteraction.Configure();
+            softInteraction.ConfigureHoldSound(m_DeformationSound);
             return instance;
         }
 

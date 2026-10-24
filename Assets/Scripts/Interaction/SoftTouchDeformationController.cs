@@ -38,6 +38,13 @@ namespace Moodium.Interaction
         public Vector3 PinchWorldPosition { get; private set; }
         public Vector3 MeshHitPosition { get; private set; }
 
+        // Shared by Creative Space and multi-mesh completion houses; identical smoothstep falloff.
+        public static float ContactFalloff(float distance, float radius)
+        {
+            var weight = 1f - Mathf.Clamp01(distance / Mathf.Max(.0001f, radius));
+            return weight * weight * (3f - 2f * weight);
+        }
+
         void Awake()
         {
             PrepareMesh();
@@ -169,10 +176,8 @@ namespace Moodium.Interaction
             for (var i = 0; i < m_OriginalVertices.Length; i++)
             {
                 var distance = Vector3.Distance(m_OriginalVertices[i], touchLocal);
-                var falloff = 1f - Mathf.Clamp01(distance / Mathf.Max(0.0001f, radiusLocal));
-                falloff = falloff * falloff * (3f - 2f * falloff);
-                var grabFalloff = 1f - Mathf.Clamp01(distance / Mathf.Max(0.0001f, grabRadiusLocal));
-                grabFalloff = grabFalloff * grabFalloff * (3f - 2f * grabFalloff);
+                var falloff = ContactFalloff(distance, radiusLocal);
+                var grabFalloff = ContactFalloff(distance, grabRadiusLocal);
                 var pressOffset = inward * (depthLocal * falloff * m_CurrentWeight);
                 var grabOffset = m_EnablePinchGrab ? m_GrabOffsetLocal * grabFalloff : Vector3.zero;
                 m_DeformedVertices[i] = m_OriginalVertices[i] + pressOffset + grabOffset;

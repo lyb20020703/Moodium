@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4339773101178698948}
+  - component: {fileID: 751239471005501}
   m_Layer: 0
   m_Name: CandyHouse
   m_TagString: Untagged
@@ -32,6 +33,30 @@ Transform:
   - {fileID: 3060071173936177698}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &751239471005501
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1343903856503807044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc824a04158ae408fb506743d001afed, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_InfluenceRadius: 0.12
+  m_MaxIndentation: 0.045
+  m_PressStrength: 1
+  m_FingerRadius: 0.012
+  m_SurfaceSearchDistance: 0.065
+  m_ResponseSpeed: 14
+  m_RecoverySpeed: 7
+  m_Elasticity: 18
+  m_BaseAnchorHeight: 0.025
+  m_UpdateRate: 20
+  m_NormalUpdateRate: 10
+  m_Debug: 0
 --- !u!1001 &3313866441041479113
 PrefabInstance:
   m_ObjectHideFlags: 0

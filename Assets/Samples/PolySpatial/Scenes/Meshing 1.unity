@@ -399,6 +399,7 @@ MonoBehaviour:
   m_RealityCandyWorldModelPrefab: {fileID: 2686762556302764267, guid: 568a81cade6de4441917864c3a0ca2ca, type: 3}
   m_RealityNatureWorldModelPrefab: {fileID: 8467906725528905566, guid: aae9b05163e2e41119b31f85cca4d3a8, type: 3}
   m_RealityFallbackWorldModelPrefab: {fileID: 1243638243325089260, guid: 9b7f48995c0634708b12f6eddad122fc, type: 3}
+  m_MoodiMascotPrefab: {fileID: 100100000, guid: 1c1c0c337d80f495e8342b47fb803074, type: 3}
   m_RealityCandySoftPrefab: {fileID: 1530540559236984759, guid: 1a625cf3392f44daea4271fa589266f3, type: 3}
   m_RealityNatureSoftPrefab: {fileID: 7753623436516282245, guid: 304ef1a166c654b98808d9c59f5bb5b9, type: 3}
   m_PushLeftHandGuidePrefab: {fileID: 1295767573294396060, guid: d91edd1b833fa4c4ab87eea899094818, type: 3}
@@ -420,6 +421,8 @@ MonoBehaviour:
   - {fileID: 481030001, guid: 0ccf480805cf43ffb31491b78960ab8e, type: 3}
   - {fileID: 481020001, guid: ef0bc5e54ce249b49ad7bf686d5c4772, type: 3}
   - {fileID: 481040001, guid: 54e422f949db4b5a80997273b27c9813, type: 3}
+  m_CandyWorldRewardTable: {fileID: 11400000, guid: 11e5eb976bb94994b10220ab4477cca5, type: 2}
+  m_NatureWorldRewardTable: {fileID: 11400000, guid: 585b9db53690465ab39d1b34aca44c71, type: 2}
   m_ForceNatureBurstOnStart: 0
   m_ForceNatureBurstPrefab: 0
   m_UseCandyBurstPrefabsInNatureForDebug: 0
@@ -441,6 +444,7 @@ MonoBehaviour:
   m_CandyFrostPrefab: {fileID: 1984035739642887215, guid: d882278a24ef2452f854c8ef70b879ac, type: 3}
   m_NatureLeafFallPrefab: {fileID: 1363029145903867714, guid: b845cc5bbde33413fac5af1b2534ab8b, type: 3}
   m_ReleaseRewardTouchSound: {fileID: 8300000, guid: 2722086750a69aa4289a792be804c60b, type: 3}
+  m_CandyPrefabDeformationSound: {fileID: 8300000, guid: e064b066102664be4a65f0fd08ac950d, type: 3}
   m_CreativeSpaceModeArtwork: {fileID: 21300000, guid: f01336ac660af444bbe0ecb8fa6cfe5c, type: 3}
   m_RealityEnhancementModeArtwork: {fileID: 21300000, guid: 0e15b0e260ab94646bb21d096df182fb, type: 3}
 --- !u!114 &339371881

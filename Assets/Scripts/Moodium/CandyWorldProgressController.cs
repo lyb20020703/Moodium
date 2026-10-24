@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Moodium.Reality;
+using Moodium.Flow;
+using Moodium.Interaction;
 using UnityEngine;
 
 namespace Moodium.CandyWorld
@@ -19,6 +21,7 @@ namespace Moodium.CandyWorld
 
         readonly List<GameObject> m_Prefabs = new();
         readonly List<GameObject> m_AmbientCandies = new();
+        AudioClip m_DeformationSound;
         Camera m_Camera;
         CandySpatialMeshTransformationController m_SpatialTransformation;
         CandyFrostParticleController m_Frost;
@@ -33,12 +36,14 @@ namespace Moodium.CandyWorld
             CandySpatialMeshTransformationController spatialTransformation,
             CandyFrostParticleController frost,
             CandyRainRewardController rainReward,
-            GameObject[] prefabs)
+            GameObject[] prefabs,
+            AudioClip deformationSound = null)
         {
             m_Camera = camera;
             m_SpatialTransformation = spatialTransformation;
             m_Frost = frost;
             m_RainReward = rainReward;
+            m_DeformationSound = deformationSound;
             m_Prefabs.Clear();
             if (prefabs == null)
                 return;
@@ -46,7 +51,13 @@ namespace Moodium.CandyWorld
             {
                 if (prefab == null)
                     continue;
-                var normalized = prefab.name.Replace("Prefab", string.Empty).Replace("_", string.Empty);
+                var normalized = NormalizePrefabName(prefab.name);
+                if (normalized.Equals("HoneyJar", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    // Honey Jar belongs to the persistent grounded stage props,
+                    // not the short-lived miniature projectile pool.
+                    continue;
+                }
                 if (normalized.Equals("Chocolate", System.StringComparison.OrdinalIgnoreCase) ||
                     normalized.Equals("Cookie", System.StringComparison.OrdinalIgnoreCase) ||
                     normalized.Equals("Heart", System.StringComparison.OrdinalIgnoreCase) ||
@@ -99,7 +110,7 @@ namespace Moodium.CandyWorld
 
             if (progress >= m_NextCandyProgress && m_AmbientCandies.Count < m_MaxAmbientCandies)
             {
-                SpawnAmbientCandy(progress);
+                SpawnAmbientCandy(m_NextCandyProgress);
                 m_NextCandyProgress += 0.06f;
             }
 
@@ -124,7 +135,8 @@ namespace Moodium.CandyWorld
         void SpawnAmbientCandy(float progress)
         {
             m_AmbientCandies.RemoveAll(item => item == null);
-            if (m_Camera == null || m_Prefabs.Count == 0 || m_AmbientCandies.Count >= m_MaxAmbientCandies)
+            if (m_Camera == null || m_Prefabs.Count == 0 ||
+                m_AmbientCandies.Count >= m_MaxAmbientCandies)
                 return;
 
             var cameraTransform = m_Camera.transform;
@@ -138,6 +150,17 @@ namespace Moodium.CandyWorld
             var prefab = m_Prefabs[Random.Range(0, m_Prefabs.Count)];
             var instance = Instantiate(prefab, position, Random.rotation);
             instance.name = $"{prefab.name} (Candy Atmosphere Mini)";
+            var deformation = instance.GetComponent<SoftTouchDeformationController>();
+            if (deformation == null)
+                deformation = instance.AddComponent<SoftTouchDeformationController>();
+            var interaction = instance.GetComponent<MoodiumObjectInteraction>();
+            if (interaction == null)
+                interaction = instance.AddComponent<MoodiumObjectInteraction>();
+            var touchAudio = instance.GetComponent<MoodiumTouchAudio>();
+            if (touchAudio == null)
+                touchAudio = instance.AddComponent<MoodiumTouchAudio>();
+            touchAudio.ConfigureHold(m_DeformationSound);
+            interaction.SetInteractionEnabled(true);
             var projectile = instance.GetComponent<CandyProjectile>();
             if (projectile == null)
                 projectile = instance.AddComponent<CandyProjectile>();
@@ -146,6 +169,16 @@ namespace Moodium.CandyWorld
             m_AmbientCandies.Add(instance);
             Debug.Log($"[Candy Progress] Gentle ambient candy appeared at {progress:P0}: {prefab.name}.");
         }
+
+        /// <summary>Reserve the third of four ambient milestones for the Honey Jar reward prop.</summary>
+        public static bool IsHoneyJarStage(float progress) =>
+            progress >= .92f && progress < .98f;
+
+        public static string NormalizePrefabName(string prefabName) =>
+            (prefabName ?? string.Empty)
+                .Replace("Prefab", string.Empty)
+                .Replace("_", string.Empty)
+                .Replace(" ", string.Empty);
 
         void OnDisable() => StopAndClear();
     }

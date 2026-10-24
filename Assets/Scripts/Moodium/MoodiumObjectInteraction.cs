@@ -19,7 +19,10 @@ namespace Moodium.Flow
             EnsureFeedback();
             m_SoftTouchFeedback.SetFeedbackEnabled(enabled);
             if (!enabled)
+            {
                 m_Deformation?.TouchEnd();
+                m_TouchAudio?.EndHold();
+            }
         }
 
         public void PointerStarted(int pointerId, Vector3 position)
@@ -31,7 +34,9 @@ namespace Moodium.Flow
             m_SoftTouchFeedback.TriggerFeedback();
             m_Deformation?.TouchBegin(position);
             m_ParticleFeedback?.Play();
-            if (m_TouchAudio != null)
+            if (m_TouchAudio != null && m_TouchAudio.HasHoldSound)
+                m_TouchAudio.BeginHold();
+            else if (m_TouchAudio != null)
                 m_TouchAudio.Play();
             else
                 MoodiumAudioManager.Play(MoodiumAudioCue.ObjectTouch, position);
@@ -44,6 +49,7 @@ namespace Moodium.Flow
                 return;
 
             m_Deformation?.TouchEnd();
+            m_TouchAudio?.EndHold();
             Debug.Log($"[Moodium Play] Interaction ended: {name}, pointer={pointerId}");
         }
 

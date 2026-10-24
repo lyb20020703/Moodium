@@ -62,7 +62,6 @@ namespace Moodium.CandyWorld
         }
 
         public void SetNatureWorld(bool natureWorld) => m_UseNaturePrefabs = natureWorld;
-
         /// <summary>Used by the reversible Nature diagnostic to select the proven Candy pool.</summary>
         public static bool ShouldUseNaturePrefabPool(bool natureWorldActive, bool useCandyPoolInNatureForDebug) =>
             natureWorldActive && !useCandyPoolInNatureForDebug;

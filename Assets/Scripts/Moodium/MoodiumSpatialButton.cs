@@ -42,6 +42,17 @@ namespace Moodium.Flow
             m_Hovered = hovered;
         }
 
+        public void SetSelected(bool selected)
+        {
+            if (m_Label != null)
+                m_Label.color = selected ? new Color(.05f, .05f, .08f, 1f) : Color.white;
+            if (m_Background == null)
+                return;
+            var material = m_Background.material;
+            if (material.HasProperty(m_ColorProperty))
+                material.SetColor(m_ColorProperty, selected ? new Color(1f, 1f, 1f, .96f) : m_BaseColor);
+        }
+
         void Update()
         {
             if (!m_AnimateTransform || m_Pressing)
@@ -58,7 +69,7 @@ namespace Moodium.Flow
             else
             {
                 m_OnPressed?.Invoke();
-                if (m_Background != null)
+                if (m_Background != null && Application.isPlaying)
                     StartCoroutine(Flash());
             }
         }

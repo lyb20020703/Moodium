@@ -12,15 +12,15 @@ namespace Moodium.NatureWorld
     public sealed class NatureForestGrowthController : MonoBehaviour
     {
         static readonly float[] SpawnThresholds = { 0.35f, 0.55f, 0.75f, 0.9f, 1f };
-        // Local X is viewer-right and local Y is viewer-forward. Keep only one tree in
-        // the forward view; distribute the remainder along the sides and behind the viewer.
+        // Local X is viewer-right and local Y is viewer-forward. Fill the user's
+        // forward field first in a shallow arc, then widen to the sides/rear.
         static readonly Vector2[] ViewerRelativeSpawnOffsets =
         {
-            new(5.6f, -4.4f),  // one distant back-right tree
-            new(-3.8f, -0.6f), // side-back left
-            new(3.8f, -0.6f),  // side-back right
-            new(-2.5f, -3.7f), // rear-left
-            new(2.5f, -3.7f)   // rear-right
+            new(-2.4f, 2.8f),  // forward-left
+            new(2.4f, 2.8f),   // forward-right
+            new(0f, 4.1f),     // forward-center, farther ring
+            new(-4.1f, 0.9f),  // side-left
+            new(4.1f, 0.9f)    // side-right
         };
         // Trees were already reduced to half their prefab scale. Nature World now
         // needs one third of that displayed size, i.e. one sixth of prefab scale.
@@ -38,11 +38,14 @@ namespace Moodium.NatureWorld
         Transform m_Viewer;
         ARMeshManager m_SpatialMeshManager;
         Transform m_ForestRoot;
+        AudioClip m_TreeSpawnSound;
         int m_NextThresholdIndex;
         bool m_Running;
 
         public int SpawnedTreeCount => m_SpawnedTrees.Count;
         public Transform ForestRoot => m_ForestRoot;
+
+        public void ConfigureSpawnSound(AudioClip spawnSound) => m_TreeSpawnSound = spawnSound;
 
         public static Vector2 GetViewerRelativeSpawnOffset(int index) =>
             ViewerRelativeSpawnOffsets[index % ViewerRelativeSpawnOffsets.Length];
@@ -123,6 +126,8 @@ namespace Moodium.NatureWorld
             var prefab = m_TreePrefabs[index % m_TreePrefabs.Count];
             var instance = Instantiate(prefab, ground.Position, rotation, m_ForestRoot);
             instance.name = $"{prefab.name} (Nature Forest {index + 1})";
+            if (m_TreeSpawnSound != null)
+                AudioSource.PlayClipAtPoint(m_TreeSpawnSound, ground.Position, 0.7f);
             instance.transform.rotation = rotation;
             instance.transform.localScale *= TreeScaleMultiplier;
             if (ground.HasSpatialSurface)

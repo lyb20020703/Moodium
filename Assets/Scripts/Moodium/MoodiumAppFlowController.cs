@@ -12,6 +12,8 @@ using Moodium.Flow.ObjectPicker;
 using Moodium.Opening;
 using Moodium.Reality;
 using Moodium.Calibration;
+using Moodium.MoodCheck;
+using Moodium.Rewards;
 
 namespace Moodium.Flow
 {
@@ -36,6 +38,7 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_RealityCandyWorldModelPrefab;
         [SerializeField] GameObject m_RealityNatureWorldModelPrefab;
         [SerializeField] GameObject m_RealityFallbackWorldModelPrefab;
+        [SerializeField] GameObject m_MoodiMascotPrefab;
 
         [Header("Reality Enhancement tracked soft objects")]
         [SerializeField] GameObject m_RealityCandySoftPrefab;
@@ -62,6 +65,9 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_CandyLittleCompletionHousePrefab;
         [Tooltip("Nature World burst prefabs emitted from the calibrated soft model.")]
         [SerializeField] GameObject[] m_NatureBurstPrefabs;
+        [Header("World reward collection")]
+        [SerializeField] WorldRewardTable m_CandyWorldRewardTable;
+        [SerializeField] WorldRewardTable m_NatureWorldRewardTable;
         [Header("Nature Burst Debug")]
         [Tooltip("One-shot diagnostic: when NatureSoft becomes available, force a pure Candy-pipeline Nature burst without progress or pinch.")]
         [SerializeField] bool m_ForceNatureBurstOnStart;
@@ -94,8 +100,13 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_NatureLeafFallPrefab;
         [Tooltip("Sound played when a full-energy release reward is touched and disappears.")]
         [SerializeField] AudioClip m_ReleaseRewardTouchSound;
+        [Tooltip("Looped while a Candy World progress prefab is being squeezed.")]
+        [SerializeField] AudioClip m_CandyPrefabDeformationSound;
         [SerializeField] Sprite m_CreativeSpaceModeArtwork;
         [SerializeField] Sprite m_RealityEnhancementModeArtwork;
+
+        [Header("Mood Check")]
+        [SerializeField] GameObject m_MoodCheckPanelPrefab;
 
         MoodiumMode m_CurrentMode;
         Transform m_UiRoot;
@@ -126,8 +137,77 @@ namespace Moodium.Flow
         Camera m_MainCamera;
         bool m_LoggedMissingFont;
         bool m_FlowUiReady;
+        MoodCheckController m_MoodCheckController;
+        MoodCheckContext m_MoodCheckContext;
+        MoodCheckLaunchSource m_MoodCheckLaunchSource;
+        bool m_TestMoodAvailabilityOverride;
+        bool m_TestCandyAvailable;
+        bool m_TestNatureAvailable;
+        bool m_DisableMoodLoggingForTests;
+        bool m_DisableNavigationForTests;
+
+        enum MoodCheckLaunchSource { None, Opening, StickerSelection, PostVisit }
 
         public MoodiumMode CurrentMode => m_CurrentMode;
+        public bool MoodCheckInProgress => m_MoodCheckController != null &&
+            m_MoodCheckController.State is not (MoodCheckState.Hidden or MoodCheckState.Done);
+        public MoodCheckContext MoodContext => m_MoodCheckContext;
+
+        public void ConfigureMoodCheckForTests(MoodCheckController controller, MoodCheckContext context)
+        {
+            UnsubscribeMoodCheck();
+            m_MoodCheckController = controller;
+            m_MoodCheckContext = context;
+            m_TestMoodAvailabilityOverride = true;
+            m_TestCandyAvailable = true;
+            m_TestNatureAvailable = true;
+            m_DisableMoodLoggingForTests = true;
+            m_DisableNavigationForTests = true;
+            SubscribeMoodCheck();
+        }
+
+        public void BeginEntryMoodCheck(bool english)
+        {
+            // The opening flow must not interrupt the sensory-bag choice with the
+            // full mood panel. Mood guidance lives on the sticker-selection hint.
+            m_MoodCheckController?.DismissImmediate();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+        }
+
+        public void RequestStickerMoodCheck()
+        {
+            EnsureMoodCheck();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.StickerSelection;
+            m_MoodCheckController?.BeginPreCheck(CurrentMoodAvailability(), IsEnglish());
+        }
+
+        public void CancelMoodCheckImmediate()
+        {
+            m_MoodCheckController?.DismissImmediate();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+        }
+
+        public string BeginMoodVisit(string enteredWorldId, float realtime)
+        {
+            EnsureMoodCheck();
+            var visitId = m_MoodCheckContext.BeginVisit(enteredWorldId, realtime);
+            if (m_MoodCheckContext.PreSample != null)
+            {
+                m_MoodCheckContext.PreSample.visitId = visitId;
+                m_MoodCheckContext.PreSample.enteredWorldId = enteredWorldId ?? string.Empty;
+            }
+            return visitId;
+        }
+
+        public void RequestMoodCheckOnWorldExit(float realtime)
+        {
+            StopCandyWorldExperience();
+            // Returning from a world is immediate; mood check is an optional hint
+            // before sticker selection, never a blocking post-visit panel.
+            m_MoodCheckContext?.CompleteVisit();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+            FinishReturnToStickerWorldSelection();
+        }
 
         public static bool SupportsRealityWorld(MoodiumWorldDefinition world)
         {
@@ -176,6 +256,8 @@ namespace Moodium.Flow
             if (m_TrackedObjectManager != null)
                 m_TrackedObjectManager.enabled = false;
             EnsureStickerWorldSelection();
+            EnsureMoodCheck();
+            m_MoodCheckController?.DismissImmediate();
             m_CalibrationCoordinator?.ClearPresentations();
             var candy = FindRealityWorld("candy");
             var nature = FindRealityWorld("nature");
@@ -186,10 +268,14 @@ namespace Moodium.Flow
                 candy,
                 nature);
             m_StickerWorldSelection.ConfigureFonts(m_ChineseFontAsset, m_FontAsset);
+            m_StickerWorldSelection.ConfigureMoodCheck(m_MoodCheckContext);
+            m_StickerWorldSelection.ConfigureEntryGlassMaterial(GetPickerGlassMaterial());
+            m_StickerWorldSelection.SetMoodCheckSummary(m_MoodCheckContext.PreSample);
             m_StickerWorldSelection.End();
             // Subscribe before enabling the manager. This mirrors the previously working
             // world flow and prevents visionOS's first image-anchor event being missed.
             m_StickerWorldSelection.Begin(session);
+            EnsureOpeningWindowHandle(session.DisplayRoot);
             if (m_TrackedImageManager != null)
                 m_TrackedImageManager.enabled = true;
             StartStickerTrackingWarmup();
@@ -435,18 +521,9 @@ namespace Moodium.Flow
 
         void BuildObjectPanel()
         {
-            // Reality mode only needs a persistent, unobtrusive bottom Back capsule.
-            m_ObjectPanel = CreatePanelRoot(
-                "Moodium Reality Enhancement Mode",
-                -0.28f,
-                addGlassBackground: false,
-                addWindowHandle: false);
-            CreateButton(
-                m_ObjectPanel.transform,
-                "Back",
-                new Vector3(0f, 0.834f, 0f),
-                new Vector2(0.18f, 0.07f),
-                ReturnToStickerWorldSelection);
+            // Exit now lives on the wrist HUD so nothing is fixed in the user's room.
+            m_ObjectPanel = new GameObject("Moodium Reality Enhancement Mode (Legacy Root)");
+            m_ObjectPanel.transform.SetParent(transform, false);
             m_ObjectPanel.SetActive(false);
         }
 
@@ -595,6 +672,13 @@ namespace Moodium.Flow
 
         void ReturnToStickerWorldSelection()
         {
+            RequestMoodCheckOnWorldExit(Time.realtimeSinceStartup);
+        }
+
+        void FinishReturnToStickerWorldSelection()
+        {
+            if (m_DisableNavigationForTests)
+                return;
             if (m_OpeningVideoSession == null || m_OpeningVideoSession.IsDisposed)
             {
                 ShowObjectWorldSelection();
@@ -611,6 +695,8 @@ namespace Moodium.Flow
                 m_StickerWorldSelection = gameObject.AddComponent<StickerWorldSelectionController>();
             m_StickerWorldSelection.WorldEntrySelected -= OnStickerWorldEntrySelected;
             m_StickerWorldSelection.WorldEntrySelected += OnStickerWorldEntrySelected;
+            m_StickerWorldSelection.MoodCheckRequested -= RequestStickerMoodCheck;
+            m_StickerWorldSelection.MoodCheckRequested += RequestStickerMoodCheck;
             if (m_CalibrationCoordinator == null)
                 m_CalibrationCoordinator = GetComponent<SensoryBagCalibrationCoordinator>();
             if (m_CalibrationCoordinator == null)
@@ -715,6 +801,7 @@ namespace Moodium.Flow
             }
 
             m_SelectedWorld = world;
+            BeginMoodVisit(world.WorldId, Time.realtimeSinceStartup);
             m_PortalEntrance?.HideImmediate();
             MoodiumAudioManager.PlayBackgroundMusic(world.BackgroundMusic);
             ConfigureTrackedSoftPrefab(world);
@@ -725,8 +812,6 @@ namespace Moodium.Flow
             SetMode(MoodiumMode.ObjectTracking);
             SetExistingModules(true, false);
             HideAllPanels();
-            PlacePanel(m_ObjectPanel, -0.28f, 1f);
-            m_ObjectPanel.SetActive(true);
             Debug.Log($"[Moodium Flow] Reality Enhancement Mode: {world.DisplayName}. Tissue tracking enabled.");
         }
 
@@ -812,6 +897,8 @@ namespace Moodium.Flow
             m_CandyWorldManager.ConfigureNatureBurstPrefabs(m_NatureBurstPrefabs);
             m_CandyWorldManager.ConfigureNatureBurstPrefabSource(m_UseCandyBurstPrefabsInNatureForDebug);
             m_CandyWorldManager.ConfigureRewardTouchSound(m_ReleaseRewardTouchSound);
+            m_CandyWorldManager.ConfigureCandyPrefabDeformationSound(m_CandyPrefabDeformationSound);
+            m_CandyWorldManager.ConfigureExitAction(ReturnToStickerWorldSelection);
             m_CandyWorldManager.ConfigureNatureBurstDebug(m_ForceNatureBurstOnStart, m_ForceNatureBurstPrefab);
             m_CandyWorldManager.ConfigureNatureIvy(m_NatureIvyGeneratorPrefab, m_NatureIvyGrowMaterial);
         }
@@ -827,6 +914,93 @@ namespace Moodium.Flow
                 Destroy(m_CandyTransformationPreviewInstance);
                 m_CandyTransformationPreviewInstance = null;
             }
+        }
+
+        void EnsureMoodCheck()
+        {
+            m_MoodCheckContext ??= new MoodCheckContext();
+            if (m_MoodCheckController == null)
+                m_MoodCheckController = GetComponent<MoodCheckController>();
+            if (m_MoodCheckController == null)
+                m_MoodCheckController = gameObject.AddComponent<MoodCheckController>();
+            if (!m_TestMoodAvailabilityOverride)
+            {
+                m_MainCamera ??= Camera.main;
+                m_MoodCheckPanelPrefab ??= Resources.Load<GameObject>("Moodium/MoodCheck/MoodCheckPanel");
+                m_MoodCheckController.Configure(m_MoodCheckPanelPrefab, m_MainCamera);
+            }
+            SubscribeMoodCheck();
+        }
+
+        void SubscribeMoodCheck()
+        {
+            if (m_MoodCheckController == null)
+                return;
+            m_MoodCheckController.Completed -= OnMoodCheckCompleted;
+            m_MoodCheckController.Completed += OnMoodCheckCompleted;
+            m_MoodCheckController.Skipped -= OnMoodCheckSkipped;
+            m_MoodCheckController.Skipped += OnMoodCheckSkipped;
+        }
+
+        void UnsubscribeMoodCheck()
+        {
+            if (m_MoodCheckController == null)
+                return;
+            m_MoodCheckController.Completed -= OnMoodCheckCompleted;
+            m_MoodCheckController.Skipped -= OnMoodCheckSkipped;
+        }
+
+        void OnMoodCheckCompleted(MoodCheckSample sample)
+        {
+            if (sample == null)
+                return;
+            sample.sessionId = m_MoodCheckContext.SessionId;
+            sample.language = IsEnglish() ? "en" : "zh-CN";
+            if (sample.phase == MoodCheckPhase.Pre)
+            {
+                m_MoodCheckContext.SetPreSample(sample);
+                m_StickerWorldSelection?.SetMoodCheckSummary(sample);
+            }
+            else
+            {
+                sample.visitId = m_MoodCheckContext.ActiveVisitId ?? string.Empty;
+                sample.enteredWorldId = m_MoodCheckContext.EnteredWorldId ?? string.Empty;
+            }
+            if (!m_DisableMoodLoggingForTests)
+                MoodCheckLog.TryAppend(sample);
+            if (m_MoodCheckLaunchSource != MoodCheckLaunchSource.PostVisit)
+                return;
+            m_MoodCheckContext.CompleteVisit();
+            m_MoodCheckController.DismissImmediate();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+            FinishReturnToStickerWorldSelection();
+        }
+
+        void OnMoodCheckSkipped()
+        {
+            if (m_MoodCheckLaunchSource == MoodCheckLaunchSource.PostVisit)
+            {
+                m_MoodCheckContext.CompleteVisit();
+                m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+                FinishReturnToStickerWorldSelection();
+            }
+        }
+
+        MoodCheckAvailability CurrentMoodAvailability()
+        {
+            if (m_TestMoodAvailabilityOverride)
+                return new MoodCheckAvailability(m_TestCandyAvailable, m_TestNatureAvailable);
+            return new MoodCheckAvailability(
+                FindRealityWorld("candy")?.IsAvailable == true,
+                FindRealityWorld("nature")?.IsAvailable == true);
+        }
+
+        bool IsEnglish() => PlayerPrefs.GetString("Moodium.Language", "Chinese")
+            .Equals("English", System.StringComparison.OrdinalIgnoreCase);
+
+        void OnDestroy()
+        {
+            UnsubscribeMoodCheck();
         }
 
         void ShowCandyTransformationPreview()
@@ -1048,6 +1222,41 @@ namespace Moodium.Flow
             collider.size = new Vector3(0.16f, 0.045f, 0.025f);
             var drag = handle.AddComponent<MoodiumWindowHandle>();
             drag.Configure(panel);
+        }
+
+        public void EnsureOpeningWindowHandle(Transform displayRoot)
+        {
+            if (displayRoot == null || displayRoot.Find("VisionOS Opening Window Handle") != null)
+                return;
+
+            var handle = new GameObject("VisionOS Opening Window Handle");
+            handle.transform.SetParent(displayRoot, false);
+            // The opening display is a wide, floating video surface. Keep the handle
+            // just below it so it never overlaps subtitles or sticker entry buttons.
+            handle.transform.localPosition = new Vector3(0f, -0.54f, -0.012f);
+            handle.transform.localRotation = Quaternion.identity;
+
+            var renderer = CreateGlassVisual(
+                handle.transform,
+                "Opening Window Handle Visual",
+                new Vector2(0.22f, 0.028f),
+                35);
+            if (renderer != null)
+            {
+                var material = renderer.material;
+                var color = new Color(0.92f, 0.95f, 1f, 0.78f);
+                if (material.HasProperty("_Tint"))
+                    material.SetColor("_Tint", color);
+                else if (material.HasProperty("_BaseColor"))
+                    material.SetColor("_BaseColor", color);
+                else if (material.HasProperty("_Color"))
+                    material.SetColor("_Color", color);
+            }
+
+            var collider = handle.AddComponent<BoxCollider>();
+            collider.size = new Vector3(0.23f, 0.052f, 0.025f);
+            var drag = handle.AddComponent<MoodiumWindowHandle>();
+            drag.Configure(displayRoot);
         }
 
         TMP_Text CreateText(

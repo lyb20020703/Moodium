@@ -5,10 +5,10 @@ using UnityEngine;
 public sealed class CandyCompletionHouseControllerTests
 {
     [Test]
-    public void CompletionHouseUsesAnApproximatelyThreeMeterRearRightOffset()
+    public void CompletionHouseUsesAForwardRightOffset()
     {
         Assert.That(CandyCompletionHouseController.GetViewerRelativeSpawnOffset(),
-            Is.EqualTo(new Vector2(1.2f, -2.75f)));
+            Is.EqualTo(new Vector2(2.8f, 2.9f)));
     }
 
     [Test]

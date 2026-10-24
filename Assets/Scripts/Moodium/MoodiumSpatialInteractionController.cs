@@ -7,6 +7,8 @@ using UnityEngine.InputSystem.LowLevel;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using Moodium.Flow.ObjectPicker;
 using Moodium.Calibration;
+using Moodium.MoodCheck;
+using Moodium.UI;
 
 namespace Moodium.Flow
 {
@@ -18,6 +20,8 @@ namespace Moodium.Flow
         readonly Dictionary<int, ChocolateCapsuleInteraction> m_ChocolateInteractions = new();
         readonly Dictionary<int, MoodiumWindowHandle> m_WindowInteractions = new();
         readonly Dictionary<int, SensoryBagCalibrationHandle> m_CalibrationInteractions = new();
+        readonly Dictionary<int, MoodCheckPlateHandle> m_MoodCheckInteractions = new();
+        readonly Dictionary<int, GlassSlideToEnter> m_GlassSliderInteractions = new();
         readonly HashSet<MoodiumSpatialButton> m_HoveredButtons = new();
         readonly HashSet<MoodiumSpatialButton> m_ButtonsThisFrame = new();
         readonly HashSet<MoodiumObjectPickerItem> m_HoveredPickerItems = new();
@@ -67,6 +71,14 @@ namespace Moodium.Flow
                             continue;
                         }
 
+                        var moodCheckHandle = target.GetComponentInParent<MoodCheckPlateHandle>();
+                        if (moodCheckHandle != null)
+                        {
+                            m_MoodCheckInteractions[id] = moodCheckHandle;
+                            moodCheckHandle.PointerStarted(id, pointer.interactionPosition);
+                            continue;
+                        }
+
                         var windowHandle = target.GetComponentInParent<MoodiumWindowHandle>();
                         if (windowHandle != null)
                         {
@@ -95,6 +107,13 @@ namespace Moodium.Flow
                         }
 
                         var button = target.GetComponentInParent<MoodiumSpatialButton>();
+                        var glassSlider = target.GetComponentInParent<GlassSlideToEnter>();
+                        if (glassSlider != null)
+                        {
+                            m_GlassSliderInteractions[id] = glassSlider;
+                            glassSlider.PointerStarted(id, pointer.interactionPosition);
+                            continue;
+                        }
                         if (button != null)
                         {
                             button.Press();
@@ -122,6 +141,23 @@ namespace Moodium.Flow
                     }
                 }
 
+                if (m_GlassSliderInteractions.TryGetValue(id, out var glassSliderInteraction))
+                {
+                    if (pointer.phase == SpatialPointerPhase.Moved)
+                        glassSliderInteraction.PointerMoved(id, pointer.interactionPosition);
+                    else if (pointer.phase == SpatialPointerPhase.Ended)
+                    {
+                        glassSliderInteraction.PointerEnded(id);
+                        m_GlassSliderInteractions.Remove(id);
+                    }
+                    else if (pointer.phase == SpatialPointerPhase.Cancelled || pointer.phase == SpatialPointerPhase.None)
+                    {
+                        glassSliderInteraction.PointerEnded(id);
+                        m_GlassSliderInteractions.Remove(id);
+                    }
+                    continue;
+                }
+
                 if (m_ChocolateInteractions.TryGetValue(id, out var chocolateInteraction))
                 {
                     if (pointer.phase == SpatialPointerPhase.Ended ||
@@ -146,6 +182,26 @@ namespace Moodium.Flow
                         case SpatialPointerPhase.None:
                             calibrationInteraction.PointerEnded(id);
                             m_CalibrationInteractions.Remove(id);
+                            break;
+                    }
+                    continue;
+                }
+
+                if (m_MoodCheckInteractions.TryGetValue(id, out var moodCheckInteraction))
+                {
+                    switch (pointer.phase)
+                    {
+                        case SpatialPointerPhase.Moved:
+                            moodCheckInteraction.PointerMoved(id, pointer.interactionPosition);
+                            break;
+                        case SpatialPointerPhase.Ended:
+                            moodCheckInteraction.PointerEnded(id, pointer.interactionPosition);
+                            m_MoodCheckInteractions.Remove(id);
+                            break;
+                        case SpatialPointerPhase.Cancelled:
+                        case SpatialPointerPhase.None:
+                            moodCheckInteraction.CancelPointer(id);
+                            m_MoodCheckInteractions.Remove(id);
                             break;
                     }
                     continue;

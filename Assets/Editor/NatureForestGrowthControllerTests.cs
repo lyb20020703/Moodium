@@ -107,15 +107,15 @@ public sealed class NatureForestGrowthControllerTests
             if (forestRoot.GetChild(i).position.z > 0f) frontCount++;
             if (forestRoot.GetChild(i).position.z < 0f) backCount++;
         }
-        Assert.That(frontCount, Is.EqualTo(1));
-        Assert.That(backCount, Is.EqualTo(4));
+        Assert.That(frontCount, Is.EqualTo(5));
+        Assert.That(backCount, Is.EqualTo(0));
     }
 
     [Test]
-    public void FirstForestTreeIsPlacedToTheViewersBackRight()
+    public void FirstForestTreeIsPlacedInTheViewersForwardLeftArc()
     {
         Assert.That(NatureForestGrowthController.GetViewerRelativeSpawnOffset(0),
-            Is.EqualTo(new Vector2(5.6f, -4.4f)));
+            Is.EqualTo(new Vector2(-2.4f, 2.8f)));
     }
 
     [Test]

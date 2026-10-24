@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.IO;
 using Moodium.CandyWorld;
 using Moodium.Reality;
 using NUnit.Framework;
@@ -7,6 +8,8 @@ using UnityEngine.XR.ARFoundation;
 
 public sealed class CandyWorldProgressControllerTests
 {
+    const string CandyWorldAssetPath = "Assets/Data/Moodium/Worlds/CandyWorld.asset";
+    const string HoneyJarGuid = "56c4aa9d9aece463e9149c33795332a5";
     GameObject m_Root;
 
     [SetUp]
@@ -41,4 +44,29 @@ public sealed class CandyWorldProgressControllerTests
 
         Object.DestroyImmediate(material);
     }
+
+    [Test]
+    public void HoneyJarIsScheduledForTheThirdAmbientCandyNode()
+    {
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.8f), Is.False);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.86f), Is.False);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.92f), Is.True);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.98f), Is.False);
+    }
+
+    [Test]
+    public void HoneyJarNameWithSpaceIsRecognizedByProgressPool()
+    {
+        Assert.That(CandyWorldProgressController.NormalizePrefabName("Honey Jar"),
+            Is.EqualTo("HoneyJar"));
+    }
+
+    [Test]
+    public void CandyWorldPrefabPoolIncludesHoneyJar()
+    {
+        var asset = File.ReadAllText(CandyWorldAssetPath);
+
+        Assert.That(asset, Does.Contain(HoneyJarGuid));
+    }
+
 }

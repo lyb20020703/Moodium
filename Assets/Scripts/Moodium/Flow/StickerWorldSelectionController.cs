@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using Moodium.Opening;
+using Moodium.MoodCheck;
+using Moodium.UI;
 
 namespace Moodium.Flow
 {
@@ -23,6 +25,7 @@ namespace Moodium.Flow
         [Header("World Entries")]
         [SerializeField] GameObject m_CandyWorldUiPrefab;
         [SerializeField] GameObject m_NatureWorldUiPrefab;
+        [SerializeField] GameObject m_MoodiMascotPrefab;
         [SerializeField] MoodiumWorldDefinition m_CandyWorld;
         [SerializeField] MoodiumWorldDefinition m_NatureWorld;
         [SerializeField] TMP_FontAsset m_ChineseFont;
@@ -36,17 +39,23 @@ namespace Moodium.Flow
         readonly Dictionary<TrackableId, StickerWorldEntry> m_Entries = new();
         OpeningVideoSession m_Session;
         TextMeshPro m_Instruction;
+        MoodiumSpatialButton m_MoodCheckButton;
+        MoodCheckSample m_MoodCheckSummary;
+        MoodCheckContext m_MoodCheckContext;
+        Material m_EntryGlassMaterial;
+        string m_RecommendedWorldId;
         bool m_Active;
         bool m_English;
-        static Material s_RuntimeButtonMaterial;
 
         public event Action<StickerWorldEntry> WorldEntrySelected;
+        public event Action MoodCheckRequested;
         public int ActiveEntryCount => m_Entries.Count;
         public bool IsSelectionActive => m_Active;
 
         public GameObject CandyWorldUiPrefab => m_CandyWorldUiPrefab;
         public GameObject NatureWorldUiPrefab => m_NatureWorldUiPrefab;
         public Vector3 EntryLocalPosition => m_EntryLocalPosition;
+        public MoodiumSpatialButton MoodCheckButton => m_MoodCheckButton;
 
         public static Vector3 GetCompensatedLocalScale(float targetWorldScale, Vector3 parentScale) => new(
             SafeScaleDivide(targetWorldScale, parentScale.x),
@@ -84,6 +93,26 @@ namespace Moodium.Flow
         {
             m_ChineseFont = chineseFont;
             m_EnglishFont = englishFont;
+        }
+
+        public void ConfigureMascotPrefab(GameObject prefab) => m_MoodiMascotPrefab = prefab;
+
+        public void ConfigureMoodCheck(MoodCheckContext context) => m_MoodCheckContext = context;
+
+        public void ConfigureEntryGlassMaterial(Material material) => m_EntryGlassMaterial = material;
+
+        public void SetMoodCheckSummary(MoodCheckSample sample)
+        {
+            m_MoodCheckSummary = sample;
+            m_RecommendedWorldId = sample?.recommendedWorldId;
+            CreateOrUpdateMoodCheckButton();
+            UpdateAllRecommendationTags();
+        }
+
+        public void SetRecommendedWorld(string worldId)
+        {
+            m_RecommendedWorldId = worldId;
+            UpdateAllRecommendationTags();
         }
 
         public void Begin(OpeningVideoSession session)
@@ -126,6 +155,9 @@ namespace Moodium.Flow
             if (m_Instruction != null)
                 Destroy(m_Instruction.gameObject);
             m_Instruction = null;
+            if (m_MoodCheckButton != null)
+                Destroy(m_MoodCheckButton.gameObject);
+            m_MoodCheckButton = null;
             foreach (var entry in m_Entries.Values)
                 if (entry.Root != null)
                     Destroy(entry.Root);
@@ -197,9 +229,10 @@ namespace Moodium.Flow
                 root.AddComponent<StickerWorldEntryUprightFollower>()
                     .Configure(anchor, m_EntryLocalPosition, m_EntryLocalScale);
                 MoodiSelectionMascotController.AttachTo(root);
-                CreateEnterButton(root.transform, trackableId);
+                CreateEnterButton(root.transform, trackableId, world);
                 entry = new StickerWorldEntry(trackableId, referenceImageName, world, anchor, root);
                 m_Entries[trackableId] = entry;
+                UpdateRecommendationTag(entry);
                 Debug.Log($"[Moodium Sticker Selection] Spawned '{world.DisplayName}' entry for '{referenceImageName}' ({trackableId}).");
             }
             else if (entry.Root.transform.parent != anchor)
@@ -258,45 +291,35 @@ namespace Moodium.Flow
             return prefab != null && world != null;
         }
 
-        void CreateEnterButton(Transform parent, TrackableId trackableId)
+        void CreateEnterButton(Transform parent, TrackableId trackableId, MoodiumWorldDefinition world)
         {
-            var buttonRoot = new GameObject("Enter World Button", typeof(BoxCollider));
-            buttonRoot.name = "Enter World Button";
+            var buttonRoot = new GameObject("Enter World Slider");
             buttonRoot.transform.SetParent(parent, false);
             buttonRoot.transform.localPosition = new Vector3(0f, m_ButtonLocalHeight, m_ButtonLocalForwardOffset);
-            var collider = buttonRoot.GetComponent<BoxCollider>();
-            collider.size = new Vector3(0.18f, 0.065f, 0.035f);
+            var isNature = world != null && string.Equals(world.WorldId, "nature", StringComparison.OrdinalIgnoreCase);
+            var slider = buttonRoot.AddComponent<GlassSlideToEnter>();
+            slider.Configure(
+                EntryButtonLabel(world),
+                isNature ? GlassSlideToEnter.Theme.Nature : GlassSlideToEnter.Theme.Candy,
+                m_English ? m_EnglishFont : m_ChineseFont,
+                m_EntryGlassMaterial,
+                m_English ? "Entering…" : "正在进入…");
+            slider.Completed += () => SelectEntry(trackableId);
+        }
 
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Button Visual";
-            visual.transform.SetParent(buttonRoot.transform, false);
-            visual.transform.localScale = new Vector3(0.11f, 0.035f, 0.012f);
-            var renderer = visual.GetComponent<Renderer>();
-            renderer.enabled = false;
-            renderer.sharedMaterial = GetRuntimeButtonMaterial();
-            var buttonColor = new Color(0.08f, 0.15f, 0.32f, 0.94f);
-            var propertyBlock = new MaterialPropertyBlock();
-            propertyBlock.SetColor("_BaseColor", buttonColor);
-            propertyBlock.SetColor("_Color", buttonColor);
-            renderer.SetPropertyBlock(propertyBlock);
-
-            var labelRoot = new GameObject("Button Label", typeof(TextMeshPro));
-            labelRoot.transform.SetParent(buttonRoot.transform, false);
-            labelRoot.transform.localPosition = new Vector3(0f, 0f, -0.02f);
-            labelRoot.transform.localRotation = Quaternion.identity;
-            labelRoot.transform.localScale = Vector3.one * 0.03f;
-            var label = labelRoot.GetComponent<TextMeshPro>();
-            label.text = m_English ? "Enter" : "进入世界";
-            label.font = m_English ? m_EnglishFont : m_ChineseFont;
-            label.fontSize = 6f;
-            label.alignment = TextAlignmentOptions.Center;
-            label.color = Color.white;
-            label.outlineWidth = 0.08f;
-            label.outlineColor = new Color(0.03f, 0.04f, 0.10f, 0.9f);
-            label.rectTransform.sizeDelta = new Vector2(8f, 2.5f);
-
-            var spatialButton = buttonRoot.AddComponent<MoodiumSpatialButton>();
-            spatialButton.Configure(label, renderer, () => SelectEntry(trackableId));
+        string EntryButtonLabel(MoodiumWorldDefinition world)
+        {
+            if (world == null)
+                return m_English ? "Enter" : "进入世界";
+            if (m_English)
+                return $"Enter {world.DisplayName}";
+            var displayName = world.WorldId switch
+            {
+                "candy" => "糖果世界",
+                "nature" => "自然世界",
+                _ => world.DisplayName
+            };
+            return $"进入{displayName}";
         }
 
         void CreateOrUpdateInstruction()
@@ -315,10 +338,112 @@ namespace Moodium.Flow
                 m_Instruction.alignment = TextAlignmentOptions.Center;
                 m_Instruction.rectTransform.sizeDelta = new Vector2(24f, 4f);
                 m_Instruction.color = Color.white;
-                m_Instruction.outlineWidth = 0.08f;
-                m_Instruction.outlineColor = new Color(0.08f, 0.02f, 0.16f, 0.85f);
+                if (Application.isPlaying)
+                {
+                    m_Instruction.outlineWidth = 0.08f;
+                    m_Instruction.outlineColor = new Color(0.08f, 0.02f, 0.16f, 0.85f);
+                }
             }
             m_Instruction.text = m_English ? "Look at the sticker" : "请对准贴纸";
+            CreateOrUpdateMoodCheckButton();
+        }
+
+        void CreateOrUpdateMoodCheckButton()
+        {
+            if (m_Session?.DisplayRoot == null)
+                return;
+            if (m_MoodCheckButton == null)
+            {
+                var root = new GameObject("Mood Check Entry", typeof(BoxCollider));
+                root.transform.SetParent(m_Session.DisplayRoot, false);
+                root.transform.localPosition = new Vector3(0f, .34f, -.04f);
+                root.transform.localScale = GetCompensatedLocalScale(.045f, m_Session.DisplayRoot.localScale);
+                root.GetComponent<BoxCollider>().size = new Vector3(12f, 2.2f, .8f);
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visual.name = "Button Visual";
+                visual.transform.SetParent(root.transform, false);
+                visual.transform.localScale = new Vector3(4.25f, 1.05f, .2f);
+                var primitiveCollider = visual.GetComponent<Collider>();
+                if (Application.isPlaying) Destroy(primitiveCollider);
+                else DestroyImmediate(primitiveCollider);
+                var renderer = visual.GetComponent<Renderer>();
+                renderer.enabled = false;
+                var buttonColor = new Color(0.08f, 0.15f, 0.32f, 0.94f);
+                var propertyBlock = new MaterialPropertyBlock();
+                propertyBlock.SetColor("_BaseColor", buttonColor);
+                propertyBlock.SetColor("_Color", buttonColor);
+                renderer.SetPropertyBlock(propertyBlock);
+                var labelRoot = new GameObject("Label", typeof(TextMeshPro));
+                labelRoot.transform.SetParent(root.transform, false);
+                labelRoot.transform.localPosition = new Vector3(0f, 0f, -.45f);
+                var label = labelRoot.GetComponent<TextMeshPro>();
+                label.font = m_English ? m_EnglishFont : m_ChineseFont;
+                label.fontSize = 7f;
+                label.alignment = TextAlignmentOptions.Center;
+                label.color = Color.white;
+                label.rectTransform.sizeDelta = new Vector2(8f, 2f);
+                label.outlineWidth = 0.04f;
+                label.outlineColor = new Color(0f, 0f, 0f, .35f);
+                m_MoodCheckButton = root.AddComponent<MoodiumSpatialButton>();
+                m_MoodCheckButton.Configure(label, null, () => MoodCheckRequested?.Invoke());
+            }
+            var text = MoodCheckCopy.Get("prompt.entry", m_English);
+            if (m_MoodCheckSummary != null)
+            {
+                var mood = ShortMoodName(m_MoodCheckSummary.mood);
+                var world = WorldName(m_MoodCheckSummary.recommendedWorldId);
+                text = m_English ? $"Now: {mood} · {world} recommended" : $"现在：{mood} · 推荐{world}";
+            }
+            if (m_MoodCheckButton.Label != null)
+                m_MoodCheckButton.Label.text = text;
+        }
+
+        void UpdateAllRecommendationTags()
+        {
+            foreach (var entry in m_Entries.Values)
+                UpdateRecommendationTag(entry);
+        }
+
+        void UpdateRecommendationTag(StickerWorldEntry entry)
+        {
+            if (entry?.Root == null)
+                return;
+            var existing = entry.Root.transform.Find("Moodi Recommendation Tag");
+            var matches = entry.World != null && !string.IsNullOrEmpty(m_RecommendedWorldId) &&
+                          string.Equals(entry.World.WorldId, m_RecommendedWorldId, StringComparison.OrdinalIgnoreCase);
+            if (!matches)
+            {
+                if (existing != null) Destroy(existing.gameObject);
+                return;
+            }
+            if (existing != null)
+                return;
+            var tag = new GameObject("Moodi Recommendation Tag", typeof(TextMeshPro));
+            tag.transform.SetParent(entry.Root.transform, false);
+            tag.transform.localPosition = new Vector3(0f, m_ButtonLocalHeight + .055f, m_ButtonLocalForwardOffset);
+            tag.transform.localScale = Vector3.one;
+            var label = tag.GetComponent<TextMeshPro>();
+            label.text = "★ " + MoodCheckCopy.Get("tag.pick", m_English);
+            label.font = m_English ? m_EnglishFont : m_ChineseFont;
+            label.fontSize = .025f;
+            label.alignment = TextAlignmentOptions.Center;
+            label.color = new Color(1f, 1f, 1f, .95f);
+            label.rectTransform.sizeDelta = new Vector2(.18f, .025f);
+            tag.AddComponent<MoodRecommendationTagPulse>();
+        }
+
+        string ShortMoodName(MoodKind mood)
+        {
+            var value = MoodCheckCopy.Get("mood." + mood.ToString().ToLowerInvariant(), m_English);
+            var separator = value.IndexOf(" · ", StringComparison.Ordinal);
+            return separator >= 0 ? value.Substring(0, separator) : value;
+        }
+
+        string WorldName(string worldId)
+        {
+            if (string.IsNullOrEmpty(worldId)) return m_English ? "either world" : "任一世界";
+            if (m_English) return worldId == "candy" ? "Candy World" : "Nature World";
+            return worldId == "candy" ? "糖果世界" : "自然世界";
         }
 
         void SeekSelectionLoopStart()
@@ -333,13 +458,5 @@ namespace Moodium.Flow
         static float SafeScaleDivide(float value, float divisor) =>
             Mathf.Abs(divisor) > 0.0001f ? value / divisor : value;
 
-        static Material GetRuntimeButtonMaterial()
-        {
-            if (s_RuntimeButtonMaterial != null)
-                return s_RuntimeButtonMaterial;
-            s_RuntimeButtonMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color"))
-            { name = "Moodium Runtime Entry Button" };
-            return s_RuntimeButtonMaterial;
-        }
     }
 }

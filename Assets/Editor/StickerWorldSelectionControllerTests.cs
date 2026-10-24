@@ -4,6 +4,8 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Video;
 using UnityEngine.XR.ARSubsystems;
+using UnityEditor;
+using Moodium.MoodCheck;
 
 public sealed class StickerWorldSelectionControllerTests
 {
@@ -21,14 +23,20 @@ public sealed class StickerWorldSelectionControllerTests
         m_Controller = m_Root.AddComponent<StickerWorldSelectionController>();
         m_CandyWorld = ScriptableObject.CreateInstance<MoodiumWorldDefinition>();
         m_NatureWorld = ScriptableObject.CreateInstance<MoodiumWorldDefinition>();
+        var candySerialized = new SerializedObject(m_CandyWorld);
+        candySerialized.FindProperty("m_WorldId").stringValue = "candy";
+        candySerialized.FindProperty("m_DisplayName").stringValue = "糖果世界";
+        candySerialized.ApplyModifiedPropertiesWithoutUndo();
+        var natureSerialized = new SerializedObject(m_NatureWorld);
+        natureSerialized.FindProperty("m_WorldId").stringValue = "nature";
+        natureSerialized.FindProperty("m_DisplayName").stringValue = "自然世界";
+        natureSerialized.ApplyModifiedPropertiesWithoutUndo();
         m_Controller.ConfigureForTests(
             new GameObject("Candy UI Prefab"),
             new GameObject("Nature UI Prefab"),
             m_CandyWorld,
             m_NatureWorld);
-        // The mapping tests do not need the runtime instruction text, whose TMP outline
-        // material is intentionally created only in the player-facing display hierarchy.
-        m_Controller.Begin(new OpeningVideoSession(m_Root.AddComponent<VideoPlayer>(), null, null, false, () => { }));
+        m_Controller.Begin(new OpeningVideoSession(m_Root.AddComponent<VideoPlayer>(), m_Root.transform, null, false, () => { }));
     }
 
     [TearDown]
@@ -69,6 +77,20 @@ public sealed class StickerWorldSelectionControllerTests
 
         Assert.That(m_Controller.ActiveEntryCount, Is.EqualTo(1));
         Assert.That(m_Controller.GetEntry(NatureId).World, Is.SameAs(m_NatureWorld));
+    }
+
+    [Test]
+    public void WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton()
+    {
+        var anchor = new GameObject("Candy Anchor").transform;
+        anchor.SetParent(m_Root.transform);
+        m_Controller.HandleTrackedImageUpdate(CandyId, "CandyWorldPhoneTracking", anchor, TrackingState.Tracking);
+
+        var button = m_Controller.GetEntry(CandyId).Root.transform.Find("Enter World Button");
+        Assert.That(button.Find("Glass Track"), Is.Not.Null);
+        Assert.That(button.Find("Slide Handle"), Is.Not.Null);
+        Assert.That(button.Find("Slide Handle/Arrow"), Is.Not.Null);
+        Assert.That(button.Find("Button Label").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo("进入糖果世界"));
     }
 
     [Test]
@@ -119,6 +141,54 @@ public sealed class StickerWorldSelectionControllerTests
     {
         Assert.That(m_Controller.EntryLocalPosition.y, Is.GreaterThanOrEqualTo(.12f));
         Assert.That(m_Controller.EntryLocalPosition.z, Is.GreaterThanOrEqualTo(.10f));
+    }
+
+    [Test]
+    public void MoodEntry_ChangesSummaryAndRaisesRequest()
+    {
+        var requests = 0;
+        m_Controller.MoodCheckRequested += () => requests++;
+        m_Controller.SetMoodCheckSummary(new MoodCheckSample
+        {
+            mood = MoodKind.Tense,
+            recommendedWorldId = "nature"
+        });
+
+        Assert.That(m_Controller.MoodCheckButton.Label.text, Does.Contain("烦躁"));
+        Assert.That(m_Controller.MoodCheckButton.Label.text, Does.Contain("自然世界"));
+        m_Controller.MoodCheckButton.Press();
+        Assert.That(requests, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MoodEntry_UsesContrastingGlassBackgroundAndOutlinedLabel()
+    {
+        var root = m_Controller.MoodCheckButton.transform;
+        var renderer = root.Find("Button Visual").GetComponent<Renderer>();
+        var block = new MaterialPropertyBlock();
+        renderer.GetPropertyBlock(block);
+
+        Assert.That(block.GetColor("_BaseColor").r, Is.LessThan(.5f));
+        Assert.That(m_Controller.MoodCheckButton.Label.outlineWidth, Is.GreaterThan(0f));
+    }
+
+    [Test]
+    public void RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons()
+    {
+        m_Controller.SetRecommendedWorld("nature");
+        var candyAnchor = new GameObject("Candy Anchor").transform;
+        var natureAnchor = new GameObject("Nature Anchor").transform;
+        candyAnchor.SetParent(m_Root.transform);
+        natureAnchor.SetParent(m_Root.transform);
+        m_Controller.HandleTrackedImageUpdate(CandyId, "CandyWorldPhoneTracking", candyAnchor, TrackingState.Tracking);
+        m_Controller.HandleTrackedImageUpdate(NatureId, "NatureWorldPhoneTracking", natureAnchor, TrackingState.Tracking);
+
+        Assert.That(m_Controller.GetEntry(CandyId).Root.transform.Find("Moodi Recommendation Tag"), Is.Null);
+        var tag = m_Controller.GetEntry(NatureId).Root.transform.Find("Moodi Recommendation Tag");
+        Assert.That(tag, Is.Not.Null);
+        Assert.That(tag.localScale.x, Is.InRange(1f, 1.05f));
+        Assert.That(m_Controller.GetEntry(CandyId).Root.transform.Find("Enter World Button").gameObject.activeSelf, Is.True);
+        Assert.That(m_Controller.GetEntry(NatureId).Root.transform.Find("Enter World Button").gameObject.activeSelf, Is.True);
     }
 
     [Test]

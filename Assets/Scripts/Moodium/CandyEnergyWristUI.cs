@@ -35,6 +35,7 @@ namespace Moodium.CandyWorld
         [SerializeField] float m_TitleVerticalOffset = .012f;
         [SerializeField] float m_PercentageVerticalOffset = 0f;
         [SerializeField] float m_ReleaseVerticalOffset = -.017f;
+        [SerializeField] float m_ExitVerticalOffset = -.042f;
 
         Camera m_Camera;
         XRHandSubsystem m_HandSubsystem;
@@ -44,8 +45,10 @@ namespace Moodium.CandyWorld
         TMP_Text m_Percentage;
         TMP_Text m_Title;
         TMP_Text m_ReleaseLabel;
+        TMP_Text m_ExitLabel;
         GameObject m_ReleaseButtonRoot;
         GameObject m_ReleaseKnobRoot;
+        GameObject m_ExitButtonRoot;
         Sprite m_RoundedSprite;
         Sprite m_CircleSprite;
         Transform m_RingRoot;
@@ -62,6 +65,7 @@ namespace Moodium.CandyWorld
         bool m_Completed;
         bool m_ReleaseAvailable;
         bool m_ReleaseEnabled;
+        bool m_ExitAvailable;
         bool m_Built;
         bool m_NatureWorld;
         string m_WorldEnergyTitle = "Candy Energy";
@@ -69,6 +73,7 @@ namespace Moodium.CandyWorld
         public float DisplayedProgress => m_DisplayedProgress;
         public bool HandTracked { get; private set; }
         public event System.Action ReleasePressed;
+        public event System.Action ExitPressed;
 
         public static float ProgressToArcDegrees(float normalizedProgress) => Mathf.Clamp01(normalizedProgress) * FullCircleDegrees;
         public static Color GetProgressRingColor(bool natureWorld) => natureWorld ? NatureRingColor : CandyRingColor;
@@ -76,6 +81,21 @@ namespace Moodium.CandyWorld
         {
             return (Mathf.Max(0f, ringRadius) + Mathf.Max(0f, ringThickness) * .5f + Mathf.Max(0f, clearance)) /
                    Mathf.Max(.000001f, canvasScale);
+        }
+
+        public static string GetExitButtonLabel(bool english)
+        {
+            return english ? "Exit World" : "退出世界";
+        }
+
+        public void ConfigureLanguageFonts(TMP_FontAsset chineseFont, TMP_FontAsset englishFont)
+        {
+            var english = PlayerPrefs.GetString("Moodium.Language", "Chinese")
+                .Equals("English", System.StringComparison.OrdinalIgnoreCase);
+            var selected = english ? englishFont : chineseFont;
+            if (selected == null) return;
+            if (m_ExitLabel != null) m_ExitLabel.font = selected;
+            if (m_ReleaseLabel != null) m_ReleaseLabel.font = selected;
         }
 
         public void Build(Camera camera, TMP_FontAsset font, Sprite roundedSprite, Sprite circleSprite)
@@ -103,6 +123,14 @@ namespace Moodium.CandyWorld
         {
             m_ReleaseEnabled = enabled;
             UpdateReleaseToggleVisual();
+        }
+
+        public void SetExitAvailable(bool available)
+        {
+            m_ExitAvailable = available;
+            if (m_ExitButtonRoot != null)
+                m_ExitButtonRoot.SetActive(available);
+            UpdateExitButtonLabel();
         }
 
         public void SetWorldTheme(bool natureWorld)
@@ -179,6 +207,7 @@ namespace Moodium.CandyWorld
             m_Percentage = CreateText("0%", m_CanvasRect,
                 new Vector2(0f, anchor + m_PercentageVerticalOffset / canvasScale), new Vector2(135f, 45f), 27f, font, Color.white);
             CreateReleaseButton(font, anchor + m_ReleaseVerticalOffset / canvasScale);
+            CreateExitButton(font, anchor + m_ExitVerticalOffset / canvasScale);
         }
 
         void CreateReleaseButton(TMP_FontAsset font, float verticalPosition)
@@ -211,6 +240,27 @@ namespace Moodium.CandyWorld
             m_ReleaseButtonRoot.SetActive(false);
         }
 
+        void CreateExitButton(TMP_FontAsset font, float verticalPosition)
+        {
+            m_ExitButtonRoot = new GameObject("Exit World Button", typeof(RectTransform), typeof(Image), typeof(BoxCollider));
+            m_ExitButtonRoot.transform.SetParent(m_CanvasRect, false);
+            var rect = (RectTransform)m_ExitButtonRoot.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+            rect.anchoredPosition = new Vector2(0f, verticalPosition);
+            rect.sizeDelta = new Vector2(136f, 42f);
+            var image = m_ExitButtonRoot.GetComponent<Image>();
+            image.sprite = m_RoundedSprite;
+            image.type = m_RoundedSprite != null && m_RoundedSprite.border.sqrMagnitude > 0f ? Image.Type.Sliced : Image.Type.Simple;
+            image.color = new Color(.34f, .12f, .20f, .94f);
+            image.raycastTarget = false;
+            m_ExitButtonRoot.GetComponent<BoxCollider>().size = new Vector3(136f, 42f, 20f);
+            m_ExitLabel = CreateText("退出世界", m_ExitButtonRoot.transform, Vector2.zero, new Vector2(126f, 36f), 16f,
+                font, Color.white);
+            var button = m_ExitButtonRoot.AddComponent<MoodiumSpatialButton>();
+            button.Configure(m_ExitLabel, null, PressExit);
+            m_ExitButtonRoot.SetActive(false);
+        }
+
         void UpdateReleaseToggleVisual()
         {
             if (m_ReleaseLabel != null)
@@ -229,6 +279,20 @@ namespace Moodium.CandyWorld
         {
             if (!m_ReleaseAvailable) return;
             ReleasePressed?.Invoke();
+        }
+
+        void PressExit()
+        {
+            if (!m_ExitAvailable) return;
+            ExitPressed?.Invoke();
+        }
+
+        void UpdateExitButtonLabel()
+        {
+            if (m_ExitLabel == null) return;
+            var english = PlayerPrefs.GetString("Moodium.Language", "Chinese")
+                .Equals("English", System.StringComparison.OrdinalIgnoreCase);
+            m_ExitLabel.text = GetExitButtonLabel(english);
         }
 
         void LateUpdate()

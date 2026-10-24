@@ -59,13 +59,11 @@ namespace Moodium.Calibration
                 // scale against the prefab's X/Y plane instead, rotating Candy's
                 // long edge and breaking both worlds' calibrated proportions.
                 m_Anchor.rotation * m_Data.LocalOrientation);
-            // Image tracking and the calibration frame own the interaction-plane rotation.
-            // The visible CandySoft/NatureSoft prefab must *not* inherit that correction:
-            // its authored transform is already the approved world-facing pose. Keeping
-            // this root at world identity preserves that pose exactly while the parent
-            // still follows the tracked anchor's calibrated center position.
+            // Bags are authored in the image anchor's X/Z plane. Cancel only the
+            // calibration UI's plane correction, while retaining the full tracked
+            // image rotation (including pitch and roll) for physical alignment.
             if (VisualRoot != null)
-                VisualRoot.rotation = Quaternion.identity;
+                VisualRoot.localRotation = Quaternion.Inverse(m_Data.LocalOrientation);
         }
 
         void EnsureRoots()

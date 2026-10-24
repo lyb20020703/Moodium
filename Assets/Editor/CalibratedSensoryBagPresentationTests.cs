@@ -41,7 +41,7 @@ public sealed class CalibratedSensoryBagPresentationTests
     }
 
     [Test]
-    public void VisualRoot_PreservesAuthoredPrefabWorldOrientation_WhileFittingBagXZ()
+    public void VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ()
     {
         m_Anchor = new GameObject("Rotated image anchor");
         m_Anchor.transform.rotation = Quaternion.Euler(35f, 70f, 15f);
@@ -58,13 +58,16 @@ public sealed class CalibratedSensoryBagPresentationTests
 
         presentation.Configure(m_Anchor.transform, data, m_VisualPrefab);
 
-        // Regression: calibration owns the interaction plane, but it must never rotate the visible
-        // CandySoft/NatureSoft prefab away from its authored world orientation.
-        Assert.That(Quaternion.Angle(presentation.VisualRoot.rotation, Quaternion.identity), Is.LessThan(.01f));
+        Assert.That(Quaternion.Angle(presentation.VisualRoot.rotation, m_Anchor.transform.rotation), Is.LessThan(.01f));
         Assert.That(Quaternion.Angle(
                 presentation.VisualRoot.localRotation,
-                Quaternion.Inverse(presentation.transform.rotation)),
+                Quaternion.Inverse(data.LocalOrientation)),
             Is.LessThan(.01f));
+        var before = presentation.VisualRoot.rotation;
+        m_Anchor.transform.rotation = Quaternion.AngleAxis(30f, Vector3.forward) * before;
+        presentation.SyncNow();
+        Assert.That(Quaternion.Angle(before, presentation.VisualRoot.rotation), Is.EqualTo(30f).Within(.01f));
+        Assert.That(Quaternion.Angle(presentation.VisualRoot.rotation, m_Anchor.transform.rotation), Is.LessThan(.01f));
         Assert.That(presentation.VisualRoot.localScale.x, Is.EqualTo(data.Width).Within(.0001f));
         Assert.That(presentation.VisualRoot.localScale.y, Is.EqualTo(1f).Within(.0001f));
         Assert.That(presentation.VisualRoot.localScale.z, Is.EqualTo(data.Height).Within(.0001f));

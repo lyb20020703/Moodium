@@ -42,6 +42,8 @@ namespace Moodium.CandyWorld
         GameObject m_NatureIvyGeneratorPrefab;
         Material m_NatureIvyGrowMaterial;
         AudioClip m_RewardTouchSound;
+        AudioClip m_CandyPrefabDeformationSound;
+        System.Action m_ExitAction;
         bool m_NatureWorldActive;
         bool m_Running;
         bool m_RewardReleased;
@@ -61,6 +63,8 @@ namespace Moodium.CandyWorld
         public float Energy => m_Energy != null ? m_Energy.Energy : 0f;
 
         public void ConfigureRewardTouchSound(AudioClip touchSound) => m_RewardTouchSound = touchSound;
+        public void ConfigureCandyPrefabDeformationSound(AudioClip sound) => m_CandyPrefabDeformationSound = sound;
+        public void ConfigureExitAction(System.Action exitAction) => m_ExitAction = exitAction;
 
         void Update()
         {
@@ -83,6 +87,7 @@ namespace Moodium.CandyWorld
         {
             m_ChineseFont = chineseFont;
             m_EnglishFont = englishFont;
+            m_EnergyUI?.ConfigureLanguageFonts(chineseFont, englishFont);
         }
 
         // Keep existing editor tests and external callers source-compatible. The full
@@ -160,7 +165,7 @@ namespace Moodium.CandyWorld
                 m_ProgressController = gameObject.AddComponent<CandyWorldProgressController>();
             m_ProgressController.Configure(
                 camera, m_SpatialTransformation, m_Frost, m_RainReward,
-                world != null ? world.Prefabs : null);
+                world != null ? world.Prefabs : null, m_CandyPrefabDeformationSound);
 
             m_NatureForestGrowth = GetComponent<NatureForestGrowthController>();
             if (m_NatureForestGrowth == null)
@@ -187,6 +192,8 @@ namespace Moodium.CandyWorld
             }
             m_EnergyUI.ReleasePressed -= ReleaseAccumulatedEnergy;
             m_EnergyUI.ReleasePressed += ReleaseAccumulatedEnergy;
+            m_EnergyUI.ExitPressed -= RequestExit;
+            m_EnergyUI.ExitPressed += RequestExit;
             StopExperience();
         }
 
@@ -214,10 +221,11 @@ namespace Moodium.CandyWorld
             // behind the Nature-specific leaf atmosphere at completion.
             m_ProgressController.Configure(
                 Camera.main, m_SpatialTransformation, m_NatureWorldActive ? null : m_Frost, m_RainReward,
-                world != null ? world.Prefabs : null);
+                world != null ? world.Prefabs : null, m_CandyPrefabDeformationSound);
             m_EnergyUI?.SetWorldTheme(m_NatureWorldActive);
             m_RewardReleased = false;
             m_EnergyUI?.SetReleaseAvailable(false);
+            m_EnergyUI?.SetExitAvailable(true);
             m_LastNatureProgress = 0f;
             m_LastNatureSoftOrigin = Vector3.zero;
             // The pink candy-wrapper overlay belongs only to Candy World. Nature keeps
@@ -234,12 +242,12 @@ namespace Moodium.CandyWorld
                 }
                 m_NatureForestGrowth.Configure(Camera.main != null ? Camera.main.transform : null, m_NatureTreePrefabs,
                     m_SpatialMeshManager);
+                m_NatureForestGrowth.ConfigureSpawnSound(m_RewardTouchSound);
                 m_NatureForestGrowth.StartGrowth();
                 m_NatureFootstepGrass.Configure(Camera.main != null ? Camera.main.transform : null,
                     m_SpatialMeshManager, m_NatureFootstepGrassPrefab, m_NatureFootstepAlternatePrefab);
                 m_NatureFootstepGrass.StartTracking();
-                m_NatureCompletionPanorama.Configure(Camera.main, m_NatureCompletionPanoramaTexture);
-                m_NatureCompletionPanorama.StartDisplay();
+                m_NatureCompletionPanorama.StopAndClear();
                 m_CandyCompletionHouse.StopAndClear();
                 m_NatureIvyGrowth.Configure(
                     Camera.main,
@@ -263,10 +271,21 @@ namespace Moodium.CandyWorld
                 m_NatureFootstepGrass.ConfigureCandy(Camera.main != null ? Camera.main.transform : null,
                     m_SpatialMeshManager, m_CandyFootstepBeanPrefab);
                 m_NatureFootstepGrass.StartTracking();
-                m_NatureCompletionPanorama.Configure(Camera.main, m_CandyCompletionPanoramaTexture);
-                m_NatureCompletionPanorama.StartDisplay();
+                m_NatureCompletionPanorama.StopAndClear();
                 m_CandyCompletionHouse.Configure(Camera.main != null ? Camera.main.transform : null,
-                    m_SpatialMeshManager, m_CandyCompletionHousePrefab, m_CandyLittleCompletionHousePrefab);
+                    m_SpatialMeshManager, m_CandyCompletionHousePrefab, m_CandyLittleCompletionHousePrefab,
+                    m_RewardTouchSound);
+                m_CandyCompletionHouse.ConfigureDeformationSound(m_CandyPrefabDeformationSound);
+                GameObject honeyJar = null;
+                if (world != null && world.Prefabs != null)
+                    foreach (var prefab in world.Prefabs)
+                        if (prefab != null && CandyWorldProgressController.NormalizePrefabName(prefab.name)
+                            .Equals("HoneyJar", System.StringComparison.OrdinalIgnoreCase))
+                        {
+                            honeyJar = prefab;
+                            break;
+                        }
+                m_CandyCompletionHouse.ConfigureHoneyJar(honeyJar);
                 m_CandyCompletionHouse.StartDisplay();
                 m_NatureIvyGrowth.StopAndClear();
             }
@@ -298,6 +317,7 @@ namespace Moodium.CandyWorld
             if (m_EnergyUI != null)
             {
                 m_EnergyUI.SetReleaseAvailable(false);
+                m_EnergyUI.SetExitAvailable(false);
                 m_EnergyUI.gameObject.SetActive(false);
             }
             m_ProgressController?.StopAndClear();
@@ -314,8 +334,16 @@ namespace Moodium.CandyWorld
         void OnDestroy()
         {
             if (m_EnergyUI != null)
+            {
                 m_EnergyUI.ReleasePressed -= ReleaseAccumulatedEnergy;
+                m_EnergyUI.ExitPressed -= RequestExit;
+            }
             StopExperience();
+        }
+
+        void RequestExit()
+        {
+            m_ExitAction?.Invoke();
         }
 
         void OnCapsulePinched(ChocolateCapsuleInteraction capsule, Vector3 position)
