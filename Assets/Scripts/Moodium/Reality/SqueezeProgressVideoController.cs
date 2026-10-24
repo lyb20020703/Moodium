@@ -61,6 +61,31 @@ namespace Moodium.Reality
         public bool IsVisible => m_DiscRenderer != null && m_DiscRenderer.enabled;
         public VideoClip ActiveClip => m_Player != null ? m_Player.clip : null;
 
+        public bool TryGetBurstExclusion(out Vector3 center, out float radius)
+        {
+            center = default;
+            radius = m_VideoDiameter * .5f + .015f;
+            if (!IsVisible || m_Display == null || !m_Display.activeInHierarchy) return false;
+            // Resolve the tracked pose now so projectile updates cannot use last frame's pose.
+            UpdateDisplayPose();
+            center = m_Display.transform.position;
+            return true;
+        }
+
+        public bool OverlapsBurstVideo(Bounds bounds)
+        {
+            if (!TryGetBurstExclusion(out var center, out var radius)) return false;
+            // A thin region around the actual video plane, rather than a sphere
+            // swallowing the emitter and its entire upward flight path.
+            var normal = m_Display.transform.up;
+            var relative = bounds.center - center;
+            var normalExtent = Vector3.Dot(bounds.extents,
+                new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z)));
+            if (Mathf.Abs(Vector3.Dot(relative, normal)) > .012f + normalExtent) return false;
+            var projected = Vector3.ProjectOnPlane(relative, normal);
+            return projected.magnitude <= radius + bounds.extents.magnitude;
+        }
+
         public void Configure(Camera camera, VideoClip candyClip, VideoClip natureClip)
         {
             m_Camera = camera;

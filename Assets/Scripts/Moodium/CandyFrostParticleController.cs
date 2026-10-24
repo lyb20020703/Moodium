@@ -49,21 +49,27 @@ namespace Moodium.CandyWorld
             if (m_HasOrigin)
                 return;
 
-            // Anchor one environmental volume in world space at first interaction.
-            // It is placed around the user's forward space, but never follows the head.
+            // The emission volume follows translation, while existing particles
+            // stay in world space and continue their natural downward trajectory.
             var camera = Camera.main;
             if (camera != null)
             {
-                var forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
-                if (forward.sqrMagnitude < 0.01f) forward = camera.transform.forward.normalized;
-                transform.position = camera.transform.position + forward * 0.65f - Vector3.up * 0.18f;
+                transform.SetPositionAndRotation(camera.transform.position - Vector3.up * .18f, Quaternion.identity);
             }
             else
             {
                 transform.position = worldPosition - Vector3.up * 0.35f;
             }
             m_HasOrigin = true;
-            Debug.Log($"[Candy Frost] Environmental volume anchored at {transform.position}; it will not follow the head.");
+            Debug.Log("[Candy Frost] Emission volume follows the viewer; falling particles remain in world space.");
+        }
+
+        void LateUpdate()
+        {
+            if (!m_HasOrigin) return;
+            var camera = Camera.main;
+            if (camera != null)
+                transform.SetPositionAndRotation(camera.transform.position - Vector3.up * .18f, Quaternion.identity);
         }
 
         public void UpdateFrostIntensity(float energy, float normalizedEnergy)
@@ -143,6 +149,7 @@ namespace Moodium.CandyWorld
             if (particles == null)
                 return;
             var main = particles.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
             particles.Clear(true);
             particles.Play(true);

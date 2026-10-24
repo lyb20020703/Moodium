@@ -27,6 +27,71 @@ namespace Moodium.Flow
         readonly HashSet<MoodiumObjectPickerItem> m_HoveredPickerItems = new();
         readonly HashSet<MoodiumObjectPickerItem> m_PickerItemsThisFrame = new();
 
+#if UNITY_EDITOR
+        const int MousePointerId = int.MaxValue;
+        MoodCheckPlateHandle m_MousePlate;
+        Plane m_MouseDragPlane;
+
+        void UpdateEditorMouse()
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            var camera = Camera.main;
+            if (mouse == null || camera == null) return;
+            var ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            if (m_MousePlate != null)
+            {
+                if (!m_MousePlate.isActiveAndEnabled)
+                {
+                    m_MousePlate.CancelPointer(MousePointerId);
+                    m_MousePlate = null;
+                    return;
+                }
+                if (m_MouseDragPlane.Raycast(ray, out var distance))
+                {
+                    var point = ray.GetPoint(distance);
+                    m_MousePlate.PointerMoved(MousePointerId, point);
+                    if (mouse.leftButton.wasReleasedThisFrame || !mouse.leftButton.isPressed)
+                    {
+                        var plate = m_MousePlate;
+                        m_MousePlate = null;
+                        plate.PointerEnded(MousePointerId, point);
+                    }
+                }
+                else if (!mouse.leftButton.isPressed)
+                {
+                    m_MousePlate.CancelPointer(MousePointerId);
+                    m_MousePlate = null;
+                }
+                return;
+            }
+            // uGUI language/video buttons retain their existing EventSystem input.
+            if (!mouse.leftButton.wasPressedThisFrame || Touch.activeTouches.Count > 0) return;
+            if (UnityEngine.EventSystems.EventSystem.current != null &&
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+            if (!Physics.Raycast(ray, out var hit, 20f, Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide)) return;
+            var button = hit.collider.GetComponentInParent<MoodiumSpatialButton>();
+            if (button != null && button.isActiveAndEnabled)
+            {
+                button.Press();
+                return;
+            }
+            var handle = hit.collider.GetComponentInParent<MoodCheckPlateHandle>();
+            if (handle != null && handle.isActiveAndEnabled)
+            {
+                m_MousePlate = handle;
+                m_MouseDragPlane = new Plane(handle.transform.forward, hit.point);
+                handle.PointerStarted(MousePointerId, hit.point);
+            }
+        }
+
+        void OnDisable()
+        {
+            if (m_MousePlate != null) m_MousePlate.CancelPointer(MousePointerId);
+            m_MousePlate = null;
+        }
+#endif
+
         void OnEnable()
         {
             EnhancedTouchSupport.Enable();
@@ -34,6 +99,9 @@ namespace Moodium.Flow
 
         void Update()
         {
+#if UNITY_EDITOR
+            UpdateEditorMouse();
+#endif
             m_ButtonsThisFrame.Clear();
             m_PickerItemsThisFrame.Clear();
             foreach (var touch in Touch.activeTouches)

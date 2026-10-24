@@ -45,14 +45,23 @@ namespace Moodium.NatureWorld
         ParticleSystem.Particle[] m_ParticleBuffer;
         bool m_HasOrigin;
         bool m_Emitting;
+        float m_EmissionRate;
+        float m_EmissionStartedAt;
+        Vector3 m_EmissionBox = new(5.5f, .6f, 5.5f);
 
         public static bool ShouldEmitLeaves(float normalizedProgress) => normalizedProgress >= .999f;
         public static bool NeedsVariantInitialization(int variantCount) => variantCount == 0;
-        // The stable visionOS implementation deliberately renders one leaf system only.
-        // Texture variants created overlapping particle renderers on device.
-        public static int GetLeafSystemCount(int _) => 1;
+        public static int GetLeafSystemCount(int textureCount) => Mathf.Max(1, textureCount);
         public static float GetEmissionRatePerVariant(float totalRate, int variantCount) =>
             variantCount > 0 ? Mathf.Max(0f, totalRate) / variantCount : 0f;
+        public static float GetIndependentEmissionRate(float totalRate, int count, int index)
+        {
+            if (count <= 0 || index < 0 || index >= count) return 0f;
+            // Unequal native rates prevent cloned emitters producing matched triplets.
+            var weight = 1f + index * .271f;
+            var sum = count + .271f * count * (count - 1) * .5f;
+            return Mathf.Max(0f, totalRate) * weight / sum;
+        }
         public static int GetInitialEmissionCount(int totalCount, int variantCount, int variantIndex)
         {
             if (totalCount <= 0 || variantCount <= 0 || variantIndex < 0 || variantIndex >= variantCount)
@@ -83,10 +92,56 @@ namespace Moodium.NatureWorld
             if (m_Leaves == null)
                 return;
 
-            // Keep the authored NatureLeafFall material, which is bound to leaf.png.
-            // Do not clone particle systems or materials for leaf2 / leaf3: PolySpatial
-            // renders their coincident particles as one visually stacked leaf.
+            m_Leaves.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            m_EmissionBox = m_Leaves.shape.scale;
             m_LeafVariants.Add(m_Leaves);
+            var sourceRenderer = m_Leaves.GetComponent<ParticleSystemRenderer>();
+            var sourceMaterial = sourceRenderer != null ? sourceRenderer.sharedMaterial : null;
+            var count = GetLeafSystemCount(m_LeafTextures != null ? m_LeafTextures.Length : 0);
+            for (var i = 0; i < count; i++)
+            {
+                var leaves = i == 0 ? m_Leaves : Instantiate(m_Leaves, m_Leaves.transform.parent);
+                leaves.name = "Falling Leaves Variant " + (i + 1);
+                leaves.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                // Distinct seeds give each texture its own positions and trajectories.
+                // Fixed random seeds are not supported by native property replication.
+                leaves.useAutoRandomSeed = true;
+                var main = leaves.main;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+                // At .08 m/s, a leaf needs 30 seconds just to reach eye level
+                // from the 2.4 m overhead emitter. The prefab's 5.5–8.5 s
+                // lifetime expired before the leaves could enter the view.
+                main.startLifetime = new ParticleSystem.MinMaxCurve(35f, 42f);
+                main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+                main.maxParticles = Mathf.Max(main.maxParticles, 256);
+                var emission = leaves.emission;
+                emission.enabled = false;
+                var shape = leaves.shape;
+                shape.enabled = true;
+                // Native ReplicateProperties emits from this volume. Do not rely
+                // on ParticleSystem.Emit, which only changes Unity's simulation.
+                shape.scale = new Vector3(m_EmissionBox.x * (1f + i * .137f),
+                    3f + i * .23f, m_EmissionBox.z * (1f + i * .193f));
+                shape.rotation = new Vector3(0f, i * 73f, 0f);
+                shape.position = new Vector3((i - (count - 1) * .5f) * .61f, -1.5f, i * .43f);
+                emission.SetBursts(System.Array.Empty<ParticleSystem.Burst>());
+                main.startDelay = 0f;
+                main.startRotation3D = true;
+                main.startRotationX = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.startRotationY = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.startRotationZ = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                var renderer = leaves.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null) renderer.alignment = ParticleSystemRenderSpace.World;
+                if (sourceMaterial != null && m_LeafTextures != null && i < m_LeafTextures.Length && m_LeafTextures[i] != null)
+                {
+                    var material = new Material(sourceMaterial) { name = "Nature Leaf Variant " + (i + 1) };
+                    if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", m_LeafTextures[i]);
+                    if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", m_LeafTextures[i]);
+                    renderer.sharedMaterial = material;
+                    m_RuntimeMaterials.Add(material);
+                }
+                if (i > 0) m_LeafVariants.Add(leaves);
+            }
         }
 
         public void StartLeaves()
@@ -108,6 +163,7 @@ namespace Moodium.NatureWorld
         {
             m_HasOrigin = false;
             m_Emitting = false;
+            m_EmissionRate = 0f;
             foreach (var leaves in m_LeafVariants)
                 leaves.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
@@ -138,8 +194,6 @@ namespace Moodium.NatureWorld
                 return;
             m_Emitting = shouldEmit;
             SetEmissionRate(m_Emitting ? m_CompletionRate : 0f);
-            if (m_Emitting)
-                EmitInitialLeaves(16);
         }
 
         void LateUpdate()
@@ -158,7 +212,14 @@ namespace Moodium.NatureWorld
             if (!m_Emitting || m_LeafVariants.Count == 0)
                 return;
             for (var variant = 0; variant < m_LeafVariants.Count; variant++)
+            {
+                var emission = m_LeafVariants[variant].emission;
+                // Delay module is not supported by native replication. Enable
+                // independent emitters on separate frames instead.
+                if (!emission.enabled && Time.time - m_EmissionStartedAt >= variant * .317f)
+                    emission.enabled = true;
                 UpdateVariantMotion(m_LeafVariants[variant], variant);
+            }
         }
 
         void UpdateVariantMotion(ParticleSystem leaves, int variant)
@@ -199,7 +260,7 @@ namespace Moodium.NatureWorld
                     motion.DriftSign * m_HorizontalDrift + sway,
                     -motion.FallSpeed,
                     Mathf.Cos(now * m_SwayFrequency * .73f + motion.Phase) * m_DepthDrift);
-                particle.rotation3D += new Vector3(motion.RollX, motion.RollY, motion.RollZ) * delta;
+                particle.rotation3D += new Vector3(motion.RollX, motion.RollY, motion.RollZ) * (Mathf.Rad2Deg * delta);
                 m_ParticleBuffer[i] = particle;
                 m_MotionBySeed[key] = motion;
             }
@@ -218,9 +279,9 @@ namespace Moodium.NatureWorld
                 RollY = Mathf.Lerp(m_RollSpeedY.x, m_RollSpeedY.y, (float)random.NextDouble()),
                 RollZ = Mathf.Lerp(m_RollSpeedZ.x, m_RollSpeedZ.y, (float)random.NextDouble()),
                 SizeMultiplier = Mathf.Lerp(m_SizeMultiplier.x, m_SizeMultiplier.y, (float)random.NextDouble()),
-                InitialRotationX = (float)(random.NextDouble() * Mathf.PI * 2f),
-                InitialRotationY = (float)(random.NextDouble() * Mathf.PI * 2f),
-                InitialRotationZ = (float)(random.NextDouble() * Mathf.PI * 2f)
+                InitialRotationX = (float)(random.NextDouble() * 360f),
+                InitialRotationY = (float)(random.NextDouble() * 360f),
+                InitialRotationZ = (float)(random.NextDouble() * 360f)
             };
         }
 
@@ -228,22 +289,23 @@ namespace Moodium.NatureWorld
         {
             if (m_Leaves == null)
                 return;
-            var ratePerVariant = GetEmissionRatePerVariant(rate, m_LeafVariants.Count);
-            foreach (var leaves in m_LeafVariants)
+            m_EmissionRate = Mathf.Max(0f, rate);
+            m_EmissionStartedAt = Time.time;
+            for (var i = 0; i < m_LeafVariants.Count; i++)
             {
+                var leaves = m_LeafVariants[i];
                 var variantEmission = leaves.emission;
-                variantEmission.rateOverTime = ratePerVariant;
+                // ReplicateProperties copies emission settings to RealityKit;
+                // manual Emit calls are not a native emission source.
+                variantEmission.rateOverTime = GetIndependentEmissionRate(m_EmissionRate, m_LeafVariants.Count, i);
+                variantEmission.enabled = m_EmissionRate > 0f && i == 0;
             }
         }
 
-        void EmitInitialLeaves(int totalCount)
+        void OnDestroy()
         {
-            for (var i = 0; i < m_LeafVariants.Count; i++)
-            {
-                var count = GetInitialEmissionCount(totalCount, m_LeafVariants.Count, i);
-                if (count > 0 && m_LeafVariants[i] != null)
-                    m_LeafVariants[i].Emit(count);
-            }
+            foreach (var material in m_RuntimeMaterials)
+                if (material != null) Destroy(material);
         }
 
     }

@@ -6,6 +6,19 @@ using UnityEngine;
 public sealed class NatureFootstepGrassControllerTests
 {
     [Test]
+    public void EnablingWalkingAgainDoesNotResetTrackedStepDistance()
+    {
+        var root = new GameObject("Walk gate regression");
+        var controller = root.AddComponent<NatureFootstepGrassController>();
+        controller.SetWalkingEnabled(true);
+        var field = typeof(NatureFootstepGrassController).GetField("m_HasLastGrassPosition",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        field.SetValue(controller, true);
+        controller.SetWalkingEnabled(true);
+        Assert.That(field.GetValue(controller), Is.True);
+        Object.DestroyImmediate(root);
+    }
+    [Test]
     public void FootstepGrassOnlyActivatesForACompletedNatureWorld()
     {
         Assert.That(NatureFootstepGrassController.ShouldBeActive(true, 1f), Is.True);

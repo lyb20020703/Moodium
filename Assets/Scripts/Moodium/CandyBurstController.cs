@@ -170,6 +170,7 @@ namespace Moodium.CandyWorld
             List<GameObject> prefabs, int count, bool pureNatureDebug = false)
         {
             Debug.Log($"[Candy Burst] Spawning {count} miniature candies from Chocolate Capsule center at {center}.");
+            var protectedVideo = FindFirstObjectByType<Moodium.Reality.SqueezeProgressVideoController>();
             for (var i = 0; i < count; i++)
             {
                 var prefab = prefabs[Random.Range(0, prefabs.Count)];
@@ -195,6 +196,7 @@ namespace Moodium.CandyWorld
                 projectile.Launch(velocity, useNatureCompatibility
                     ? ResolveNatureScaleMultiplier(instance)
                     : m_RealityScaleMultiplier);
+                projectile.ProtectVideo(protectedVideo);
                 if (pureNatureDebug)
                     LogPureNatureBurstInstance(instance, projectile, velocity);
                 projectile.IgnoreCollisionsWith(sourceColliders);

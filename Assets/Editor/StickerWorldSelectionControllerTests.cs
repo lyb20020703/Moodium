@@ -48,6 +48,26 @@ public sealed class StickerWorldSelectionControllerTests
     }
 
     [Test]
+    public void MoodPanelSuspensionHidesEntriesAndBlocksTrackingAndSelection()
+    {
+        var anchor = new GameObject("Suspension anchor").transform;
+        anchor.SetParent(m_Root.transform);
+        m_Controller.HandleTrackedImageUpdate(CandyId, "CandyWorldPhoneTracking", anchor, TrackingState.Tracking);
+        var selected = 0;
+        m_Controller.WorldEntrySelected += _ => selected++;
+        m_Controller.SetMoodCheckSuspended(true);
+        Assert.That(m_Controller.GetEntry(CandyId).Root.activeSelf, Is.False);
+        m_Controller.HandleTrackedImageUpdate(NatureId, "NatureWorldPhoneTracking", anchor, TrackingState.Tracking);
+        Assert.That(m_Controller.ActiveEntryCount, Is.EqualTo(1));
+        m_Controller.SelectEntry(CandyId);
+        Assert.That(selected, Is.Zero);
+        m_Controller.SetMoodCheckSuspended(false);
+        Assert.That(m_Controller.GetEntry(CandyId).Root.activeSelf, Is.True);
+        m_Controller.SelectEntry(CandyId);
+        Assert.That(selected, Is.EqualTo(1));
+    }
+
+    [Test]
     public void TrackedCandyAndNatureImages_CreateIndependentMatchingEntries()
     {
         var candyAnchor = new GameObject("Candy Anchor").transform;
@@ -161,15 +181,14 @@ public sealed class StickerWorldSelectionControllerTests
     }
 
     [Test]
-    public void MoodEntry_UsesContrastingGlassBackgroundAndOutlinedLabel()
+    public void MoodEntry_UsesAuthoredGlassSpriteAndReadableHitArea()
     {
         var root = m_Controller.MoodCheckButton.transform;
-        var renderer = root.Find("Button Visual").GetComponent<Renderer>();
-        var block = new MaterialPropertyBlock();
-        renderer.GetPropertyBlock(block);
-
-        Assert.That(block.GetColor("_BaseColor").r, Is.LessThan(.5f));
-        Assert.That(m_Controller.MoodCheckButton.Label.outlineWidth, Is.GreaterThan(0f));
+        var renderer = root.GetComponent<SpriteRenderer>();
+        Assert.That(renderer, Is.Not.Null);
+        Assert.That(renderer.sprite, Is.Not.Null);
+        Assert.That(root.GetComponent<BoxCollider>().size.y, Is.EqualTo(.056f).Within(.0001f));
+        Assert.That(m_Controller.MoodCheckButton.Label.GetComponent<Renderer>().enabled, Is.False);
     }
 
     [Test]

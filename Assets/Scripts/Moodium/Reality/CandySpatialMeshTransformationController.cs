@@ -40,10 +40,10 @@ namespace Moodium.Reality
 
         [SerializeField] ARMeshManager m_MeshManager;
         [SerializeField] Material m_CandyMaterialTemplate;
-        [SerializeField, Min(1f)] float m_MaxSpreadDistance = 5f;
+        [SerializeField, Min(1f)] float m_MaxSpreadDistance = 2.5f;
         [SerializeField] Color m_CandyPink = new(1f, 0.58f, 0.78f, 1f);
         [SerializeField] Color m_CandyViolet = new(0.68f, 0.55f, 1f, 1f);
-        [SerializeField, Range(0.05f, 0.3f)] float m_MaximumAlpha = 0.24f;
+        [SerializeField, Range(0.05f, 0.3f)] float m_MaximumAlpha = 0.12f;
 
         [Header("Soft Candy Wrapper")]
         [Tooltip("Small outward normal offset that gives the transparent wrapper a soft shell presence.")]
@@ -58,9 +58,14 @@ namespace Moodium.Reality
 
         readonly Dictionary<MeshFilter, OverlayEntry> m_Overlays = new();
         Material[] m_LevelMaterials;
+        Color[] m_LevelColors;
+        float m_CompletionFlashUntil;
         Vector3 m_Origin;
         float m_Progress;
         bool m_Running;
+        CandyWrapperContactFeedback m_ContactFeedback;
+        Vector3 m_ContactNormalA = Vector3.up;
+        Vector3 m_ContactNormalB = Vector3.up;
         XRHandSubsystem m_HandSubsystem;
         XROrigin m_XROrigin;
         Vector4 m_CurrentPressA = new(0f, -1000f, 0f, 0f);
@@ -105,9 +110,18 @@ namespace Moodium.Reality
             if (m_Running || m_MeshManager == null || m_CandyMaterialTemplate == null)
                 return;
             m_Running = true;
+            m_CompletionFlashUntil = 0f;
             m_Progress = 0f;
             m_Origin = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
             BuildLevelMaterials();
+            // Keep the candy surface material, but no longer create the separate
+            // hand-following foil crease geometry. Clear legacy scene components too.
+            m_ContactFeedback = GetComponent<CandyWrapperContactFeedback>();
+            if (m_ContactFeedback != null)
+            {
+                m_ContactFeedback.ClearFeedback();
+                m_ContactFeedback.enabled = false;
+            }
             m_MeshManager.meshesChanged += OnMeshesChanged;
             foreach (var filter in m_MeshManager.GetComponentsInChildren<MeshFilter>(true))
                 Register(filter);
@@ -120,6 +134,11 @@ namespace Moodium.Reality
             if (!m_Running)
                 return;
             m_Running = false;
+            if (m_ContactFeedback != null)
+            {
+                m_ContactFeedback.ClearFeedback();
+                m_ContactFeedback.enabled = false;
+            }
             if (m_MeshManager != null)
                 m_MeshManager.meshesChanged -= OnMeshesChanged;
             DestroyAllOverlays();
@@ -137,6 +156,8 @@ namespace Moodium.Reality
 
         public void SetProgress(float energy, float normalizedProgress)
         {
+            if (m_Running && m_Progress < .999f && normalizedProgress >= .999f)
+                m_CompletionFlashUntil = Time.time + .65f;
             m_Progress = Mathf.Clamp01(normalizedProgress);
             UpdateMaterialGlobals();
             if (m_Progress < ActivationProgress)
@@ -167,6 +188,19 @@ namespace Moodium.Reality
             if (!m_Running || m_LevelMaterials == null)
                 return;
             UpdateSoftShellPresses();
+            if (m_CompletionFlashUntil > 0f && m_LevelColors != null)
+            {
+                var remaining = Mathf.Clamp01((m_CompletionFlashUntil - Time.time) / .65f);
+                var flash = Mathf.Sin(remaining * Mathf.PI);
+                for (var i = 0; i < m_LevelMaterials.Length; i++)
+                {
+                    var color = Color.Lerp(m_LevelColors[i], new Color(1f, .94f, .78f, m_LevelColors[i].a), flash * .25f);
+                    color.a = m_LevelColors[i].a + flash * .025f;
+                    if (m_LevelMaterials[i].HasProperty("_BaseColor"))
+                        m_LevelMaterials[i].SetColor("_BaseColor", color);
+                }
+                if (Time.time >= m_CompletionFlashUntil) m_CompletionFlashUntil = 0f;
+            }
             foreach (var material in m_LevelMaterials)
                 if (material != null && material.HasProperty(ShaderTimeProperty))
                     material.SetFloat(ShaderTimeProperty, Time.time);
@@ -264,6 +298,7 @@ namespace Moodium.Reality
             DestroyLevelMaterials();
             var stableShader = Shader.Find("Universal Render Pipeline/Lit");
             m_LevelMaterials = new Material[MaterialLevels];
+            m_LevelColors = new Color[MaterialLevels];
             for (var i = 0; i < MaterialLevels; i++)
             {
                 var progress = i / (float)(MaterialLevels - 1);
@@ -276,8 +311,10 @@ namespace Moodium.Reality
                 material.name = $"Candy Transparent Overlay {i} (Runtime)";
                 material.hideFlags = HideFlags.DontSave;
                 ConfigureTransparentMaterial(material);
-                var color = Color.Lerp(m_CandyPink, m_CandyViolet, progress);
-                color.a = Mathf.Lerp(0.08f, m_MaximumAlpha, progress);
+                var color = Color.Lerp(m_CandyPink, m_CandyViolet, progress * .45f);
+                color = Color.Lerp(Color.white, color, .45f);
+                color.a = Mathf.Lerp(0.025f, m_MaximumAlpha, progress);
+                m_LevelColors[i] = color;
                 if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
                 if (material.HasProperty("_Color")) material.SetColor("_Color", color);
                 if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", Mathf.Lerp(0.78f, 0.96f, progress));
@@ -295,7 +332,7 @@ namespace Moodium.Reality
                 if (material.HasProperty("_EmissionColor"))
                 {
                     material.EnableKeyword("_EMISSION");
-                    material.SetColor("_EmissionColor", Color.Lerp(m_CandyPink, m_CandyViolet, progress) * (0.015f + progress * 0.04f));
+                    material.SetColor("_EmissionColor", color * .012f);
                 }
                 if (material.HasProperty(ShellThicknessProperty))
                     material.SetFloat(ShellThicknessProperty, m_ShellThickness);
@@ -330,8 +367,8 @@ namespace Moodium.Reality
             if (m_Progress >= ActivationProgress && TryEnsureHands())
             {
                 m_HandSubsystem.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
-                TryGetHandPress(m_HandSubsystem.leftHand, out targetA);
-                TryGetHandPress(m_HandSubsystem.rightHand, out targetB);
+                TryGetHandPress(m_HandSubsystem.leftHand, out targetA, out m_ContactNormalA);
+                TryGetHandPress(m_HandSubsystem.rightHand, out targetB, out m_ContactNormalB);
             }
 
             var lerp = 1f - Mathf.Exp(-m_PressReturnSpeed * Time.deltaTime);
@@ -352,9 +389,10 @@ namespace Moodium.Reality
             return m_HandSubsystem != null && m_HandSubsystem.running;
         }
 
-        bool TryGetHandPress(XRHand hand, out Vector4 press)
+        bool TryGetHandPress(XRHand hand, out Vector4 press, out Vector3 normal)
         {
             press = Vector4.zero;
+            normal = Vector3.up;
             if (!hand.isTracked)
                 return false;
             var indexTip = hand.GetJoint(XRHandJointID.IndexTip);
@@ -366,6 +404,9 @@ namespace Moodium.Reality
             var handPosition = PalmPressGestureController.TransformTrackingPose(trackingPose, origin).position;
             if (!TryFindClosestOverlaySurface(handPosition, out var surfacePoint, out var distance))
                 return false;
+            normal = handPosition - surfacePoint;
+            if (normal.sqrMagnitude < .000001f) normal = Vector3.up;
+            else normal.Normalize();
 
             var contact01 = 1f - Mathf.Clamp01(distance / Mathf.Max(.0001f, m_HandContactDistance));
             var strength = m_MaxPressDepth * (contact01 * contact01 * (3f - 2f * contact01));
@@ -436,6 +477,7 @@ namespace Moodium.Reality
                 if (material != null)
                     Destroy(material);
             m_LevelMaterials = null;
+            m_LevelColors = null;
         }
     }
 }

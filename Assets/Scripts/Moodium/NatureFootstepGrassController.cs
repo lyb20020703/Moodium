@@ -20,12 +20,12 @@ namespace Moodium.NatureWorld
         };
 
         [Header("Footstep placement")]
-        [SerializeField, Min(.05f)] float m_DistanceBetweenGrass = .35f;
-        [SerializeField, Min(.01f)] float m_MinimumGrassSeparation = .35f;
-        [SerializeField, Min(1)] int m_MaxActiveGrass = 60;
+        [SerializeField, Min(.05f)] float m_DistanceBetweenGrass = .3f;
+        [SerializeField, Min(.01f)] float m_MinimumGrassSeparation = .22f;
+        [SerializeField, Min(1)] int m_MaxActiveGrass = 45;
         [SerializeField, Range(0f, 1f)] float m_MinGroundNormalY = .55f;
         [SerializeField, Min(0f)] float m_SurfaceOffset = .005f;
-        [SerializeField, Min(.01f)] float m_GrassScaleMultiplier = 1f;
+        [SerializeField, Min(.01f)] float m_GrassScaleMultiplier = 1.55f;
 
         readonly List<GameObject> m_SpawnedGrass = new();
         Transform m_Viewer;
@@ -39,6 +39,24 @@ namespace Moodium.NatureWorld
         bool m_CandyWorldActive;
         bool m_HasLastGrassPosition;
         bool m_HasLoggedMissingGround;
+        bool m_Managed;
+        bool m_WalkingEnabled;
+        int m_TotalSpawned;
+        Vector3 m_WalkDirection;
+        Vector3 m_PreviousHead;
+
+        public event System.Action<Vector3> StepGrown;
+        public bool IsCandy => m_CandyWorldActive;
+        public Transform Viewer => m_Viewer;
+        public GameObject PrimaryPrefab => m_GrassPrefab;
+        public GameObject FlowerPrefab => m_AlternateGrassPrefab != null ? m_AlternateGrassPrefab : m_GrassPrefab;
+        public void SetGuidedMode(bool managed) { m_Managed = managed; m_WalkingEnabled = false; }
+        public void SetWalkingEnabled(bool enabled)
+        {
+            if (m_WalkingEnabled == enabled) return;
+            m_WalkingEnabled = enabled;
+            m_HasLastGrassPosition = false;
+        }
 
         public int SpawnedGrassCount => m_SpawnedGrass.Count;
 
@@ -122,6 +140,12 @@ namespace Moodium.NatureWorld
             m_CandyWorldActive = candyWorld;
             m_NatureWorldActive = !candyWorld;
             m_Progress = 0f;
+            m_TotalSpawned = 0;
+            if (m_Viewer != null)
+            {
+                m_PreviousHead = m_Viewer.position;
+                m_WalkDirection = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
+            }
         }
 
         public void SetProgress(float normalizedProgress) => m_Progress = Mathf.Clamp01(normalizedProgress);
@@ -131,6 +155,7 @@ namespace Moodium.NatureWorld
             m_NatureWorldActive = false;
             m_CandyWorldActive = false;
             m_Progress = 0f;
+            m_WalkingEnabled = false;
             m_HasLastGrassPosition = false;
             m_HasLoggedMissingGround = false;
             foreach (var grass in m_SpawnedGrass)
@@ -149,6 +174,14 @@ namespace Moodium.NatureWorld
                 m_Viewer == null || (m_GrassPrefab == null && m_AlternateGrassPrefab == null) ||
                 m_SpatialMeshManager == null)
                 return;
+            if (m_Managed && !m_WalkingEnabled) return;
+            var motion = Vector3.ProjectOnPlane(m_Viewer.position - m_PreviousHead, Vector3.up);
+            m_PreviousHead = m_Viewer.position;
+            if (motion.magnitude > .001f)
+                m_WalkDirection = Vector3.Slerp(m_WalkDirection, motion.normalized,
+                    1f - Mathf.Exp(-Time.deltaTime / .5f)).normalized;
+            if (m_HasLastGrassPosition && HorizontalDistance(m_Viewer.position, m_LastGrassPosition) < m_DistanceBetweenGrass)
+                return;
 
             if (!TryFindGroundBelowViewer(out var groundHit))
             {
@@ -166,19 +199,25 @@ namespace Moodium.NatureWorld
             if (!m_HasLastGrassPosition)
             {
                 // Reaching 100% does not place a grass clump under a stationary user.
-                m_LastGrassPosition = groundPosition;
+                m_LastGrassPosition = m_Viewer.position;
                 m_HasLastGrassPosition = true;
                 return;
             }
 
-            if (HorizontalDistance(groundPosition, m_LastGrassPosition) < m_DistanceBetweenGrass)
+            if (HorizontalDistance(m_Viewer.position, m_LastGrassPosition) < m_DistanceBetweenGrass)
                 return;
 
-            m_LastGrassPosition = groundPosition;
+            m_LastGrassPosition = m_Viewer.position;
+            var direction = m_WalkDirection.sqrMagnitude > .1f ? m_WalkDirection
+                : Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
+            var ahead = m_Viewer.position + direction * 1.2f +
+                Vector3.Cross(Vector3.up, direction) * (m_TotalSpawned % 2 == 0 ? .12f : -.12f);
+            if (!TryFindSafeGround(ahead, groundHit.point.y, out groundPosition)) return;
             if (!HasMinimumHorizontalSeparation(groundPosition, GetActivePositions(), m_MinimumGrassSeparation))
                 return;
 
             SpawnGrass(groundPosition);
+            StepGrown?.Invoke(groundPosition);
         }
 
         bool TryFindGroundBelowViewer(out RaycastHit groundHit)
@@ -188,7 +227,7 @@ namespace Moodium.NatureWorld
             // gap, so sample a small cross around the foot position before giving up.
             var viewerPosition = m_Viewer.position;
             var hasHit = false;
-            var bestDistance = float.PositiveInfinity;
+            var lowestHeight = float.PositiveInfinity;
             groundHit = default;
             foreach (var offset in GroundProbeOffsets)
             {
@@ -198,10 +237,15 @@ namespace Moodium.NatureWorld
                     QueryTriggerInteraction.Ignore);
                 foreach (var hit in hits)
                 {
-                    if (!IsSpatialGround(hit.collider, hit.normal) || hit.distance >= bestDistance)
+                    if (!IsSpatialGround(hit.collider, hit.normal) || hit.normal.y < .9f)
                         continue;
+                    // A tracking origin can be device-relative, not floor-relative.
+                    // Select the lowest reconstructed horizontal surface below the
+                    // wearer, not the first (possibly tabletop) ray hit or origin Y.
+                    var belowHead = viewerPosition.y - hit.point.y;
+                    if (belowHead < .9f || belowHead > 2.5f || hit.point.y >= lowestHeight) continue;
                     groundHit = hit;
-                    bestDistance = hit.distance;
+                    lowestHeight = hit.point.y;
                     hasHit = true;
                 }
             }
@@ -219,29 +263,89 @@ namespace Moodium.NatureWorld
                     yield return grass.transform.position;
         }
 
-        void SpawnGrass(Vector3 position)
+        public GameObject SpawnGrass(Vector3 position, bool garden = false, GameObject overridePrefab = null)
         {
             if (m_GrassRoot == null)
                 m_GrassRoot = new GameObject(m_CandyWorldActive ? "Candy Footstep Beans" : "Nature Footstep Grass").transform;
 
-            var recycleCount = GetInstancesToRecycle(m_SpawnedGrass.Count, m_MaxActiveGrass);
+            var recycleCount = garden ? 0 : GetInstancesToRecycle(m_SpawnedGrass.Count, m_MaxActiveGrass);
             for (var i = 0; i < recycleCount; i++)
             {
                 var oldest = m_SpawnedGrass[0];
                 m_SpawnedGrass.RemoveAt(0);
                 if (oldest != null)
-                    Destroy(oldest);
+                {
+                    var growth = oldest.GetComponent<WalkTrailGrowth>();
+                    if (growth != null) growth.Retire(); else Destroy(oldest);
+                }
             }
 
             var rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
-            var prefab = SelectFootstepPrefab(m_GrassPrefab, m_AlternateGrassPrefab, m_SpawnedGrass.Count);
+            var prefab = overridePrefab != null ? overridePrefab : SelectFootstepPrefab(m_GrassPrefab, m_AlternateGrassPrefab, m_TotalSpawned);
             if (prefab == null)
-                return;
+                return null;
             var grass = Instantiate(prefab, position, rotation, m_GrassRoot);
             grass.name = $"{prefab.name} (Footstep Grass {m_SpawnedGrass.Count + 1})";
             grass.transform.localScale *= m_GrassScaleMultiplier;
             AlignVisualBaseToSurface(grass, position.y);
-            m_SpawnedGrass.Add(grass);
+            if (!garden) { m_SpawnedGrass.Add(grass); m_TotalSpawned++; }
+            grass.AddComponent<WalkTrailGrowth>().Initialize(position);
+            return grass;
+        }
+
+        public bool TryGetFloor(out Vector3 floor)
+        {
+            floor = default;
+            if (m_Viewer == null || m_SpatialMeshManager == null || !TryFindGroundBelowViewer(out var hit)) return false;
+            floor = hit.point;
+            return true;
+        }
+
+        public bool TryFindSafeGround(Vector3 desired, float floorY, out Vector3 ground, bool clearance = false)
+        {
+            ground = default;
+            if (m_SpatialMeshManager == null) return false;
+            var hits = Physics.RaycastAll(new Vector3(desired.x, floorY + .3f, desired.z), Vector3.down,
+                .6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            var found = false;
+            foreach (var hit in hits)
+                if (IsSpatialGround(hit.collider, hit.normal) && hit.normal.y >= .9f &&
+                    Mathf.Abs(hit.point.y - floorY) <= .08f)
+                { ground = hit.point + Vector3.up * m_SurfaceOffset; found = true; break; }
+            if (!found) return false;
+            if (!clearance) return true;
+            // Verify a level, reconstructed floor disk, then reject nearby raised
+            // surfaces. Missing scan data never creates an invented walking target.
+            for (var i = 0; i < 12; i++)
+            {
+                var angle = i * Mathf.PI * 2f / 12f;
+                var direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                if (!TryFindSafeGround(ground + direction * .8f, floorY, out _, false)) return false;
+                foreach (var height in new[] { .15f, .65f, 1.1f })
+                {
+                    var obstacles = Physics.RaycastAll(ground + Vector3.up * height, direction, .8f,
+                        Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+                    foreach (var hit in obstacles)
+                        if (hit.collider is MeshCollider && IsGeneratedSpatialMeshCollider(hit.collider, m_SpatialMeshManager.meshes))
+                            return false;
+                }
+            }
+            return true;
+        }
+
+        public bool IsSafePath(Vector3 from, Vector3 to, float floorY)
+        {
+            var count = Mathf.Max(1, Mathf.CeilToInt(HorizontalDistance(from, to) / .2f));
+            for (var i = 0; i <= count; i++)
+                if (!TryFindSafeGround(Vector3.Lerp(from, to, i / (float)count), floorY, out _, false)) return false;
+            return true;
+        }
+
+        public void WaveTrail()
+        {
+            for (var i = 0; i < m_SpawnedGrass.Count; i++)
+                if (m_SpawnedGrass[i] != null)
+                    m_SpawnedGrass[i].GetComponent<WalkTrailGrowth>()?.Wave(i * .05f);
         }
 
         static float HorizontalDistance(Vector3 first, Vector3 second)

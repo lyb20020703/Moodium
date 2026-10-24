@@ -19,6 +19,9 @@ namespace Moodium.CandyWorld
         CandyFrostParticleController m_Frost;
         NatureLeafParticleController m_NatureLeaves;
         CandyRainRewardController m_RainReward;
+        WalkTrailGuideController m_WalkTrailGuide;
+        GameObject m_WalkTrailGuidePrefab;
+        public void ConfigureWalkTrailGuide(GameObject prefab) => m_WalkTrailGuidePrefab = prefab;
         CandyWorldProgressController m_ProgressController;
         NatureForestGrowthController m_NatureForestGrowth;
         NatureFootstepGrassController m_NatureFootstepGrass;
@@ -289,6 +292,11 @@ namespace Moodium.CandyWorld
                 m_CandyCompletionHouse.StartDisplay();
                 m_NatureIvyGrowth.StopAndClear();
             }
+            m_WalkTrailGuide = GetComponent<WalkTrailGuideController>() ?? gameObject.AddComponent<WalkTrailGuideController>();
+            m_WalkTrailGuide.BeginSession(m_NatureFootstepGrass, m_RainReward,
+                Camera.main != null ? Camera.main.transform : null,
+                m_EnergyUI != null ? m_EnergyUI.transform : null, !m_NatureWorldActive,
+                world != null ? world.Prefabs : null, m_WalkTrailGuidePrefab);
             m_Energy.ResetEnergy();
             m_ProgressController.StartProgress();
             m_SqueezeProgressVideo?.Begin(m_NatureWorldActive);
@@ -306,6 +314,7 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
+            m_WalkTrailGuide?.StopAndClear();
             if (m_Running)
             {
                 ChocolateCapsuleInteraction.AnyCapsulePinched -= OnCapsulePinched;
@@ -373,6 +382,7 @@ namespace Moodium.CandyWorld
             // scaling. Resolve the current world-space bounds now so every candy burst
             // starts in the visible middle of the calibrated Soft model.
             var visualCenter = ResolveCurrentCapsuleCenter(capsule, position);
+            m_WalkTrailGuide?.SetBag(capsule.transform);
             m_SqueezeProgressVideo?.BindToSoft(capsule);
             m_ProgressController.SetOrigin(visualCenter);
             if (m_NatureWorldActive)
@@ -510,6 +520,7 @@ namespace Moodium.CandyWorld
 
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
+            m_WalkTrailGuide?.SetProgress(normalizedProgress);
             m_EnergyUI.SetProgress(energy, normalizedProgress);
             m_ProgressController.SetProgress(energy, normalizedProgress);
             m_SqueezeProgressVideo?.SetProgress(normalizedProgress);

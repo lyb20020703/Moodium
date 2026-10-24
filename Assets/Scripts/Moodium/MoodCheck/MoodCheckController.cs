@@ -151,6 +151,8 @@ namespace Moodium.MoodCheck
             m_CompletionSent = false;
             m_SkipSent = false;
             PendingSample = null;
+            if (m_PanelPrefab == null)
+                m_PanelPrefab = Resources.Load<GameObject>("Moodium/MoodCheck/MoodCheckPanel");
             m_PanelInstance = m_PanelPrefab != null ? Instantiate(m_PanelPrefab) : BuildFallbackPanel();
             m_PanelInstance.name = phase == MoodCheckPhase.Pre ? "Mood Check - Pre" : "Mood Check - Post";
             m_PanelInstance.transform.SetParent(transform, true);
@@ -241,6 +243,7 @@ namespace Moodium.MoodCheck
 
         void ShowDraggingFooter()
         {
+            SetActive("PanelGlass", true);
             SetCoreVisible(true);
             SetActive("RecommendationCard", false);
             SetActive("ComparisonCard", false);
@@ -256,6 +259,7 @@ namespace Moodium.MoodCheck
 
         void ShowRecommendation(bool compact)
         {
+            SetActive("PanelGlass", false);
             SetCoreVisible(false);
             SetActive("RecommendationCard", !compact);
             SetActive("Footer/Hint", false);
@@ -265,7 +269,7 @@ namespace Moodium.MoodCheck
             SetActive("Footer/AdjustButton", false);
             SetActive("Footer/ConfirmButton", false);
             SetActive("Footer/RetryButton", false);
-            SetActive("Footer/ContinueButton", !compact);
+            SetActive("Footer/ContinueButton", false);
             SetText("Footer/ContinueButton/Label", MoodCheckCopy.Get("rec.cta", m_English));
             SetText("RecommendationCard/Badge", MoodCheckCopy.Format("rec.today", m_English,
                 ("mood", MoodName(PendingSample.mood))));
@@ -276,6 +280,14 @@ namespace Moodium.MoodCheck
             SetText("RecommendationCard/Other", MoodCheckCopy.Get("rec.other", m_English));
             SetText("Footer/RecommendationSummary",
                 $"Moodi 推荐 · {WorldName(PendingSample?.recommendedWorldId)}\n{MoodCheckCopy.Get("rec." + PendingSample?.mood.ToString().ToLowerInvariant(), m_English)}");
+            var card = m_PanelInstance.transform.Find("RecommendationCard");
+            if (card != null)
+            {
+                var view = card.GetComponent<MoodRecommendationView>() ?? card.gameObject.AddComponent<MoodRecommendationView>();
+                var title = m_PanelInstance.transform.Find("Header/Title")?.GetComponent<TMP_Text>();
+                view.Show(PendingSample, m_English, title != null ? title.font : TMP_Settings.defaultFontAsset,
+                    AcceptRecommendation, Retry);
+            }
         }
 
         void ShowComparison()
@@ -413,6 +425,7 @@ namespace Moodium.MoodCheck
         {
             if (m_PanelInstance != null)
             {
+                m_PanelInstance.SetActive(false);
                 if (Application.isPlaying) Destroy(m_PanelInstance);
                 else DestroyImmediate(m_PanelInstance);
             }

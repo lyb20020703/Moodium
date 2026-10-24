@@ -47,9 +47,9 @@ public sealed class MoodCheckControllerTests
         Assert.That(m_Controller.State, Is.EqualTo(MoodCheckState.Recommending));
         Assert.That(completions, Is.Zero);
         Assert.That(m_Controller.PanelTransform.Find("RecommendationCard").gameObject.activeSelf, Is.True);
-        Assert.That(m_Controller.PanelTransform.Find("Footer/ContinueButton").gameObject.activeSelf, Is.True);
-        Assert.That(m_Controller.PanelTransform.Find("Footer/ContinueButton/Label").GetComponent<TMPro.TMP_Text>().text,
-            Is.EqualTo("好，去找贴纸"));
+        Assert.That(m_Controller.PanelTransform.Find("Footer/ContinueButton").gameObject.activeSelf, Is.False);
+        Assert.That(m_Controller.PanelTransform.Find("RecommendationCard/Find Sticker"), Is.Not.Null);
+        Assert.That(m_Controller.PanelTransform.Find("RecommendationCard/Check Again"), Is.Not.Null);
         Assert.That(m_Controller.PanelTransform.Find("Footer/RetryButton").gameObject.activeSelf, Is.False);
         m_Controller.AcceptRecommendation();
         m_Controller.AcceptRecommendation();

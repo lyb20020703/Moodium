@@ -617,8 +617,8 @@ namespace Moodium.Opening
             Destroy(rightGuide);
             Destroy(prompt);
             Destroy(skipButton);
-            player.time = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
-            player.Play();
+            // Sticker selection owns the asynchronous seek and resumes playback.
+            // Issuing a second seek here can race its handoff on visionOS.
             var skippedSession = new OpeningVideoSession(player, display, subtitleObject, english, () =>
             {
                 player.Stop();

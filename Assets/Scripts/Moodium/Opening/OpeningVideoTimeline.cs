@@ -57,7 +57,9 @@ namespace Moodium.Opening
 
         // Shared post-tutorial visual waiting segment used while the user locates
         // a physical Moodium world sticker.
-        public static readonly Segment StickerSelectionLoop = Chinese.QuestionLoop;
+        public static readonly Segment StickerSelectionLoop = new(
+            ToFrame(0, 41, 10),
+            ToFrame(0, 46, 0));
 
         public static long ToFrame(int minutes, int seconds, int frames) =>
             ((long)minutes * 60L + seconds) * FramesPerSecond + frames;

@@ -48,6 +48,8 @@ MonoBehaviour:
   m_Leaves: {fileID: 3341224732095067816}
   m_LeafTextures:
   - {fileID: 2800000, guid: 3d40b60e4fe6c4946b46645291fc2100, type: 3}
+  - {fileID: 2800000, guid: c8074090aefcd427cbc35173319dadac, type: 3}
+  - {fileID: 2800000, guid: 3d29d14bcfde141d991a679971ce8879, type: 3}
   m_CompletionRate: 18
   m_EmissionHeightAboveViewer: 2.4
 --- !u!1 &7767692946287579355

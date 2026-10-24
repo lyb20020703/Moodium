@@ -50,6 +50,15 @@ namespace Moodium.Flow
         public event Action<StickerWorldEntry> WorldEntrySelected;
         public event Action MoodCheckRequested;
         public int ActiveEntryCount => m_Entries.Count;
+        public bool HasVisibleEntry
+        {
+            get
+            {
+                foreach (var entry in m_Entries.Values)
+                    if (entry.Root != null && entry.Root.activeInHierarchy) return true;
+                return false;
+            }
+        }
         public bool IsSelectionActive => m_Active;
 
         public GameObject CandyWorldUiPrefab => m_CandyWorldUiPrefab;
@@ -132,6 +141,15 @@ namespace Moodium.Flow
             }
         }
 
+        bool m_MoodCheckSuspended;
+        public void SetMoodCheckSuspended(bool suspended)
+        {
+            m_MoodCheckSuspended = suspended;
+            foreach (var entry in m_Entries.Values)
+                if (entry.Root != null) entry.Root.SetActive(!suspended);
+            if (!suspended) RefreshTrackedImages();
+        }
+
         /// <summary>
         /// Rehydrates world entries from ARFoundation's current trackable collection.
         /// visionOS can publish an image anchor before a runtime listener is attached,
@@ -139,7 +157,7 @@ namespace Moodium.Flow
         /// </summary>
         public void RefreshTrackedImages()
         {
-            if (!m_Active || m_TrackedImageManager == null)
+            if (!m_Active || m_MoodCheckSuspended || m_TrackedImageManager == null)
                 return;
 
             foreach (var image in m_TrackedImageManager.trackables)
@@ -148,9 +166,12 @@ namespace Moodium.Flow
 
         public void End()
         {
+            if (m_SelectionSeekRoutine != null) StopCoroutine(m_SelectionSeekRoutine);
+            m_SelectionSeekRoutine = null;
             if (m_TrackedImageManager != null)
                 m_TrackedImageManager.trackablesChanged.RemoveListener(OnTrackedImagesChanged);
             m_Active = false;
+            m_MoodCheckSuspended = false;
             m_Session = null;
             if (m_Instruction != null)
                 Destroy(m_Instruction.gameObject);
@@ -174,6 +195,7 @@ namespace Moodium.Flow
             if (!m_Active || m_Session?.Player == null)
                 return;
             var player = m_Session.Player;
+            if (m_SelectionSeekRoutine != null) return;
             var loop = OpeningVideoTimeline.StickerSelectionLoop;
             var frame = player.frame >= 0
                 ? player.frame
@@ -205,6 +227,7 @@ namespace Moodium.Flow
             Transform anchor,
             TrackingState trackingState)
         {
+            if (m_MoodCheckSuspended) return;
             if (!m_Active || !TryGetDefinition(referenceImageName, out var prefab, out var world))
             {
                 if (m_Active)
@@ -257,6 +280,7 @@ namespace Moodium.Flow
 
         public void SelectEntry(TrackableId trackableId)
         {
+            if (!m_Active || m_MoodCheckSuspended) return;
             if (!m_Active || !m_Entries.TryGetValue(trackableId, out var entry))
                 return;
             WorldEntrySelected?.Invoke(entry);
@@ -330,7 +354,7 @@ namespace Moodium.Flow
             {
                 var root = new GameObject("Sticker Selection Instruction", typeof(TextMeshPro));
                 root.transform.SetParent(m_Session.DisplayRoot, false);
-                root.transform.localPosition = new Vector3(0f, -0.36f, -0.04f);
+                root.transform.localPosition = new Vector3(0f, -0.35f, -0.04f);
                 root.transform.localScale = GetCompensatedLocalScale(0.045f, m_Session.DisplayRoot.localScale);
                 m_Instruction = root.GetComponent<TextMeshPro>();
                 m_Instruction.font = m_English ? m_EnglishFont : m_ChineseFont;
@@ -354,38 +378,15 @@ namespace Moodium.Flow
                 return;
             if (m_MoodCheckButton == null)
             {
-                var root = new GameObject("Mood Check Entry", typeof(BoxCollider));
+                var root = new GameObject("Mood Check Entry");
                 root.transform.SetParent(m_Session.DisplayRoot, false);
-                root.transform.localPosition = new Vector3(0f, .34f, -.04f);
-                root.transform.localScale = GetCompensatedLocalScale(.045f, m_Session.DisplayRoot.localScale);
-                root.GetComponent<BoxCollider>().size = new Vector3(12f, 2.2f, .8f);
-                var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                visual.name = "Button Visual";
-                visual.transform.SetParent(root.transform, false);
-                visual.transform.localScale = new Vector3(4.25f, 1.05f, .2f);
-                var primitiveCollider = visual.GetComponent<Collider>();
-                if (Application.isPlaying) Destroy(primitiveCollider);
-                else DestroyImmediate(primitiveCollider);
-                var renderer = visual.GetComponent<Renderer>();
-                renderer.enabled = false;
-                var buttonColor = new Color(0.08f, 0.15f, 0.32f, 0.94f);
-                var propertyBlock = new MaterialPropertyBlock();
-                propertyBlock.SetColor("_BaseColor", buttonColor);
-                propertyBlock.SetColor("_Color", buttonColor);
-                renderer.SetPropertyBlock(propertyBlock);
-                var labelRoot = new GameObject("Label", typeof(TextMeshPro));
-                labelRoot.transform.SetParent(root.transform, false);
-                labelRoot.transform.localPosition = new Vector3(0f, 0f, -.45f);
-                var label = labelRoot.GetComponent<TextMeshPro>();
-                label.font = m_English ? m_EnglishFont : m_ChineseFont;
-                label.fontSize = 7f;
-                label.alignment = TextAlignmentOptions.Center;
-                label.color = Color.white;
-                label.rectTransform.sizeDelta = new Vector2(8f, 2f);
-                label.outlineWidth = 0.04f;
-                label.outlineColor = new Color(0f, 0f, 0f, .35f);
-                m_MoodCheckButton = root.AddComponent<MoodiumSpatialButton>();
-                m_MoodCheckButton.Configure(label, null, () => MoodCheckRequested?.Invoke());
+                root.transform.localScale = GetCompensatedLocalScale(1f, m_Session.DisplayRoot.lossyScale);
+                root.transform.localPosition = m_Instruction != null
+                    ? m_Session.DisplayRoot.InverseTransformPoint(m_Instruction.transform.position -
+                        m_Instruction.transform.up * .05f)
+                    : new Vector3(0f, -.41f, -.04f);
+                m_MoodCheckButton = root.AddComponent<MoodEntryChip>().Initialize(this,
+                    m_English ? m_EnglishFont : m_ChineseFont, () => MoodCheckRequested?.Invoke());
             }
             var text = MoodCheckCopy.Get("prompt.entry", m_English);
             if (m_MoodCheckSummary != null)
@@ -396,6 +397,7 @@ namespace Moodium.Flow
             }
             if (m_MoodCheckButton.Label != null)
                 m_MoodCheckButton.Label.text = text;
+            m_MoodCheckButton.GetComponent<MoodEntryChip>()?.SetContent(m_English, m_MoodCheckSummary);
         }
 
         void UpdateAllRecommendationTags()
@@ -446,13 +448,51 @@ namespace Moodium.Flow
             return worldId == "candy" ? "糖果世界" : "自然世界";
         }
 
+        Coroutine m_SelectionSeekRoutine;
+
         void SeekSelectionLoopStart()
         {
-            if (m_Session?.Player == null)
+            if (m_Session?.Player == null || m_SelectionSeekRoutine != null)
                 return;
+            if (Application.isPlaying)
+            {
+                m_SelectionSeekRoutine = StartCoroutine(SeekSelectionLoop());
+                return;
+            }
             m_Session.Player.time = OpeningVideoTimeline.FrameToSeconds(
                 OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
             m_Session.Player.Play();
+        }
+
+        System.Collections.IEnumerator SeekSelectionLoop()
+        {
+            var player = m_Session.Player;
+            var completed = false;
+            UnityEngine.Video.VideoPlayer.EventHandler onSeek = _ => completed = true;
+            player.seekCompleted += onSeek;
+            try
+            {
+                player.Pause();
+                player.time = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
+                var deadline = Time.realtimeSinceStartup + 3f;
+                // Always yield once: assignment does not mean the decoder has
+                // presented the requested frame. Never restart a pending seek.
+                do { yield return null; }
+                while (!completed && Time.realtimeSinceStartup < deadline);
+                if (m_Active && m_Session?.Player == player)
+                {
+                    if (!completed) Debug.LogWarning("[Moodium Sticker Selection] Video seek timed out; resuming decoder before retry.");
+                    player.Play();
+                    // Give the backend time to present a frame before Update
+                    // evaluates the loop boundary again, including on visionOS.
+                    yield return null;
+                }
+            }
+            finally
+            {
+                if (player != null) player.seekCompleted -= onSeek;
+                m_SelectionSeekRoutine = null;
+            }
         }
 
         static float SafeScaleDivide(float value, float divisor) =>

@@ -1,0 +1,491 @@
+using System.Collections.Generic;
+using Moodium.CandyWorld;
+using UnityEngine;
+
+namespace Moodium.NatureWorld
+{
+    /// <summary>Optional post-reward walking journey. Only reconstructed, level ground can become a target.</summary>
+    public sealed class WalkTrailGuideController : MonoBehaviour
+    {
+        enum Phase { Waiting, Inviting, Walking, Sleeping, Complete }
+        sealed class FloatingCard
+        {
+            public SpriteRenderer Renderer;
+            public Vector3 Position;
+            public float Born;
+            public bool Collect;
+        }
+        readonly List<Vector3> m_Gardens = new();
+        readonly List<SpriteRenderer> m_Dots = new();
+        readonly List<FloatingCard> m_Cards = new();
+        readonly AudioClip[] m_Notes = new AudioClip[8];
+        readonly List<AudioSource> m_Voices = new();
+        readonly List<GameObject> m_Decorations = new();
+        readonly List<SpriteRenderer> m_GardenRings = new();
+        NatureFootstepGrassController m_Trail;
+        CandyRainRewardController m_Rain;
+        Transform m_Viewer;
+        Transform m_Wrist;
+        CandyEnergyWristUI m_WristUI;
+        Transform m_Bag;
+        Transform m_Root;
+        Transform m_Guide;
+        SpriteRenderer m_Glow;
+        SpriteRenderer m_Ring;
+        SpriteRenderer m_Invite;
+        AudioClip m_Chime, m_Complete, m_Hop;
+        Color m_Tint;
+        Phase m_Phase;
+        bool m_Candy, m_English, m_HasTarget, m_HasOrigin, m_HasCompletedEnergy, m_RainSeen;
+        float m_FullAt, m_InvitedAt, m_LastStep = -100f, m_NextSearch, m_NextSafety, m_LastHop, m_NextDots;
+        Material m_CandyPink, m_CandyCream;
+        Texture2D m_GrowthGlowTexture;
+        Sprite m_GrowthGlowSprite;
+        int m_Note, m_Voice;
+        Vector3 m_Start, m_Target, m_LastHead, m_GuideHome, m_InviteStart;
+        string World => m_Candy ? "candy" : "nature";
+        string Language => m_English ? "en" : "cn";
+        public int DiscoveredGardenCount => m_Gardens.Count;
+        public static bool ShouldOfferWalk(bool rainSeen, bool rainPlaying, float secondsSinceFull) =>
+            secondsSinceFull >= 25f || (rainSeen && !rainPlaying && secondsSinceFull >= 3f);
+        public static int NextNoteIndex(int current) => current < 7 ? current + 1 : 3;
+
+        public void BeginSession(NatureFootstepGrassController trail, CandyRainRewardController rain,
+            Transform viewer, Transform wrist, bool candy, GameObject[] decorations, GameObject guidePrefab = null)
+        {
+            StopAndClear();
+            m_Trail = trail; m_Rain = rain; m_Viewer = viewer; m_Wrist = wrist; m_Candy = candy;
+            m_WristUI = wrist != null ? wrist.GetComponent<CandyEnergyWristUI>() : null;
+            m_English = PlayerPrefs.GetString("Moodium.Language", "Chinese") == "English";
+            m_Tint = candy ? new Color(1f, .55f, .78f) : new Color(.44f, .83f, .60f);
+            m_Phase = Phase.Waiting;
+            m_HasCompletedEnergy = m_HasTarget = m_HasOrigin = m_RainSeen = false;
+            m_NextSearch = m_NextSafety = 0f; m_Note = 0; m_LastStep = -100f;
+            m_Trail.SetGuidedMode(true);
+            m_Trail.StepGrown += OnStep;
+            if (decorations != null)
+                foreach (var prefab in decorations)
+                    if (prefab != null && (prefab.name.ToLowerInvariant().Contains("star") ||
+                        prefab.name.ToLowerInvariant().Contains("lolli"))) m_Decorations.Add(prefab);
+            m_Root = new GameObject("Walk Trail Journey").transform;
+            for (var i = 0; i < 5; i++)
+            {
+                var sound = new GameObject("Walk Trail Voice " + i);
+                sound.transform.SetParent(m_Root, false);
+                var source = sound.AddComponent<AudioSource>();
+                source.playOnAwake = false; source.spatialBlend = 1f;
+                source.minDistance = .3f; source.maxDistance = 5f;
+                m_Voices.Add(source);
+            }
+            for (var i = 0; i < 8; i++) m_Notes[i] = LoadAudio("walk_step_" + (i + 1).ToString("00"));
+            m_Chime = LoadAudio("walk_spot_chime"); m_Complete = LoadAudio("walk_complete"); m_Hop = LoadAudio("walk_guide_hop");
+            m_Ring = Sprite("walk_floor_ring", .6f, true);
+            m_Invite = Sprite($"walk_floor_invite_{World}_{Language}", .6f, true, false);
+            m_Glow = Sprite("walk_guide_glow", .14f, false);
+            m_Guide = new GameObject("Walking Light Guide").transform;
+            m_Guide.SetParent(m_Root, false);
+            if (guidePrefab != null) PrepareGuide(Instantiate(guidePrefab, m_Guide));
+            m_Ring.gameObject.SetActive(false); m_Invite.gameObject.SetActive(false);
+            m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
+            for (var i = 0; i < 12; i++)
+            {
+                var dot = Sprite("walk_trail_dot", .025f, true);
+                dot.gameObject.SetActive(false); m_Dots.Add(dot);
+            }
+            if (viewer != null) m_LastHead = viewer.position;
+            enabled = true;
+        }
+
+        public void SetBag(Transform bag)
+        {
+            m_Bag = bag;
+        }
+        public void SetProgress(float progress)
+        {
+            if (progress < .999f || m_HasCompletedEnergy) return;
+            m_HasCompletedEnergy = true;
+            m_FullAt = Time.time;
+        }
+
+        void Update()
+        {
+            if (m_Root == null || m_Trail == null || m_Viewer == null) return;
+            UpdateCards();
+            foreach (var ring in m_GardenRings)
+                if (ring != null) ring.color = new Color(m_Tint.r, m_Tint.g, m_Tint.b,
+                    .45f + Mathf.Sin(Time.time * Mathf.PI * .5f) * .1f);
+            if (!m_HasCompletedEnergy) return;
+            if (m_Rain != null && m_Rain.IsPlaying) m_RainSeen = true;
+            if (m_Phase == Phase.Waiting)
+            {
+                if (!ShouldOfferWalk(m_RainSeen, m_Rain != null && m_Rain.IsPlaying, Time.time - m_FullAt)) return;
+                // Basic planting must not depend on finding a large, completely
+                // reconstructed garden target. Each plant still validates its floor.
+                m_Trail.SetWalkingEnabled(true);
+                if (Time.time < m_NextSearch) return;
+                m_NextSearch = Time.time + 2f;
+                if (!m_Trail.TryGetFloor(out m_Start))
+                {
+                    UpdateGuideHome();
+                    return;
+                }
+                m_HasOrigin = true;
+                if (!FindTarget(true))
+                {
+                    UpdateGuideHome();
+                    return;
+                }
+                Invite();
+            }
+            if (!m_HasOrigin) return;
+            var movement = Vector3.ProjectOnPlane(m_Viewer.position - m_LastHead, Vector3.up).magnitude;
+            if (m_Phase == Phase.Sleeping && movement >= .3f)
+            {
+                m_LastHead = m_Viewer.position;
+                m_Phase = Phase.Walking; m_Trail.SetWalkingEnabled(true);
+                m_NextSearch = 0f;
+            }
+            if (m_Phase == Phase.Inviting && movement >= .3f)
+            {
+                m_Phase = Phase.Walking;
+                m_Invite.gameObject.SetActive(false);
+                m_LastHead = m_Viewer.position;
+            }
+            if (m_Phase == Phase.Inviting && Time.time - m_InvitedAt >= 60f)
+            {
+                m_Phase = Phase.Sleeping;
+                m_Trail.SetWalkingEnabled(false);
+                m_Invite.gameObject.SetActive(false); m_Ring.gameObject.SetActive(false);
+                HideDots(); m_LastHead = m_Viewer.position;
+            }
+            if (m_Phase == Phase.Sleeping || m_Phase == Phase.Complete)
+            {
+                UpdateGuideHome();
+                return;
+            }
+            if ((m_Phase == Phase.Walking || m_Phase == Phase.Inviting) && !m_HasTarget && Time.time >= m_NextSearch)
+            {
+                m_NextSearch = Time.time + 2f;
+                FindTarget(false);
+            }
+            if (m_HasTarget && Time.time >= m_NextSafety)
+            {
+                m_NextSafety = Time.time + 1f;
+                if (!m_Trail.TryFindSafeGround(m_Target, m_Start.y, out _, true) ||
+                    !m_Trail.IsSafePath(m_Viewer.position, m_Target, m_Start.y) ||
+                    (HorizontalDistance(m_Viewer.position, m_Target) > .65f &&
+                     Vector3.Dot(Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized,
+                         Vector3.ProjectOnPlane(m_Target - m_Viewer.position, Vector3.up).normalized) < .5f))
+                {
+                    m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
+                    m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
+                }
+            }
+            if (m_Phase == Phase.Walking && m_HasTarget && HorizontalDistance(m_Viewer.position, m_Target) <= .5f)
+                DiscoverGarden();
+            UpdateGuide();
+        }
+
+        bool FindTarget(bool invite)
+        {
+            if (!m_Trail.TryGetFloor(out var floor)) return false;
+            var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
+            if (forward.sqrMagnitude < .1f) forward = Vector3.forward;
+            var angles = new[] { 0f, -30f, 30f, -60f, 60f };
+            foreach (var distance in invite ? new[] { 1.3f } : new[] { 1.5f, 1.8f, 1.3f })
+                foreach (var angle in angles)
+                {
+                    var desired = floor + Quaternion.AngleAxis(angle, Vector3.up) * forward * distance;
+                    if (HorizontalDistance(desired, m_Start) > 2.5f) continue;
+                    if (!NatureFootstepGrassController.HasMinimumHorizontalSeparation(desired, m_Gardens, 1.2f)) continue;
+                    if (!m_Trail.TryFindSafeGround(desired, m_Start.y, out var candidate, true) ||
+                        !m_Trail.IsSafePath(floor, candidate, m_Start.y)) continue;
+                    m_Target = candidate; m_HasTarget = true;
+                    m_Ring.transform.position = candidate + Vector3.up * .008f;
+                    m_Ring.gameObject.SetActive(true);
+                    if (m_Invite != null && m_Invite.gameObject.activeSelf)
+                        m_Invite.transform.position = candidate + forward * .4f + Vector3.up * .012f;
+                    return true;
+                }
+            return false;
+        }
+
+        void Invite()
+        {
+            m_Phase = Phase.Inviting; m_InvitedAt = Time.time;
+            m_LastHead = m_Viewer.position;
+            m_InviteStart = m_Bag != null ? m_Bag.position : m_Viewer.position + m_Viewer.forward * .4f;
+            m_Guide.position = m_InviteStart;
+            m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
+            var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
+            m_Invite.transform.position = m_Target + forward * .4f + Vector3.up * .012f;
+            m_Invite.transform.rotation = Quaternion.LookRotation(Vector3.down, forward);
+            m_Invite.gameObject.SetActive(true);
+            m_Trail.SetWalkingEnabled(true);
+            Play(m_Hop, m_Target, .25f);
+            StartCoroutine(DemonstrateGrowth(m_Target));
+        }
+
+        System.Collections.IEnumerator DemonstrateGrowth(Vector3 target)
+        {
+            yield return new WaitForSeconds(.8f);
+            for (var i = 0; i < 3; i++)
+            {
+                var p = target + new Vector3(Mathf.Cos(i * 2.1f), 0f, Mathf.Sin(i * 2.1f)) * .16f;
+                if (m_Trail.TryFindSafeGround(p, m_Start.y, out var ground))
+                { m_Trail.SpawnGrass(ground); Sparkle(ground); }
+            }
+        }
+
+        void OnStep(Vector3 position)
+        {
+            if (Time.time - m_LastStep > 1.2f) m_Note = 0;
+            Play(m_Notes[m_Note], position, .35f);
+            m_Note = NextNoteIndex(m_Note);
+            m_LastStep = Time.time;
+            Sparkle(position);
+        }
+
+        void DiscoverGarden()
+        {
+            m_Gardens.Add(m_Target);
+            var garden = new GameObject("Secret Garden " + m_Gardens.Count).transform;
+            garden.SetParent(m_Root, false);
+            garden.position = m_Target;
+            for (var i = 0; i < 9; i++)
+            {
+                var angle = i * Mathf.PI * 2f / 9f;
+                var p = m_Target + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * (.12f + (i % 3) * .065f);
+                if (!m_Trail.TryFindSafeGround(p, m_Start.y, out var ground)) continue;
+                var prefab = m_Candy && i % 3 == 0 && m_Decorations.Count > 0
+                    ? m_Decorations[(i / 3) % m_Decorations.Count] : m_Trail.FlowerPrefab;
+                var plant = m_Trail.SpawnGrass(ground, true, prefab);
+                if (plant != null) plant.transform.SetParent(garden, true);
+                Sparkle(ground);
+            }
+            var ring = Sprite("walk_floor_ring", .85f, true);
+            ring.transform.position = m_Target + Vector3.up * .009f;
+            m_GardenRings.Add(ring);
+            if (m_Candy)
+            {
+                CreateLollipop(m_Target + new Vector3(-.15f, 0f, .08f), garden, 0);
+                CreateLollipop(m_Target + new Vector3(.12f, 0f, -.06f), garden, 1);
+            }
+            Play(m_Chime, m_Target, .4f);
+            ShowCard($"walk_counter_{World}_{m_Gardens.Count}_{Language}", m_Target + Vector3.up * .7f, .35f, true);
+            m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
+            if (m_Gardens.Count >= 3)
+            {
+                m_Phase = Phase.Complete;
+                m_Trail.WaveTrail();
+                ShowCard($"walk_toast_done_{World}_{Language}", m_Viewer.position + m_Viewer.forward, .5f, false);
+                Play(m_Complete, m_Viewer.position + m_Viewer.forward, .4f);
+            }
+            else m_NextSearch = Time.time + 1.2f;
+        }
+
+        void UpdateGuide()
+        {
+            if (!m_HasTarget)
+            { m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false); return; }
+            m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
+            m_Glow.color = m_Tint;
+            var viewerFloor = new Vector3(m_Viewer.position.x, m_Start.y, m_Viewer.position.z);
+            var direction = m_Target - viewerFloor;
+            var guidePoint = viewerFloor + Vector3.ClampMagnitude(direction, 1.1f);
+            if (!m_Trail.TryFindSafeGround(guidePoint, m_Start.y, out guidePoint)) return;
+            var hop = Mathf.Abs(Mathf.Sin(Time.time * 2.3f));
+            var desired = guidePoint + Vector3.up * (.12f + hop * .075f);
+            var invite = Mathf.Clamp01((Time.time - m_InvitedAt) / .8f);
+            m_Guide.position = m_Phase == Phase.Inviting && invite < 1f
+                ? Vector3.Lerp(m_InviteStart, desired, invite) + Vector3.up * Mathf.Sin(invite * Mathf.PI) * .2f
+                : desired;
+            if (hop < .08f && Time.time - m_LastHop > 1f)
+            { m_LastHop = Time.time; Play(m_Hop, guidePoint, .08f); }
+            Face(m_Glow.transform, m_Guide.position);
+            var start = Vector3.Lerp(viewerFloor, m_Target, .25f);
+            var count = Mathf.Min(12, Mathf.FloorToInt(HorizontalDistance(start, m_Target) / .2f));
+            if (Time.time >= m_NextDots)
+            {
+                m_NextDots = Time.time + .2f;
+                for (var i = 0; i < m_Dots.Count; i++)
+                {
+                    var active = i < count;
+                    var p = active ? Vector3.Lerp(start, m_Target, (i + 1f) / (count + 1f)) : Vector3.zero;
+                    if (active) active = m_Trail.TryFindSafeGround(p, m_Start.y, out p);
+                    m_Dots[i].gameObject.SetActive(active);
+                    if (!active) continue;
+                    m_Dots[i].transform.position = p + Vector3.up * .006f;
+                    m_Dots[i].color = new Color(m_Tint.r, m_Tint.g, m_Tint.b, Mathf.Lerp(.65f, .2f, i / 12f));
+                }
+            }
+            if (m_Phase == Phase.Inviting)
+            {
+                var c = Color.white; c.a = 1f - Mathf.Clamp01((Time.time - m_InvitedAt - 58f) / 2f);
+                m_Invite.color = c;
+            }
+        }
+
+        void UpdateGuideHome()
+        {
+            m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
+            var home = m_Bag != null && m_Bag.gameObject.activeInHierarchy ? m_Bag.position
+                : m_Viewer.position + m_Viewer.forward * .45f - Vector3.up * .2f;
+            m_Guide.position = Vector3.Lerp(m_Guide.position, home + Vector3.up * .07f, 1f - Mathf.Exp(-Time.deltaTime * 2f));
+            Face(m_Glow.transform, m_Guide.position);
+            m_Glow.color = new Color(m_Tint.r, m_Tint.g, m_Tint.b, .3f + Mathf.Sin(Time.time) * .05f);
+        }
+
+        void Sparkle(Vector3 position)
+        {
+            if (m_GrowthGlowSprite == null)
+            {
+                const int size = 128;
+                m_GrowthGlowTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { name = "Walk Growth White Soft Glow", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+                var pixels = new Color[size * size];
+                for (var y = 0; y < size; y++)
+                    for (var x = 0; x < size; x++)
+                    {
+                        var radius = new Vector2((x + .5f) / size * 2f - 1f, (y + .5f) / size * 2f - 1f).magnitude;
+                        var alpha = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.12f, 1f, radius));
+                        pixels[y * size + x] = new Color(1f, 1f, 1f, alpha * .95f);
+                    }
+                m_GrowthGlowTexture.SetPixels(pixels);
+                m_GrowthGlowTexture.Apply(false, true);
+                m_GrowthGlowSprite = UnityEngine.Sprite.Create(m_GrowthGlowTexture,
+                    new Rect(0, 0, size, size), new Vector2(.5f, .5f), size, 0, SpriteMeshType.FullRect);
+            }
+            var root = new GameObject("New Growth White Highlight");
+            root.transform.SetParent(m_Root, false);
+            root.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            root.transform.localScale = Vector3.one * .44f;
+            var burst = root.AddComponent<SpriteRenderer>();
+            burst.sprite = m_GrowthGlowSprite;
+            burst.color = Color.white;
+            burst.transform.position = position + Vector3.up * .018f;
+            StartCoroutine(FadeBurst(burst));
+        }
+        System.Collections.IEnumerator FadeBurst(SpriteRenderer burst)
+        {
+            var scale = burst.transform.localScale;
+            const float duration = 1.2f;
+            for (var t = 0f; t < duration; t += Time.deltaTime)
+            {
+                if (burst == null) yield break;
+                burst.transform.localScale = scale * Mathf.Lerp(.8f, 1.15f, Mathf.SmoothStep(0f, 1f, t / duration));
+                var alpha = Mathf.SmoothStep(0f, 1f, t / .08f) *
+                    (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.35f, duration, t)));
+                burst.color = new Color(1f, 1f, 1f, alpha);
+                yield return null;
+            }
+            if (burst != null) Destroy(burst.gameObject);
+        }
+
+        void ShowCard(string resource, Vector3 position, float width, bool collect)
+        {
+            var sprite = Sprite(resource, width, false, false);
+            Face(sprite.transform, position);
+            m_Cards.Add(new FloatingCard { Renderer = sprite, Position = position, Born = Time.time, Collect = collect });
+        }
+        void UpdateCards()
+        {
+            for (var i = m_Cards.Count - 1; i >= 0; i--)
+            {
+                var card = m_Cards[i]; var age = Time.time - card.Born;
+                var duration = card.Collect ? 1.6f : 2.5f;
+                if (card.Renderer == null || age > duration)
+                { if (card.Renderer != null) Destroy(card.Renderer.gameObject); m_Cards.RemoveAt(i); continue; }
+                var position = card.Position;
+                if (card.Collect && age > 1f && m_Wrist != null && m_Wrist.gameObject.activeInHierarchy &&
+                    m_WristUI != null && m_WristUI.HandTracked)
+                    position = Vector3.Lerp(position, m_Wrist.position, Mathf.SmoothStep(0f, 1f, (age - 1f) / .6f));
+                Face(card.Renderer.transform, position);
+                card.Renderer.color = new Color(1f, 1f, 1f, Mathf.Clamp01((duration - age) / .5f));
+                if (card.Collect && age > 1f) card.Renderer.transform.localScale *= Mathf.Exp(-Time.deltaTime * 3f);
+            }
+        }
+
+        SpriteRenderer Sprite(string resource, float width, bool floor, bool tint = true)
+        {
+            var go = new GameObject(resource); go.transform.SetParent(m_Root, false);
+            var renderer = go.AddComponent<SpriteRenderer>();
+            renderer.sprite = Resources.Load<Sprite>("MoodiumWalkTrail/" + resource);
+            if (renderer.sprite != null) go.transform.localScale = Vector3.one * width / renderer.sprite.bounds.size.x;
+            renderer.color = tint ? m_Tint : Color.white;
+            if (floor) go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            return renderer;
+        }
+        void Face(Transform visual, Vector3 position)
+        { visual.position = position; visual.rotation = Quaternion.LookRotation(position - m_Viewer.position, Vector3.up); }
+        void HideDots() { foreach (var dot in m_Dots) if (dot != null) dot.gameObject.SetActive(false); }
+        void Play(AudioClip clip, Vector3 position, float volume)
+        {
+            if (clip == null || m_Voices.Count == 0) return;
+            var source = m_Voices[m_Voice++ % m_Voices.Count];
+            source.transform.position = position; source.PlayOneShot(clip, volume);
+        }
+        static AudioClip LoadAudio(string name) => Resources.Load<AudioClip>("MoodiumWalkTrail/" + name);
+        static float HorizontalDistance(Vector3 a, Vector3 b) => Vector3.ProjectOnPlane(a - b, Vector3.up).magnitude;
+        static void PrepareGuide(GameObject visual)
+        {
+            foreach (var collider in visual.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+            foreach (var body in visual.GetComponentsInChildren<Rigidbody>(true)) body.isKinematic = true;
+            var renderers = visual.GetComponentsInChildren<Renderer>();
+            var bounds = new Bounds(visual.transform.position, Vector3.zero);
+            foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+            var size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+            if (size > .0001f) visual.transform.localScale *= .04f / size;
+        }
+
+        void CreateLollipop(Vector3 position, Transform garden, int index)
+        {
+            if (m_CandyPink == null)
+            {
+                m_CandyPink = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                m_CandyPink.SetColor("_BaseColor", m_Tint);
+                m_CandyPink.SetFloat("_Smoothness", .85f);
+                m_CandyCream = new Material(m_CandyPink);
+                m_CandyCream.SetColor("_BaseColor", new Color(1f, .94f, .8f));
+            }
+            var root = new GameObject("Secret Garden Lollipop");
+            root.transform.SetParent(garden, false); root.transform.position = position;
+            var stick = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            stick.transform.SetParent(root.transform, false);
+            stick.transform.localPosition = Vector3.up * .15f;
+            stick.transform.localScale = new Vector3(.009f, .15f, .009f);
+            stick.GetComponent<Renderer>().sharedMaterial = m_CandyCream;
+            Destroy(stick.GetComponent<Collider>());
+            var top = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            top.transform.SetParent(root.transform, false);
+            top.transform.localPosition = Vector3.up * .31f;
+            top.transform.localScale = new Vector3(.12f, .12f, .045f);
+            top.GetComponent<Renderer>().sharedMaterial = index == 0 ? m_CandyPink : m_CandyCream;
+            Destroy(top.GetComponent<Collider>());
+            root.AddComponent<WalkTrailGrowth>().Initialize(position);
+        }
+
+        public void StopAndClear()
+        {
+            if (m_Trail != null)
+            {
+                m_Trail.StepGrown -= OnStep;
+                m_Trail.SetWalkingEnabled(false);
+            }
+            StopAllCoroutines();
+            if (m_Root != null) Destroy(m_Root.gameObject);
+            m_Root = null;
+            m_Gardens.Clear(); m_Dots.Clear(); m_Cards.Clear(); m_Voices.Clear(); m_Decorations.Clear();
+            m_GardenRings.Clear();
+            if (m_CandyPink != null) Destroy(m_CandyPink);
+            if (m_CandyCream != null) Destroy(m_CandyCream);
+            m_CandyPink = m_CandyCream = null;
+            if (m_GrowthGlowSprite != null) Destroy(m_GrowthGlowSprite);
+            if (m_GrowthGlowTexture != null) Destroy(m_GrowthGlowTexture);
+            m_GrowthGlowSprite = null;
+            m_GrowthGlowTexture = null;
+            enabled = false;
+        }
+        void OnDisable() { if (m_Root != null) StopAndClear(); }
+    }
+}

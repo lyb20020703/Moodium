@@ -13,7 +13,7 @@ namespace Moodium.MoodCheck
 
         static readonly Dictionary<string, Pair> s_Copy = new()
         {
-            ["prompt.entry"] = new("不知道去哪个世界？告诉 Moodi 你现在的心情", "Not sure where to go? Tell Moodi how you feel"),
+            ["prompt.entry"] = new("不知道选哪个？测测心情", "Not sure? Check your mood"),
             ["plate.kicker"] = new("Moodi 想知道", "Moodi wants to know"),
             ["plate.title.pre"] = new("你现在的心情怎么样？", "How are you feeling right now?"),
             ["plate.title.post"] = new("现在呢？", "And now?"),
@@ -40,8 +40,13 @@ namespace Moodium.MoodCheck
             ["rec.sticker"] = new("找到这张贴纸，贴在袋子上", "Find this sticker and put it on your bag"),
             ["rec.sticker.sub"] = new("贴好后看向它，就能进入", "Once it's on, look at it to enter"),
             ["rec.other"] = new("也想去另一个？完全可以", "Prefer the other one? That's fine too"),
-            ["rec.cta"] = new("好，去找贴纸", "Find my sticker"),
-            ["rec.retry"] = new("再选一次", "Choose again"),
+            ["rec.cta"] = new("去找这张贴纸", "Find this sticker"),
+            ["rec.retry"] = new("再测一次", "Check again"),
+            ["rec.short.happy"] = new("好心情，再加点甜", "Add a little sweetness"),
+            ["rec.short.calm"] = new("把这份平静带进森林", "Take this calm into the woods"),
+            ["rec.short.neutral"] = new("先去森林走走吧", "Maybe a walk in the woods"),
+            ["rec.short.low"] = new("给自己一点甜吧", "A little sweetness might help"),
+            ["rec.short.tense"] = new("去森林里慢慢呼吸", "Breathe slowly in the forest"),
             ["tag.pick"] = new("Moodi 推荐", "Moodi's pick"),
             ["compare.kicker"] = new("在{world}待了一会儿之后", "After some time in {world}"),
             ["compare.better"] = new("感觉轻松了一些呢", "Seems a little lighter now"),

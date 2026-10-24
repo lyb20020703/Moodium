@@ -9,6 +9,56 @@ namespace Moodium.CandyWorld
         [SerializeField, Range(0.1f, 1f)] float m_ColliderScale = 0.35f;
 
         Collider[] m_Colliders;
+        SqueezeProgressVideoController m_ProtectedVideo;
+        Renderer[] m_Visuals;
+        float m_VideoProtectionStarted;
+        float m_VideoOverlapTime;
+
+        public void ProtectVideo(SqueezeProgressVideoController video)
+        {
+            m_ProtectedVideo = video;
+            m_Visuals = GetComponentsInChildren<Renderer>(true);
+            m_VideoProtectionStarted = Time.time;
+            m_VideoOverlapTime = 0f;
+        }
+
+        void LateUpdate() => CheckVideoExclusion();
+
+        void CheckVideoExclusion()
+        {
+            // The emitter lies inside the video region: let the initial burst
+            // leave it before considering cleanup, then require sustained overlap.
+            if (m_ProtectedVideo == null || Time.time - m_VideoProtectionStarted < .35f)
+            {
+                m_VideoOverlapTime = 0f;
+                return;
+            }
+            var bounds = new Bounds(transform.position, Vector3.zero);
+            var hasBounds = false;
+            foreach (var visual in m_Visuals)
+            {
+                if (visual == null || !visual.enabled) continue;
+                if (!hasBounds) { bounds = visual.bounds; hasBounds = true; }
+                else bounds.Encapsulate(visual.bounds);
+            }
+            m_VideoOverlapTime = m_ProtectedVideo.OverlapsBurstVideo(bounds)
+                ? m_VideoOverlapTime + Time.deltaTime : 0f;
+            if (m_VideoOverlapTime >= .2f)
+            {
+                // Hide synchronously; Destroy alone leaves the renderer visible until frame end.
+                gameObject.SetActive(false);
+                Destroy(gameObject);
+                return;
+            }
+        }
+
+        public static bool CrossesProtectedSphere(Vector3 from, Vector3 to, float radius)
+        {
+            var delta = to - from;
+            var t = delta.sqrMagnitude > 1e-10f
+                ? Mathf.Clamp01(-Vector3.Dot(from, delta) / delta.sqrMagnitude) : 0f;
+            return (from + delta * t).sqrMagnitude <= radius * radius;
+        }
 
         public Collider[] Colliders => m_Colliders ?? System.Array.Empty<Collider>();
 

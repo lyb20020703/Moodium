@@ -55,6 +55,7 @@ namespace Moodium.Flow
         [SerializeField] GameObject m_NatureFootstepAlternatePrefab;
         [Tooltip("Bean prefab grown on the real floor beneath a walking player after Candy World reaches 100% energy.")]
         [SerializeField] GameObject m_CandyFootstepBeanPrefab;
+        [SerializeField] GameObject m_WalkTrailGuidePrefab;
         [Tooltip("360-degree Nature World background shown only after Nature energy reaches 100%.")]
         [SerializeField] Texture2D m_NatureCompletionPanoramaTexture;
         [Tooltip("360-degree Candy World background shown only after Candy energy reaches 100%.")]
@@ -176,7 +177,11 @@ namespace Moodium.Flow
 
         public void RequestStickerMoodCheck()
         {
+            if (MoodCheckInProgress) return;
             EnsureMoodCheck();
+            StopStickerTrackingWarmup();
+            m_StickerWorldSelection?.SetMoodCheckSuspended(true);
+            if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = false;
             m_MoodCheckLaunchSource = MoodCheckLaunchSource.StickerSelection;
             m_MoodCheckController?.BeginPreCheck(CurrentMoodAvailability(), IsEnglish());
         }
@@ -184,7 +189,17 @@ namespace Moodium.Flow
         public void CancelMoodCheckImmediate()
         {
             m_MoodCheckController?.DismissImmediate();
+            ResumeStickerTrackingAfterMoodCheck();
             m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
+        }
+
+        void ResumeStickerTrackingAfterMoodCheck()
+        {
+            if (m_MoodCheckLaunchSource != MoodCheckLaunchSource.StickerSelection ||
+                m_StickerWorldSelection == null || !m_StickerWorldSelection.IsSelectionActive) return;
+            m_StickerWorldSelection.SetMoodCheckSuspended(false);
+            if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = true;
+            StartStickerTrackingWarmup();
         }
 
         public string BeginMoodVisit(string enteredWorldId, float realtime)
@@ -737,8 +752,10 @@ namespace Moodium.Flow
 
         void OnStickerWorldEntrySelected(StickerWorldEntry entry)
         {
-            if (entry == null)
+            if (entry == null || MoodCheckInProgress)
                 return;
+            m_MoodCheckController?.DismissImmediate();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
             m_SelectedStickerEntry = entry;
             StopStickerTrackingWarmup();
             m_StickerWorldSelection?.End();
@@ -794,6 +811,8 @@ namespace Moodium.Flow
         {
             if (world == null || !world.IsAvailable)
                 return;
+            m_MoodCheckController?.DismissImmediate();
+            m_MoodCheckLaunchSource = MoodCheckLaunchSource.None;
             if (!SupportsRealityWorld(world))
             {
                 Debug.Log($"[Moodium Object World] {world.DisplayName} is not implemented yet.");
@@ -870,6 +889,7 @@ namespace Moodium.Flow
             var managerObject = new GameObject("Candy World Reality Enhancement");
             managerObject.transform.SetParent(transform, false);
             m_CandyWorldManager = managerObject.AddComponent<CandyWorldManager>();
+            m_CandyWorldManager.ConfigureWalkTrailGuide(m_WalkTrailGuidePrefab);
             m_CandyWorldManager.Configure(
                 m_MainCamera,
                 m_GlassPanelPrefab,
@@ -925,8 +945,11 @@ namespace Moodium.Flow
                 m_MoodCheckController = gameObject.AddComponent<MoodCheckController>();
             if (!m_TestMoodAvailabilityOverride)
             {
-                m_MainCamera ??= Camera.main;
-                m_MoodCheckPanelPrefab ??= Resources.Load<GameObject>("Moodium/MoodCheck/MoodCheckPanel");
+                if (m_MainCamera == null) m_MainCamera = Camera.main;
+                // Unity destroyed/missing references compare equal to null, but ??=
+                // does not recognize them. Retry the actual resource in that case.
+                if (m_MoodCheckPanelPrefab == null)
+                    m_MoodCheckPanelPrefab = Resources.Load<GameObject>("Moodium/MoodCheck/MoodCheckPanel");
                 m_MoodCheckController.Configure(m_MoodCheckPanelPrefab, m_MainCamera);
             }
             SubscribeMoodCheck();
@@ -960,6 +983,7 @@ namespace Moodium.Flow
             {
                 m_MoodCheckContext.SetPreSample(sample);
                 m_StickerWorldSelection?.SetMoodCheckSummary(sample);
+                ResumeStickerTrackingAfterMoodCheck();
             }
             else
             {
@@ -978,6 +1002,7 @@ namespace Moodium.Flow
 
         void OnMoodCheckSkipped()
         {
+            ResumeStickerTrackingAfterMoodCheck();
             if (m_MoodCheckLaunchSource == MoodCheckLaunchSource.PostVisit)
             {
                 m_MoodCheckContext.CompleteVisit();

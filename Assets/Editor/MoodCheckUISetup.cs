@@ -77,8 +77,8 @@ public static class MoodCheckUISetup
         CreateText(header.transform, "Kicker", "Moodi 想知道", new Vector3(0f, .247f, -.004f), .010f, chinese);
         CreateText(header.transform, "Title", "你现在的心情怎么样？", new Vector3(0f, .225f, -.004f), .018f, chinese);
         var readout = Child(root.transform, "Readout");
-        CreateText(readout.transform, "MoodName", "一般", new Vector3(-.025f, .190f, -.004f), .022f, chinese);
-        CreateText(readout.transform, "MoodDescription", "说不上好坏", new Vector3(.045f, .190f, -.004f), .011f, chinese);
+        CreateText(readout.transform, "MoodName", "一般", new Vector3(-.025f, .202f, -.004f), .022f, chinese);
+        CreateText(readout.transform, "MoodDescription", "说不上好坏", new Vector3(.045f, .202f, -.004f), .011f, chinese);
 
         var plate = Child(root.transform, "Plate");
         plate.transform.localPosition = new Vector3(0f, .035f, -.003f);
@@ -142,6 +142,7 @@ public static class MoodCheckUISetup
         CreateButton(footer.transform, "ContinueButton", "继续", new Vector3(.15f, -.245f, -.004f), new Vector2(.08f, .036f), buttonMesh, chinese).SetActive(false);
 
         var recommendation = Child(root.transform, "RecommendationCard");
+        recommendation.AddComponent<MoodRecommendationView>();
         var recommendationGlass = CreateMeshVisual(recommendation.transform, "Glass", surface,
             AssetDatabase.LoadAssetAtPath<Material>(GlassPath), 2);
         recommendationGlass.transform.localScale = new Vector3(.392f / .462f, .78f, 1f);

@@ -7,6 +7,48 @@ using UnityEngine;
 public sealed class NatureLeafParticleControllerTests
 {
     [Test]
+    public void IndependentLeafEmittersDoNotShareACadenceAndPreserveTotalBudget()
+    {
+        var first = NatureLeafParticleController.GetIndependentEmissionRate(18f, 3, 0);
+        var second = NatureLeafParticleController.GetIndependentEmissionRate(18f, 3, 1);
+        var third = NatureLeafParticleController.GetIndependentEmissionRate(18f, 3, 2);
+        Assert.That(first, Is.Not.EqualTo(second));
+        Assert.That(second, Is.Not.EqualTo(third));
+        Assert.That(first + second + third, Is.EqualTo(18f).Within(.001f));
+    }
+    [Test]
+    public void LeavesSurviveLongEnoughToReachViewerHeight()
+    {
+        var root = new GameObject("Leaf regression");
+        var particles = new GameObject("Particles").AddComponent<ParticleSystem>();
+        particles.transform.SetParent(root.transform);
+        particles.Stop();
+        root.AddComponent<NatureLeafParticleController>().Configure(particles);
+        Assert.That(particles.main.startLifetime.constantMin, Is.GreaterThanOrEqualTo(35f));
+        Assert.That(particles.main.cullingMode, Is.EqualTo(ParticleSystemCullingMode.AlwaysSimulate));
+        Object.DestroyImmediate(root);
+    }
+
+    [Test]
+    public void CompletedLeavesEnableNativeAutomaticEmission()
+    {
+        var root = new GameObject("Native emission regression");
+        var particles = new GameObject("Particles").AddComponent<ParticleSystem>();
+        particles.transform.SetParent(root.transform);
+        particles.Stop();
+        var controller = root.AddComponent<NatureLeafParticleController>();
+        controller.Configure(particles);
+        controller.StartLeaves();
+        Assert.That(particles.emission.enabled, Is.False);
+        controller.SetOrigin(Vector3.zero);
+        controller.UpdateLeafIntensity(1f);
+        Assert.That(particles.emission.enabled, Is.True);
+        Assert.That(particles.emission.rateOverTime.constant, Is.EqualTo(18f));
+        Assert.That(particles.shape.enabled, Is.True);
+        controller.StopLeaves();
+        Object.DestroyImmediate(root);
+    }
+    [Test]
     public void Leaves_StartOnlyWhenNatureWorldReachesCompletion()
     {
         Assert.That(NatureLeafParticleController.ShouldEmitLeaves(.99f), Is.False);
@@ -51,10 +93,10 @@ public sealed class NatureLeafParticleControllerTests
     }
 
     [Test]
-    public void NatureLeavesUseOneOriginalLeafSystemRegardlessOfAdditionalTextures()
+    public void NatureLeavesUseOneVariantPerTexture()
     {
         Assert.That(NatureLeafParticleController.GetLeafSystemCount(1), Is.EqualTo(1));
-        Assert.That(NatureLeafParticleController.GetLeafSystemCount(3), Is.EqualTo(1));
+        Assert.That(NatureLeafParticleController.GetLeafSystemCount(3), Is.EqualTo(3));
     }
 
     [Test]
