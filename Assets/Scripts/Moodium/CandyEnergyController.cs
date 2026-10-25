@@ -23,15 +23,21 @@ namespace Moodium.CandyWorld
 
         public void RegisterPinch()
         {
+            AddEnergy(m_EnergyPerPinch,"legacy");
+        }
+
+        public void AddEnergy(float amount,string reason)
+        {
+            if(float.IsNaN(amount)||float.IsInfinity(amount)||amount<=0f||m_Energy>=m_MaxEnergy)return;
             var previous = m_Energy;
-            m_Energy = Mathf.Min(m_MaxEnergy, m_Energy + m_EnergyPerPinch);
+            m_Energy = Mathf.Min(m_MaxEnergy, m_Energy + amount);
             EnergyChanged?.Invoke(m_Energy, NormalizedEnergy);
 
             CheckThreshold(previous, m_Energy, 20f, 20);
             CheckThreshold(previous, m_Energy, 50f, 50);
             CheckThreshold(previous, m_Energy, 80f, 80);
             CheckThreshold(previous, m_Energy, 100f, 100);
-            Debug.Log($"[Candy Energy] {m_Energy:0}/{m_MaxEnergy:0}");
+            if(reason=="legacy")Debug.Log($"[Candy Energy] {m_Energy:0}/{m_MaxEnergy:0}");
         }
 
         void CheckThreshold(float previous, float current, float threshold, int stage)

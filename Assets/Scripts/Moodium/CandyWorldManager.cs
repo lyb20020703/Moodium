@@ -4,6 +4,9 @@ using Moodium.NatureWorld;
 using Moodium.Reality;
 using Moodium.Calibration;
 using Moodium.Opening;
+using Moodium.Squeeze;
+using Moodium.MoodCheck;
+using Moodium.Rewards;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
@@ -31,6 +34,11 @@ namespace Moodium.CandyWorld
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
         CandyHandOpenBurstGesture m_HandOpenBurstGesture;
         SqueezeProgressVideoController m_SqueezeProgressVideo;
+        SqueezeModeController m_SqueezeModes;
+        RewardSequenceController m_SqueezeStageRewards;
+        MoodCheckContext m_SqueezeContext;
+        float m_NextEnergyUIUpdate;
+        public void ConfigureSqueezeContext(MoodCheckContext context)=>m_SqueezeContext=context;
         ARMeshManager m_SpatialMeshManager;
         GameObject[] m_NatureTreePrefabs;
         GameObject m_NatureFootstepGrassPrefab;
@@ -298,6 +306,12 @@ namespace Moodium.CandyWorld
                 m_EnergyUI != null ? m_EnergyUI.transform : null, !m_NatureWorldActive,
                 world != null ? world.Prefabs : null, m_WalkTrailGuidePrefab);
             m_Energy.ResetEnergy();
+            m_SqueezeModes=GetComponent<SqueezeModeController>()??gameObject.AddComponent<SqueezeModeController>();
+            m_SqueezeModes.BeginSession(m_Energy,m_SqueezeContext,m_NatureWorldActive,IsValidSqueezeSource);
+            m_SqueezeStageRewards=GetComponent<RewardSequenceController>()??gameObject.AddComponent<RewardSequenceController>();
+            m_SqueezeStageRewards.ConfigureTableFeedback(m_Energy,m_SqueezeModes.StageFeedback);
+            m_SqueezeStageRewards.BeginSession();
+            m_NextEnergyUIUpdate=0;
             m_ProgressController.StartProgress();
             m_SqueezeProgressVideo?.Begin(m_NatureWorldActive);
             m_SpatialTouchFeedback?.SetInteractionEnabled(true);
@@ -314,6 +328,8 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
+            m_SqueezeModes?.StopSession();
+            m_SqueezeStageRewards?.StopAndClear();
             m_WalkTrailGuide?.StopAndClear();
             if (m_Running)
             {
@@ -382,7 +398,6 @@ namespace Moodium.CandyWorld
             // scaling. Resolve the current world-space bounds now so every candy burst
             // starts in the visible middle of the calibrated Soft model.
             var visualCenter = ResolveCurrentCapsuleCenter(capsule, position);
-            m_WalkTrailGuide?.SetBag(capsule.transform);
             m_SqueezeProgressVideo?.BindToSoft(capsule);
             m_ProgressController.SetOrigin(visualCenter);
             if (m_NatureWorldActive)
@@ -391,7 +406,8 @@ namespace Moodium.CandyWorld
                 m_NatureIvyGrowth?.SetNatureSoftOrigin(m_LastNatureSoftOrigin);
                 m_NatureLeaves?.SetOrigin(visualCenter);
             }
-            m_Energy.RegisterPinch();
+            if(m_SqueezeModes!=null)m_SqueezeModes.AcceptPinch(capsule);
+            else m_Energy.RegisterPinch();
             SpawnSoftSqueezeFeedback(visualCenter);
             m_BurstController.Burst(visualCenter, capsule.transform);
         }
@@ -405,6 +421,16 @@ namespace Moodium.CandyWorld
             var burst = ParticleBurstEffect.Spawn(center);
             MoodiumRuntimeObjectRegistry.RegisterCreative(burst);
             return burst;
+        }
+
+        public static bool IsValidSqueezeSource(ChocolateCapsuleInteraction capsule)
+        {
+            if(capsule==null||!capsule.gameObject.activeInHierarchy||!capsule.InteractionEnabled)return false;
+            if(capsule.GetComponentInParent<ARTrackedObject>()!=null||capsule.GetComponentInParent<ARTrackedImage>()!=null||
+                capsule.GetComponentInParent<CalibratedSensoryBagPresentation>()!=null)return true;
+            var follower=capsule.GetComponent<TrackedObjectPoseFollower>();
+            return follower!=null&&follower.Anchor!=null&&(follower.Anchor.GetComponentInParent<ARTrackedObject>()!=null||
+                follower.Anchor.GetComponentInParent<ARTrackedImage>()!=null);
         }
 
         static Vector3 ResolveCurrentCapsuleCenter(ChocolateCapsuleInteraction capsule, Vector3 fallback)
@@ -521,9 +547,13 @@ namespace Moodium.CandyWorld
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
             m_WalkTrailGuide?.SetProgress(normalizedProgress);
-            m_EnergyUI.SetProgress(energy, normalizedProgress);
-            m_ProgressController.SetProgress(energy, normalizedProgress);
-            m_SqueezeProgressVideo?.SetProgress(normalizedProgress);
+            if(Time.unscaledTime>=m_NextEnergyUIUpdate||normalizedProgress>=1f||normalizedProgress<=0)
+            {
+                m_NextEnergyUIUpdate=Time.unscaledTime+.1f;
+                m_EnergyUI.SetProgress(energy, normalizedProgress);
+                m_ProgressController.SetProgress(energy, normalizedProgress);
+                m_SqueezeProgressVideo?.SetProgress(normalizedProgress);
+            }
             m_EnergyUI?.SetReleaseAvailable(EnergyReleasePolicy.ShouldShowToggle(normalizedProgress));
             if (m_NatureWorldActive)
             {

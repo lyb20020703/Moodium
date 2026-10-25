@@ -301,6 +301,8 @@ namespace Moodium.Reality
             m_Player.isLooping = false;
             m_Player.source = VideoSource.VideoClip;
             m_Player.clip = clip;
+            // Squeeze feedback has its own audio; these progress videos are visual-only.
+            m_Player.audioOutputMode = VideoAudioOutputMode.None;
             m_Player.renderMode = VideoRenderMode.RenderTexture;
             m_Player.targetTexture = m_RenderTexture;
             m_Player.loopPointReached += OnLoopPointReached;

@@ -27,7 +27,6 @@ namespace Moodium.NatureWorld
         Transform m_Viewer;
         Transform m_Wrist;
         CandyEnergyWristUI m_WristUI;
-        Transform m_Bag;
         Transform m_Root;
         Transform m_Guide;
         SpriteRenderer m_Glow;
@@ -42,13 +41,35 @@ namespace Moodium.NatureWorld
         Texture2D m_GrowthGlowTexture;
         Sprite m_GrowthGlowSprite;
         int m_Note, m_Voice;
-        Vector3 m_Start, m_Target, m_LastHead, m_GuideHome, m_InviteStart;
+        Vector3 m_Start, m_Target, m_LastHead, m_InviteStart;
+        bool m_HasGuidePosition;
+        Vector3 m_RouteStart;
+        float m_GuideDistance;
+        bool m_TargetIsGarden;
+        string m_LastWaitReason;
         string World => m_Candy ? "candy" : "nature";
         string Language => m_English ? "en" : "cn";
         public int DiscoveredGardenCount => m_Gardens.Count;
         public static bool ShouldOfferWalk(bool rainSeen, bool rainPlaying, float secondsSinceFull) =>
             secondsSinceFull >= 25f || (rainSeen && !rainPlaying && secondsSinceFull >= 3f);
         public static int NextNoteIndex(int current) => current < 7 ? current + 1 : 3;
+        public static float AdvanceGuideDistance(float current, float length, float distanceFromViewer, float deltaTime) =>
+            distanceFromViewer > 1.2f ? current : Mathf.MoveTowards(current, length, Mathf.Max(0f, deltaTime) * .45f);
+        public static Vector3 CompanionFollowPoint(Vector3 viewer, Vector3 forward)
+        {
+            forward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
+            if (forward.sqrMagnitude < .01f) forward = Vector3.forward;
+            return viewer + forward * .65f + Vector3.Cross(Vector3.up, forward) * .22f - Vector3.up * .45f;
+        }
+        public static Vector3 SmoothGuidePosition(Vector3 current, Vector3 desired, float deltaTime) =>
+            Vector3.Lerp(current, desired, 1f - Mathf.Exp(-6f * Mathf.Max(0f, deltaTime)));
+        public static Vector3 GuideHoverPoint(Vector3 groundPoint, Vector3 viewer, float bob)
+        {
+            // Ground navigation owns X/Z only. Keep the companion at the same
+            // body-relative height whether leading, arriving, or following.
+            groundPoint.y=CompanionFollowPoint(viewer,Vector3.forward).y+Mathf.Clamp(bob,-.015f,.015f);
+            return groundPoint;
+        }
 
         public void BeginSession(NatureFootstepGrassController trail, CandyRainRewardController rain,
             Transform viewer, Transform wrist, bool candy, GameObject[] decorations, GameObject guidePrefab = null)
@@ -61,6 +82,8 @@ namespace Moodium.NatureWorld
             m_Phase = Phase.Waiting;
             m_HasCompletedEnergy = m_HasTarget = m_HasOrigin = m_RainSeen = false;
             m_NextSearch = m_NextSafety = 0f; m_Note = 0; m_LastStep = -100f;
+            m_LastWaitReason = null;
+            m_HasGuidePosition = false;
             m_Trail.SetGuidedMode(true);
             m_Trail.StepGrown += OnStep;
             if (decorations != null)
@@ -89,17 +112,13 @@ namespace Moodium.NatureWorld
             m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
             for (var i = 0; i < 12; i++)
             {
-                var dot = Sprite("walk_trail_dot", .025f, true);
+                var dot = Sprite("walk_trail_dot", .08f, true, false);
                 dot.gameObject.SetActive(false); m_Dots.Add(dot);
             }
             if (viewer != null) m_LastHead = viewer.position;
             enabled = true;
         }
 
-        public void SetBag(Transform bag)
-        {
-            m_Bag = bag;
-        }
         public void SetProgress(float progress)
         {
             if (progress < .999f || m_HasCompletedEnergy) return;
@@ -122,17 +141,18 @@ namespace Moodium.NatureWorld
                 // Basic planting must not depend on finding a large, completely
                 // reconstructed garden target. Each plant still validates its floor.
                 m_Trail.SetWalkingEnabled(true);
+                UpdateCompanionFollow();
                 if (Time.time < m_NextSearch) return;
                 m_NextSearch = Time.time + 2f;
-                if (!m_Trail.TryGetFloor(out m_Start))
+                if (!m_Trail.TryGetFloor(out var floor))
                 {
-                    UpdateGuideHome();
+                    ReportGuideWait("No reconstructed floor below the viewer; look down and scan the floor.");
                     return;
                 }
-                m_HasOrigin = true;
+                if (!m_HasOrigin) { m_Start = floor; m_HasOrigin = true; }
                 if (!FindTarget(true))
                 {
-                    UpdateGuideHome();
+                    ReportGuideWait("No scanned, unobstructed forward route yet; waiting for floor reconstruction.");
                     return;
                 }
                 Invite();
@@ -160,7 +180,7 @@ namespace Moodium.NatureWorld
             }
             if (m_Phase == Phase.Sleeping || m_Phase == Phase.Complete)
             {
-                UpdateGuideHome();
+                UpdateCompanionFollow();
                 return;
             }
             if ((m_Phase == Phase.Walking || m_Phase == Phase.Inviting) && !m_HasTarget && Time.time >= m_NextSearch)
@@ -171,7 +191,7 @@ namespace Moodium.NatureWorld
             if (m_HasTarget && Time.time >= m_NextSafety)
             {
                 m_NextSafety = Time.time + 1f;
-                if (!m_Trail.TryFindSafeGround(m_Target, m_Start.y, out _, true) ||
+                if (!m_Trail.TryFindSafeGround(m_Target, m_Start.y, out _, m_TargetIsGarden) ||
                     !m_Trail.IsSafePath(m_Viewer.position, m_Target, m_Start.y) ||
                     (HorizontalDistance(m_Viewer.position, m_Target) > .65f &&
                      Vector3.Dot(Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized,
@@ -181,8 +201,15 @@ namespace Moodium.NatureWorld
                     m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
                 }
             }
-            if (m_Phase == Phase.Walking && m_HasTarget && HorizontalDistance(m_Viewer.position, m_Target) <= .5f)
-                DiscoverGarden();
+            if (m_HasTarget && HorizontalDistance(m_Viewer.position, m_Target) <= .4f)
+            {
+                if (m_Phase == Phase.Walking && m_TargetIsGarden) DiscoverGarden();
+                else if (!m_TargetIsGarden)
+                {
+                    m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
+                    m_NextSearch = Time.time + .2f;
+                }
+            }
             UpdateGuide();
         }
 
@@ -200,22 +227,52 @@ namespace Moodium.NatureWorld
                     if (!NatureFootstepGrassController.HasMinimumHorizontalSeparation(desired, m_Gardens, 1.2f)) continue;
                     if (!m_Trail.TryFindSafeGround(desired, m_Start.y, out var candidate, true) ||
                         !m_Trail.IsSafePath(floor, candidate, m_Start.y)) continue;
-                    m_Target = candidate; m_HasTarget = true;
-                    m_Ring.transform.position = candidate + Vector3.up * .008f;
-                    m_Ring.gameObject.SetActive(true);
-                    if (m_Invite != null && m_Invite.gameObject.activeSelf)
-                        m_Invite.transform.position = candidate + forward * .4f + Vector3.up * .012f;
+                    SetRouteTarget(floor, candidate, true, forward);
+                    return true;
+                }
+            // A large garden needs the original .8 m clearance disk. A short
+            // guide waypoint only needs a scanned, body-width unobstructed route.
+            // Never block all guidance merely because no large garden fits yet.
+            foreach (var distance in new[] { 1.1f, .9f, .7f })
+                foreach (var angle in angles)
+                {
+                    var desired = floor + Quaternion.AngleAxis(angle, Vector3.up) * forward * distance;
+                    if (!m_Trail.TryFindSafeGround(desired, floor.y, out var candidate) ||
+                        !m_Trail.IsSafePath(floor, candidate, floor.y)) continue;
+                    SetRouteTarget(floor, candidate, false, forward);
                     return true;
                 }
             return false;
+        }
+
+        void SetRouteTarget(Vector3 floor, Vector3 candidate, bool garden, Vector3 forward)
+        {
+            m_Target = candidate; m_HasTarget = true; m_TargetIsGarden = garden;
+            m_RouteStart = floor;
+            m_GuideDistance = Mathf.Min(.3f, HorizontalDistance(floor, candidate));
+            m_NextDots = 0f;
+            m_LastWaitReason = null;
+            m_Ring.transform.position = candidate + Vector3.up * .018f;
+            m_Ring.gameObject.SetActive(true);
+            if (m_Invite != null && m_Invite.gameObject.activeSelf)
+                m_Invite.transform.position = candidate + forward * .4f + Vector3.up * .012f;
+            Debug.Log($"[Walk Trail] Route ready: {(garden ? "garden" : "short waypoint")}, length={HorizontalDistance(floor, candidate):0.00}m.");
+        }
+
+        void ReportGuideWait(string reason)
+        {
+            if (m_LastWaitReason == reason) return;
+            m_LastWaitReason = reason;
+            Debug.LogWarning("[Walk Trail] " + reason);
         }
 
         void Invite()
         {
             m_Phase = Phase.Inviting; m_InvitedAt = Time.time;
             m_LastHead = m_Viewer.position;
-            m_InviteStart = m_Bag != null ? m_Bag.position : m_Viewer.position + m_Viewer.forward * .4f;
+            m_InviteStart = m_HasGuidePosition ? m_Guide.position : CompanionFollowPoint(m_Viewer.position, m_Viewer.forward);
             m_Guide.position = m_InviteStart;
+            m_HasGuidePosition = true;
             m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
             var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
             m_Invite.transform.position = m_Target + forward * .4f + Vector3.up * .012f;
@@ -281,30 +338,49 @@ namespace Moodium.NatureWorld
                 ShowCard($"walk_toast_done_{World}_{Language}", m_Viewer.position + m_Viewer.forward, .5f, false);
                 Play(m_Complete, m_Viewer.position + m_Viewer.forward, .4f);
             }
-            else m_NextSearch = Time.time + 1.2f;
+            else m_NextSearch = Time.time + .25f;
         }
 
         void UpdateGuide()
         {
             if (!m_HasTarget)
-            { m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false); return; }
+            {
+                HideDots();
+                UpdateCompanionFollow();
+                if (m_Phase != Phase.Complete)
+                    ReportGuideWait("Forward route unavailable; companion follows the viewer while waiting for a scanned route.");
+                return;
+            }
             m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
             m_Glow.color = m_Tint;
             var viewerFloor = new Vector3(m_Viewer.position.x, m_Start.y, m_Viewer.position.z);
-            var direction = m_Target - viewerFloor;
-            var guidePoint = viewerFloor + Vector3.ClampMagnitude(direction, 1.1f);
-            if (!m_Trail.TryFindSafeGround(guidePoint, m_Start.y, out guidePoint)) return;
-            var hop = Mathf.Abs(Mathf.Sin(Time.time * 2.3f));
-            var desired = guidePoint + Vector3.up * (.12f + hop * .075f);
+            var routeLength = HorizontalDistance(m_RouteStart, m_Target);
+            var routeDirection = Vector3.ProjectOnPlane(m_Target - m_RouteStart, Vector3.up).normalized;
             var invite = Mathf.Clamp01((Time.time - m_InvitedAt) / .8f);
-            m_Guide.position = m_Phase == Phase.Inviting && invite < 1f
+            if (m_Phase != Phase.Inviting || invite >= 1f)
+                m_GuideDistance = AdvanceGuideDistance(m_GuideDistance, routeLength,
+                    HorizontalDistance(m_Viewer.position, m_RouteStart + routeDirection * m_GuideDistance), Time.deltaTime);
+            var guidePoint = m_RouteStart + routeDirection * m_GuideDistance;
+            if (!m_Trail.TryFindSafeGround(guidePoint, m_Start.y, out guidePoint))
+            {
+                m_HasTarget = false;
+                m_Ring.gameObject.SetActive(false);
+                HideDots();
+                UpdateCompanionFollow();
+                ReportGuideWait("Ground under the next guide hop is no longer tracked; replanning.");
+                return;
+            }
+            var hop = Mathf.Abs(Mathf.Sin(Time.time * 2.3f));
+            var desired = GuideHoverPoint(guidePoint,m_Viewer.position,Mathf.Sin(Time.time*2f)*.015f);
+            var destination = m_Phase == Phase.Inviting && invite < 1f
                 ? Vector3.Lerp(m_InviteStart, desired, invite) + Vector3.up * Mathf.Sin(invite * Mathf.PI) * .2f
                 : desired;
+            MoveGuideSmoothly(destination);
             if (hop < .08f && Time.time - m_LastHop > 1f)
-            { m_LastHop = Time.time; Play(m_Hop, guidePoint, .08f); }
+            { m_LastHop = Time.time; Play(m_Hop, m_Guide.position, .08f); }
             Face(m_Glow.transform, m_Guide.position);
-            var start = Vector3.Lerp(viewerFloor, m_Target, .25f);
-            var count = Mathf.Min(12, Mathf.FloorToInt(HorizontalDistance(start, m_Target) / .2f));
+            var start = Vector3.MoveTowards(viewerFloor, m_Target, .2f);
+            var count = Mathf.Clamp(Mathf.CeilToInt(HorizontalDistance(start, m_Target) / .22f), 1, 12);
             if (Time.time >= m_NextDots)
             {
                 m_NextDots = Time.time + .2f;
@@ -315,8 +391,9 @@ namespace Moodium.NatureWorld
                     if (active) active = m_Trail.TryFindSafeGround(p, m_Start.y, out p);
                     m_Dots[i].gameObject.SetActive(active);
                     if (!active) continue;
-                    m_Dots[i].transform.position = p + Vector3.up * .006f;
-                    m_Dots[i].color = new Color(m_Tint.r, m_Tint.g, m_Tint.b, Mathf.Lerp(.65f, .2f, i / 12f));
+                    m_Dots[i].transform.position = p + Vector3.up * .018f;
+                    var pulse = .75f + .25f * Mathf.Sin(Time.time * 4f - i * .7f);
+                    m_Dots[i].color = new Color(1f, 1f, 1f, pulse);
                 }
             }
             if (m_Phase == Phase.Inviting)
@@ -326,14 +403,21 @@ namespace Moodium.NatureWorld
             }
         }
 
-        void UpdateGuideHome()
+        void UpdateCompanionFollow()
         {
             m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
-            var home = m_Bag != null && m_Bag.gameObject.activeInHierarchy ? m_Bag.position
-                : m_Viewer.position + m_Viewer.forward * .45f - Vector3.up * .2f;
-            m_Guide.position = Vector3.Lerp(m_Guide.position, home + Vector3.up * .07f, 1f - Mathf.Exp(-Time.deltaTime * 2f));
+            var companion = CompanionFollowPoint(m_Viewer.position, m_Viewer.forward);
+            companion.y += Mathf.Sin(Time.time * 2f) * .015f;
+            MoveGuideSmoothly(companion);
             Face(m_Glow.transform, m_Guide.position);
             m_Glow.color = new Color(m_Tint.r, m_Tint.g, m_Tint.b, .3f + Mathf.Sin(Time.time) * .05f);
+        }
+
+        void MoveGuideSmoothly(Vector3 destination)
+        {
+            m_Guide.position = m_HasGuidePosition
+                ? SmoothGuidePosition(m_Guide.position, destination, Time.deltaTime) : destination;
+            m_HasGuidePosition = true;
         }
 
         void Sparkle(Vector3 position)

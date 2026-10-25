@@ -890,6 +890,7 @@ namespace Moodium.Flow
             managerObject.transform.SetParent(transform, false);
             m_CandyWorldManager = managerObject.AddComponent<CandyWorldManager>();
             m_CandyWorldManager.ConfigureWalkTrailGuide(m_WalkTrailGuidePrefab);
+            m_CandyWorldManager.ConfigureSqueezeContext(m_MoodCheckContext);
             m_CandyWorldManager.Configure(
                 m_MainCamera,
                 m_GlassPanelPrefab,

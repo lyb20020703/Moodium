@@ -25,6 +25,7 @@ namespace Moodium.MoodCheck
         bool m_English;
         bool m_CompletionSent;
         bool m_SkipSent;
+        float m_ConfirmShownAt;
 
         public event Action<MoodCheckSample> Completed;
         public event Action Skipped;
@@ -197,11 +198,54 @@ namespace Moodium.MoodCheck
             SetText("Readout/MoodName", separator >= 0 ? copy.Substring(0, separator) : copy);
             SetText("Readout/MoodDescription", separator >= 0 ? copy.Substring(separator + 3) : string.Empty);
             UpdateMoodChipSelection(mood);
+            LayoutMoodReadout();
+        }
+
+        void LayoutMoodReadout()
+        {
+            if (m_PanelInstance == null) return;
+            var name = m_PanelInstance.transform.Find("Readout/MoodName")?.GetComponent<TMP_Text>();
+            var description = m_PanelInstance.transform.Find("Readout/MoodDescription")?.GetComponent<TMP_Text>();
+            var dot = m_PanelInstance.transform.Find("Readout/MoodDot");
+            if (name == null || description == null || dot == null) return;
+            var nameWidth = name.preferredWidth * name.transform.localScale.x;
+            var descriptionWidth = description.preferredWidth * description.transform.localScale.x;
+            var start = -(.010f + .007f + nameWidth + .006f + descriptionWidth) * .5f;
+            dot.localPosition = new Vector3(start + .005f, .1815f, -.006f);
+            var dotRenderer = dot.GetComponent<SpriteRenderer>();
+            if (dotRenderer != null && (State == MoodCheckState.Hidden || !Application.isPlaying))
+                dotRenderer.color = MoodCheckPlate.Tint(Plate != null ? Plate.CurrentMood : MoodKind.Neutral);
+            name.transform.localPosition = new Vector3(start + .017f + nameWidth * .5f, .1815f, -.004f);
+            description.transform.localPosition = new Vector3(start + .017f + nameWidth + .006f + descriptionWidth * .5f, .1815f, -.004f);
+        }
+
+        void LateUpdate()
+        {
+            if (m_PanelInstance == null || Plate == null ||
+                State is not (MoodCheckState.Dragging or MoodCheckState.Confirming)) return;
+            var dot = m_PanelInstance.transform.Find("Readout/MoodDot")?.GetComponent<SpriteRenderer>();
+            if (dot != null) dot.color = Color.Lerp(dot.color, MoodCheckPlate.Tint(Plate.CurrentMood),
+                1f - Mathf.Exp(-10f * Time.deltaTime));
+            if (State == MoodCheckState.Confirming)
+            {
+                var t = Mathf.SmoothStep(0f, 1f, (Time.time - m_ConfirmShownAt) / .25f);
+                foreach (var node in new[] { "Footer/ConfirmTitle", "Footer/ConfirmButton" })
+                {
+                    var target = m_PanelInstance.transform.Find(node);
+                    if (target == null) continue;
+                    var position = target.localPosition;
+                    position.y = (node.EndsWith("ConfirmTitle") ? -.2105f : -.247f) - .006f * (1f - t);
+                    target.localPosition = position;
+                    var label = target.GetComponent<TMP_Text>() ?? target.Find("Label")?.GetComponent<TMP_Text>();
+                    if (label != null) { var color = label.color; color.a = t; label.color = color; }
+                }
+            }
         }
 
         void EnterConfirming()
         {
             State = MoodCheckState.Confirming;
+            m_ConfirmShownAt = Time.time;
             SetActive("Footer/Hint", false);
             SetActive("Footer/ConfirmTitle", true);
             SetActive("Footer/SkipButton", false);
@@ -209,6 +253,7 @@ namespace Moodium.MoodCheck
             SetActive("Footer/ConfirmButton", true);
             SetText("Footer/ConfirmTitle", MoodCheckCopy.Format("confirm.title", m_English,
                 ("mood", MoodName(Plate.CurrentMood))));
+            UpdateMoodChipSelection(Plate.CurrentMood);
         }
 
         MoodCheckSample BuildSample()
@@ -255,6 +300,7 @@ namespace Moodium.MoodCheck
             SetActive("Footer/ConfirmButton", false);
             SetActive("Footer/RetryButton", false);
             SetActive("Footer/ContinueButton", false);
+            if (Plate != null) UpdateMoodChipSelection(Plate.CurrentMood);
         }
 
         void ShowRecommendation(bool compact)
@@ -356,7 +402,27 @@ namespace Moodium.MoodCheck
         void UpdateMoodChipSelection(MoodKind selected)
         {
             foreach (var pair in m_MoodChipButtons)
-                pair.Value?.SetSelected(pair.Key == selected);
+            {
+                var button = pair.Value;
+                if (button == null) continue;
+                button.SetSelected(pair.Key == selected);
+                var selectedBackground = button.transform.Find("Selected Background");
+                if (selectedBackground != null) selectedBackground.gameObject.SetActive(pair.Key == selected);
+                var alpha = State == MoodCheckState.Confirming && pair.Key != selected ? .55f : 1f;
+                if (button.Label != null) { var color = button.Label.color; color.a = alpha; button.Label.color = color; }
+                var dot = button.transform.Find("Dot")?.GetComponent<SpriteRenderer>();
+                if (dot != null) { var color = MoodCheckPlate.Tint(pair.Key); color.a = alpha; dot.color = color; }
+                var background = button.transform.Find("Background")?.GetComponent<Renderer>();
+                if (background is SpriteRenderer sprite)
+                    sprite.color = new Color(1f, 1f, 1f, alpha);
+                else if (background != null && Application.isPlaying)
+                {
+                    var material = background.material;
+                    var property = material.HasProperty("_Tint") ? "_Tint" : material.HasProperty("_BaseColor") ? "_BaseColor" : "_Color";
+                    if (material.HasProperty(property))
+                    { var color = material.GetColor(property); color.a *= alpha; material.SetColor(property, color); }
+                }
+            }
         }
 
         void ConfigureButton(string path, Action action)
@@ -366,11 +432,26 @@ namespace Moodium.MoodCheck
             if (button == null) return;
             var label = target.Find("Label")?.GetComponent<TMP_Text>();
             var background = target.Find("Background")?.GetComponent<Renderer>();
-            button.Configure(label, background, action);
+            // Sprite skins are selected by swapping their explicit layers. Avoid
+            // cloning Sprite/Default materials or the generic press flash resetting
+            // their selected appearance, especially in editor previews and tests.
+            button.Configure(label, background is SpriteRenderer ? null : background, action);
         }
 
         void ApplyLanguage()
         {
+            var fonts = m_PanelInstance.GetComponentInChildren<MoodCheckFontReferences>(true);
+            var font = m_English ? fonts?.English : fonts?.Chinese;
+            if (font != null)
+                foreach (var label in m_PanelInstance.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    label.font = font;
+                    if (label.transform.parent != null && label.transform.parent.name == "AxisLabels" && Application.isPlaying)
+                    {
+                        label.outlineWidth = .15f;
+                        label.outlineColor = new Color(20f / 255f, 10f / 255f, 40f / 255f, .5f);
+                    }
+                }
             SetText("Header/Kicker", MoodCheckCopy.Get("plate.kicker", m_English));
             SetText("Footer/Hint", MoodCheckCopy.Get("plate.hint", m_English));
             SetText("Footer/SkipButton/Label", MoodCheckCopy.Get("skip", m_English));
@@ -381,6 +462,27 @@ namespace Moodium.MoodCheck
             SetText("AxisLabels/Down", MoodCheckCopy.Get("axis.down", m_English));
             SetText("AxisLabels/Left", MoodCheckCopy.Get("axis.left", m_English));
             SetText("AxisLabels/Right", MoodCheckCopy.Get("axis.right", m_English));
+            foreach (var mood in new[] { MoodKind.Happy, MoodKind.Calm, MoodKind.Neutral, MoodKind.Low, MoodKind.Tense })
+            {
+                var chip = m_PanelInstance.transform.Find($"QuickChips/{mood}Chip");
+                var label = chip != null ? chip.Find("Label")?.GetComponent<TMP_Text>() : null;
+                var dot = chip != null ? chip.Find("Dot") : null;
+                if (label == null || dot == null) continue;
+                label.text = MoodName(mood);
+                var width = label.preferredWidth * label.transform.localScale.x;
+                dot.localPosition = new Vector3(-(.007f + .005f + width) * .5f + .0035f, 0f, -.005f);
+                label.transform.localPosition = new Vector3(.006f, 0f, -.003f);
+            }
+            var confirm = m_PanelInstance.transform.Find("Footer/ConfirmButton");
+            var confirmLabel = confirm != null ? confirm.Find("Label")?.GetComponent<TMP_Text>() : null;
+            if (confirmLabel != null)
+            {
+                var width = Mathf.Max(.12f, confirmLabel.preferredWidth * confirmLabel.transform.localScale.x + .04f);
+                confirm.GetComponent<BoxCollider>().size = new Vector3(width, .045f, .02f);
+                confirm.Find("Background").localScale = new Vector3(width / .11f, 1f, 1f);
+                confirm.GetComponent<MoodiumSpatialButton>()?.SetSelected(true);
+            }
+            LayoutMoodReadout();
         }
 
         void SetTitle(string key) => SetText("Header/Title", MoodCheckCopy.Get(key, m_English));

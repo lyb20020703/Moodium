@@ -1,0 +1,327 @@
+{
+  "frame": "BagRoot: origin = calibrated bag centre on the sticker (top) plane. +X = right as seen by the user, +Z = horizontal direction from the bag towards the user (camera forward projected, recomputed when the mode guide appears), +Y = up. Units: metres.",
+  "bag": {
+    "width": "SensoryBagCalibrationData.Width (default 0.25)",
+    "length": "SensoryBagCalibrationData.Height (default 0.17)",
+    "depth": "SensoryBagCalibrationData.Depth (default 0.05)",
+    "tableY": "-depth"
+  },
+  "layerHeightsAboveTable": {
+    "breath_tide": 0.0004,
+    "mote_glow": 0.0005,
+    "breath_ripples": 0.0006,
+    "rhythm_target_outline / breath_trace_track": 0.0008,
+    "breath_trace": 0.0009,
+    "breath_trace_heads": 0.001,
+    "rhythm_ring": 0.0011,
+    "rhythm_hit_splash": 0.0013,
+    "mode_btn_press_ripple": 0.0015,
+    "rhythm_combo_beads": 0.0016,
+    "mode_btn_selected_glow": 0.0017,
+    "breath_count_dots": 0.0018,
+    "mode_btn_base": 0.002,
+    "mode_label": 0.002,
+    "table_text (near edge)": 0.0021,
+    "mode_icon": 0.0026,
+    "note": "Every flat card needs its own height, otherwise overlapping cards z-fight (seen in the renders). Also register them in a VisionOSSortingGroup in this order."
+  },
+  "worldColours": {
+    "candy": {
+      "accent": "#FF8DC7",
+      "soft": "#FFD1EA",
+      "deep": "#E8559E"
+    },
+    "nature": {
+      "accent": "#6FD39A",
+      "soft": "#D6F8E0",
+      "deep": "#2FA36B"
+    },
+    "note": "All guide textures are white and tinted with these colours (URP Unlit transparent, _BaseColor)."
+  },
+  "modeButtons": {
+    "rowCentre": {
+      "x": 0,
+      "y": "tableY",
+      "z": "length/2 + 0.13"
+    },
+    "spacingX": 0.085,
+    "order": [
+      "free",
+      "rhythm",
+      "breath"
+    ],
+    "base": {
+      "texture": "mode_btn_base",
+      "size": 0.08,
+      "note": "glass puck 0.064 m + soft shadow"
+    },
+    "icon": {
+      "textures": [
+        "mode_icon_free",
+        "mode_icon_rhythm",
+        "mode_icon_breath"
+      ],
+      "size": 0.03,
+      "alpha": {
+        "selected": 1.0,
+        "idle": 0.55
+      }
+    },
+    "label": {
+      "textures": "Composite/mode_label_{free|rhythm|breath}_{cn|en}",
+      "size": 0.075,
+      "offsetZ": 0.056,
+      "tint": {
+        "selected": "accent",
+        "idle": "#D8D4E4 @ 60%"
+      }
+    },
+    "selected": {
+      "glow": "mode_btn_selected_glow tinted accent",
+      "lift": 0.004,
+      "scale": 1.04
+    },
+    "press": {
+      "depress": 0.003,
+      "duration": 0.12,
+      "ripple": {
+        "texture": "mode_btn_press_ripple",
+        "scale": [
+          1.0,
+          1.5
+        ],
+        "alpha": [
+          0.9,
+          0
+        ],
+        "duration": 0.45
+      }
+    },
+    "collider": {
+      "type": "Box",
+      "size": [
+        0.07,
+        0.02,
+        0.07
+      ]
+    },
+    "input": "direct touch (fingertip enters collider) or gaze + pinch via MoodiumSpatialInteractionController; add VisionOSHoverEffect",
+    "appear": {
+      "delay": 1.0,
+      "fade": 0.4,
+      "rise": 0.01
+    },
+    "recommendedBadge": "small accent dot (rhythm_combo_bead_full, 0.012 m) at the button's far-right edge when the mood check recommends that mode"
+  },
+  "modeToast": {
+    "slot": "tableTextSlot.rows.toast",
+    "fade": {
+      "in": 0.2,
+      "hold": 0.8,
+      "out": 0.4
+    },
+    "note": "In breath mode the toast is skipped once the word row is in use."
+  },
+  "rhythm": {
+    "targetOutline": {
+      "texture": "rhythm_target_outline",
+      "size": [
+        "width + 0.04",
+        "length + 0.04"
+      ],
+      "y": "tableY",
+      "alpha": {
+        "idle": 0.6,
+        "inWindow": 1.0
+      }
+    },
+    "ring": {
+      "mesh": "RoundedRectBandMesh (reference/RoundedRectBandMesh.cs) with rhythm_ring_band, bandWidth 0.006, innerOffset -0.003",
+      "halfSize": "(width/2 + 0.02, length/2 + 0.02) * scale",
+      "scale": "1 + 1.2 * (1 - phase)^1.6  (2.2 -> 1.0 over one squeeze period)",
+      "alpha": "0.25 + 0.75 * min(1, phase * 1.4)",
+      "phase": "0 right after a squeeze point, 1 at the next one",
+      "fallback": "rhythm_ring_circle on a quad, scaled (line gets thicker as it grows)"
+    },
+    "hitSplash": {
+      "texture": "rhythm_hit_splash",
+      "tint": "soft",
+      "scale": [
+        1.0,
+        1.35
+      ],
+      "alpha": [
+        0.9,
+        0
+      ],
+      "duration": 0.35
+    },
+    "sparkles": {
+      "texture": "squeeze_sparkle",
+      "count": 14,
+      "size": [
+        0.008,
+        0.018
+      ],
+      "life": 0.8,
+      "path": "spawn on the bag outline + 0.014, travel outwards 0.09-0.15 m along the table (ease-out), arc up at most 0.03 m; never over the bag footprint",
+      "billboard": true
+    },
+    "combo": {
+      "count": 8,
+      "textures": [
+        "rhythm_combo_bead_empty",
+        "rhythm_combo_bead_full"
+      ],
+      "size": 0.026,
+      "arc": {
+        "radiusX": "width/2 + 0.045",
+        "radiusZ": "length/2 + 0.035",
+        "fromDeg": 27,
+        "toDeg": 153,
+        "side": "far side of the bag (away from the user)"
+      },
+      "fill": {
+        "scale": [
+          0.6,
+          1.15,
+          1.0
+        ],
+        "duration": 0.25
+      },
+      "reset": {
+        "fadeOut": 0.3
+      }
+    },
+    "sugarRush": {
+      "every": 8,
+      "burst": "46 sparkles + outline flashes white 0.2 s"
+    },
+    "hintFirstTime": {
+      "slot": "tableTextSlot.rows.hint",
+      "show": "first 3 squeeze points after entering the mode"
+    }
+  },
+  "breath": {
+    "outline": "every breath element hugs the bag footprint: superellipse, exponent 3.4, half size (width/2, length/2); 'offset' = distance outwards from it",
+    "tide": {
+      "mesh": "RoundedRectBandMesh with breath_tide_band (v = 1 outer edge carries a bright crest)",
+      "innerOffset": 0.004,
+      "spread": {
+        "idle": "0.012 + 0.004 * pulse (4 s period)",
+        "inhale": "lerp(0.012, 0.065, easeInOutSine(min(1, hold / inhaleTarget)))",
+        "exhale": "lerp(current, 0.012, easeInOutSine(min(1, sinceRelease / exhaleTarget)))"
+      },
+      "tint": "accent",
+      "intensity": "0.8 + 1.0 * eased (multiply _BaseColor alpha / HDR)"
+    },
+    "trace": {
+      "track": "RoundedRectBandMesh, rhythm_ring_band, offset 0.018, bandWidth 0.004, tint soft, alpha 0.15, always on",
+      "line": "RoundedRectBandMesh, rhythm_ring_band, innerOffset 0.017, bandWidth 0.006, tint accent, fill = progress",
+      "progress": {
+        "inhale": "min(1, hold / inhaleTarget)",
+        "exhale": "max(0, 1 - sinceRelease / exhaleTarget)"
+      },
+      "heads": "two breath_trace_head sprites (0.016 m, flat on the table) at both ends of the line; they start together at the middle of the near side and meet behind the bag",
+      "onFull": "line flashes white 0.15 s + 12 motes burst outwards from the meeting point"
+    },
+    "ripples": {
+      "when": "exhale only; one ripple at release, then every 1.2 s while exhaling (max 3)",
+      "mesh": "RoundedRectBandMesh, rhythm_ring_band, bandWidth 0.004, tint soft",
+      "offset": [
+        0.005,
+        0.12
+      ],
+      "duration": 2.4,
+      "alpha": [
+        0.6,
+        0
+      ]
+    },
+    "motes": {
+      "inhale": {
+        "texture": "breath_mote (+ a 0.012 m breath_mote glow flat on the table)",
+        "rate": 15,
+        "spawnOffset": [
+          0.07,
+          0.16
+        ],
+        "height": [
+          0.002,
+          0.012
+        ],
+        "life": 1.4,
+        "path": "ease towards the tide crest along the table, alpha sin(pi * t)"
+      },
+      "exhale": {
+        "textures": {
+          "nature": "breath_mote_seed",
+          "candy": "breath_mote_sugar"
+        },
+        "rate": 9,
+        "spawnOffset": 0.01,
+        "life": 2.6,
+        "path": "outwards along the table 0.11-0.18 m, rising at most 0.04 m, slight sway, alpha 1 -> 0",
+        "billboard": true
+      },
+      "rule": "particles never enter the volume above the bag footprint"
+    },
+    "word": {
+      "slot": "tableTextSlot.rows.word",
+      "fade": 0.4,
+      "breathing": "alpha 0.75 <-> 1.0 following the tide (no flashing)"
+    },
+    "countDots": {
+      "slot": "tableTextSlot.rows.countDots",
+      "count": 9,
+      "textures": [
+        "breath_count_dot_empty",
+        "breath_count_dot_full"
+      ],
+      "size": 0.008,
+      "spacing": 0.012
+    },
+    "hints": {
+      "slot": "tableTextSlot.rows.hint",
+      "ready": "guide_hint_ready - before the first press",
+      "hold_hint": "guide_hint_hold_hint - while holding, first 2 breaths",
+      "release_hint": "guide_hint_release_hint - after release, first 2 breaths",
+      "let_go": "guide_hint_let_go - once, when hold > 6 s",
+      "longer": "guide_hint_longer - once, after 3 holds shorter than 1.2 s"
+    },
+    "bagSquash": {
+      "inhale": 0.9,
+      "note": "visual only; the physical bag is what the user really squeezes"
+    }
+  },
+  "free": {
+    "guide": "none; existing squeeze feedback only"
+  },
+  "rule": "The space above the bag belongs to the bag. Every guide element lies on the table around the bag (or is printed on the table in front of it). Nothing floats above the bag footprint: no text, no orb, no particles.",
+  "tableTextSlot": {
+    "what": "Text printed on the table between the bag and the mode buttons. Never above the bag.",
+    "anchor": "x = 0, y = tableY, z = length/2 + d (d = distance beyond the near bag edge, to the centre of the card)",
+    "tilt": "30 deg: the card's far edge is lifted so it reads at a seated viewing angle; pivot on the near edge; fixed, does not billboard",
+    "rows": {
+      "word": {
+        "d": 0.04,
+        "width": 0.18,
+        "textures": "Composite/breath_text_{inhale|exhale}_{world}_{lang}"
+      },
+      "countDots": {
+        "d": 0.064,
+        "flat": true
+      },
+      "hint": {
+        "d": 0.08,
+        "width": 0.24,
+        "textures": "Composite/guide_hint_*_{world}_{lang}"
+      },
+      "toast": {
+        "d": 0.04,
+        "width": 0.14,
+        "textures": "Composite/mode_toast_*_{world}_{lang}"
+      }
+    }
+  }
+}

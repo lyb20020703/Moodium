@@ -6,6 +6,13 @@ namespace Moodium.MoodCheck
     {
         float m_VisitStartRealtime;
         bool m_AutoPromptShown;
+        public readonly System.Collections.Generic.HashSet<string> SqueezeModesUsed=new();
+        public int BreathCount {get;private set;}
+        public float BeatAccuracySum {get;private set;}
+        public int BeatAccuracyCount {get;private set;}
+        public void RecordSqueezeMode(string mode){if(HasActiveVisit)SqueezeModesUsed.Add(mode);}
+        public void RecordBreath(){if(HasActiveVisit)BreathCount++;}
+        public void RecordRhythmAccuracy(float accuracy){if(HasActiveVisit){BeatAccuracySum+=accuracy;BeatAccuracyCount++;}}
 
         public MoodCheckContext()
         {
@@ -27,6 +34,7 @@ namespace Moodium.MoodCheck
             EnteredWorldId = enteredWorldId ?? string.Empty;
             m_VisitStartRealtime = realtime;
             PinchCount = 0;
+            SqueezeModesUsed.Clear();BreathCount=BeatAccuracyCount=0;BeatAccuracySum=0;
             return ActiveVisitId;
         }
 

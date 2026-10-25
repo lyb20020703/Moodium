@@ -5,6 +5,36 @@ using UnityEngine;
 
 public sealed class SqueezeProgressVideoControllerTests
 {
+    [TestCase("Assets/Video/CandySqueezeAlpha.mp4")]
+    [TestCase("Assets/Video/newnaturesqueeze.mp4")]
+    public void SqueezeVideoDisablesEmbeddedAudio(string path)
+    {
+        var root=new GameObject("Muted squeeze video test");
+        var controller=root.AddComponent<SqueezeProgressVideoController>();
+        var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+        try
+        {
+            var clip=UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Video.VideoClip>(path);
+            Assert.That(clip,Is.Not.Null,path);
+            typeof(SqueezeProgressVideoController).GetMethod("CreateDisplay",flags).Invoke(controller,new object[]{clip});
+            var player=(UnityEngine.Video.VideoPlayer)typeof(SqueezeProgressVideoController).GetField("m_Player",flags).GetValue(controller);
+            Assert.That(player.audioOutputMode,Is.EqualTo(UnityEngine.Video.VideoAudioOutputMode.None));
+            // VideoClip sources report the clip's own track count even with no output.
+            // None is the output guarantee; track count is not a mute state.
+        }
+        finally
+        {
+            // The runtime controller uses deferred Destroy; explicitly dispose its owned objects in EditMode.
+            foreach(var name in new[]{"m_Display","m_RenderTexture","m_Material","m_DomeMaterial","m_DiscMesh","m_DomeMesh"})
+            {
+                var field=typeof(SqueezeProgressVideoController).GetField(name,flags);
+                var owned=field.GetValue(controller) as Object;
+                if(owned!=null)Object.DestroyImmediate(owned);
+                field.SetValue(controller,null);
+            }
+            Object.DestroyImmediate(root);
+        }
+    }
     [TestCase(0f, 12d, 0d)]
     [TestCase(0.25f, 12d, 3d)]
     [TestCase(0.5f, 12d, 6d)]

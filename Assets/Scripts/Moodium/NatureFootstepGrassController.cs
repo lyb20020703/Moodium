@@ -335,9 +335,24 @@ namespace Moodium.NatureWorld
 
         public bool IsSafePath(Vector3 from, Vector3 to, float floorY)
         {
+            // Confirm a body-width strip rather than just a line. Short guide
+            // waypoints must not bypass obstacle checks used by garden targets.
+            var direction = Vector3.ProjectOnPlane(to - from, Vector3.up).normalized;
+            var side = Vector3.Cross(Vector3.up, direction) * .2f;
             var count = Mathf.Max(1, Mathf.CeilToInt(HorizontalDistance(from, to) / .2f));
             for (var i = 0; i <= count; i++)
-                if (!TryFindSafeGround(Vector3.Lerp(from, to, i / (float)count), floorY, out _, false)) return false;
+            {
+                var point = Vector3.Lerp(from, to, i / (float)count);
+                if (!TryFindSafeGround(point, floorY, out _) ||
+                    !TryFindSafeGround(point + side, floorY, out _) ||
+                    !TryFindSafeGround(point - side, floorY, out _)) return false;
+            }
+            var basePoint = new Vector3(from.x, floorY, from.z);
+            var obstacles = Physics.CapsuleCastAll(basePoint + Vector3.up * .4f,
+                basePoint + Vector3.up * 1.35f, .25f, direction, HorizontalDistance(from, to),
+                Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            foreach (var hit in obstacles)
+                if (IsGeneratedSpatialMeshCollider(hit.collider, m_SpatialMeshManager.meshes)) return false;
             return true;
         }
 

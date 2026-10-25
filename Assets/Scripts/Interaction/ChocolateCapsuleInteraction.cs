@@ -9,6 +9,10 @@ namespace Moodium.Interaction
     public sealed class ChocolateCapsuleInteraction : MonoBehaviour
     {
         public static event Action<ChocolateCapsuleInteraction, Vector3> AnyCapsulePinched;
+        public static event Action<ChocolateCapsuleInteraction, Vector3> AnyCapsuleHeld;
+        public static event Action<ChocolateCapsuleInteraction> AnyCapsuleReleased;
+        public static event Action<ChocolateCapsuleInteraction> AnyCapsuleTrackingLost;
+        public void NotifyTrackingLost() => AnyCapsuleTrackingLost?.Invoke(this);
 
         [SerializeField] Animator m_Animator;
         [SerializeField] GameObject m_NormalShell;
@@ -123,7 +127,10 @@ namespace Moodium.Interaction
         public void HandContactHeld(Vector3 contactPosition)
         {
             if (m_IsPinched)
+            {
                 m_SoftDeformation?.TouchHold(contactPosition);
+            }
+            if(m_InteractionEnabled)AnyCapsuleHeld?.Invoke(this,contactPosition);
         }
 
         /// <summary>
@@ -153,6 +160,13 @@ namespace Moodium.Interaction
         {
             if (m_IsPinched && m_ActivePointerId < 0)
                 ResetCapsule(true);
+            else if(m_ActivePointerId<0)AnyCapsuleReleased?.Invoke(this);
+        }
+
+        void OnDisable()
+        {
+            if(m_IsPinched)ResetCapsule(false);
+            else AnyCapsuleReleased?.Invoke(this);
         }
 
         bool BeginSqueeze()
@@ -211,6 +225,7 @@ namespace Moodium.Interaction
         {
             var wasPinched = m_IsPinched;
             m_IsPinched = false;
+            if (wasPinched) AnyCapsuleReleased?.Invoke(this);
             m_ActivePointerId = -1;
             m_SoftDeformation?.TouchEnd();
             if (wasPinched && m_SoftDeformation == null)

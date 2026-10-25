@@ -21,11 +21,18 @@ namespace Moodium.Rewards
         bool m_Running;
         CandyRainRewardController m_RainReward;
         bool m_FullRewardPlayed;
+        bool m_TableFeedbackOnly;
+        System.Action<int> m_TableFeedback;
+        public void ConfigureTableFeedback(CandyEnergyController energy,System.Action<int> feedback)
+        {
+            StopAndClear();m_Energy=energy;m_TableFeedback=feedback;m_TableFeedbackOnly=true;
+        }
         public int DeliveredStageCount => m_AwardedStages.Count;
 
         public void Configure(CandyEnergyController energy, WorldRewardTable table, RewardBracelet bracelet,
             Camera camera, bool natureWorld, CandyRainRewardController rainReward)
         {
+            m_TableFeedbackOnly=false;m_TableFeedback=null;
             if (m_Energy != null)
                 m_Energy.StageReached -= OnStageReached;
             m_Energy = energy;
@@ -68,6 +75,11 @@ namespace Moodium.Rewards
 
         void OnStageReached(int stage)
         {
+            if(m_TableFeedbackOnly)
+            {
+                if(m_Running&&stage<100&&m_AwardedStages.Add(stage))m_TableFeedback?.Invoke(stage);
+                return;
+            }
             if (!m_Running || !m_AwardedStages.Add(stage) || m_Table == null || !m_Table.TryGetEntry(stage, out var entry))
                 return;
             StartCoroutine(Deliver(entry));

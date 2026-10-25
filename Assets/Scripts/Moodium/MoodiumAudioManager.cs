@@ -43,6 +43,19 @@ namespace Moodium.Audio
         AudioSource m_SpatialSource;
         Coroutine m_BackgroundMusicCrossfade;
         AudioClip m_CurrentBackgroundMusic;
+        public static double BackgroundMusicDuration=>Instance!=null&&Instance.m_CurrentBackgroundMusic!=null?Instance.m_CurrentBackgroundMusic.length:0;
+        /// <summary>Reads the requested BGM, not the outgoing crossfade source.</summary>
+        public static bool TryGetBackgroundMusicTime(out double seconds)
+        {
+            seconds=0;
+            var instance=Instance;if(instance==null||instance.m_CurrentBackgroundMusic==null)return false;
+            var a=instance.m_BackgroundMusicSource;var b=instance.m_BackgroundMusicCrossfadeSource;
+            // A paused source still owns the music clock; don't switch to wall time.
+            var source=a!=null&&a.clip==instance.m_CurrentBackgroundMusic?a:
+                b!=null&&b.clip==instance.m_CurrentBackgroundMusic?b:null;
+            if(source==null)return false;
+            seconds=source.timeSamples/(double)Mathf.Max(1,source.clip.frequency);return true;
+        }
 
         void Awake()
         {

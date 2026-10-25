@@ -14,6 +14,27 @@ public sealed class MoodCheckUISetupTests
     public void BuildAssets() => MoodCheckUISetup.BuildOrUpdate();
 
     [Test]
+    public void ColorLakeHasLensHaloHiddenAxesAndReadableTypographyHierarchy()
+    {
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        var plate = prefab.transform.Find("Plate");
+        Assert.That(plate.localPosition.y, Is.EqualTo(.005f).Within(.0001f));
+        Assert.That(plate.Find("PlateLens").GetComponent<SpriteRenderer>().sprite.name, Is.EqualTo("mood_plate_lens"));
+        Assert.That(plate.Find("PlateTintBase").GetComponent<SpriteRenderer>().sprite.name, Is.EqualTo("mood_plate_colorfield"));
+        Assert.That(plate.Find("Token/Halo"), Is.Not.Null);
+        Assert.That(plate.Find("Axes").gameObject.activeSelf, Is.False);
+        Assert.That(plate.Find("NeutralZone").gameObject.activeSelf, Is.False);
+        Assert.That(plate.Find("Trail").gameObject.activeSelf, Is.False);
+        var title = prefab.transform.Find("Header/Title").GetComponent<TMPro.TMP_Text>();
+        var axis = prefab.transform.Find("AxisLabels/Up").GetComponent<TMPro.TMP_Text>();
+        Assert.That(title.fontSize, Is.GreaterThan(axis.fontSize * 1.5f));
+        Assert.That(prefab.transform.Find("Readout/MoodDot"), Is.Not.Null);
+        foreach (Transform chip in prefab.transform.Find("QuickChips"))
+            Assert.That(chip.Find("Dot"), Is.Not.Null);
+        Assert.That(prefab.transform.Find("Footer/ConfirmButton").localPosition.x, Is.Zero);
+    }
+
+    [Test]
     public void PngAssets_UseSpatialSpriteImportSettings()
     {
         foreach (var path in Directory.GetFiles(Root + "/png", "*.png"))

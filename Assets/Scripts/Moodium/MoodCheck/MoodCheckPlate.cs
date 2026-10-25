@@ -23,6 +23,9 @@ namespace Moodium.MoodCheck
         MoodKind m_LastVisualMood = (MoodKind)(-1);
         Vector3 m_TokenBaseScale = Vector3.one;
         Vector3 m_ShadowBaseScale = Vector3.one;
+        SpriteRenderer m_Halo;
+        Vector3 m_HaloBaseScale;
+        Vector3[] m_IconBaseScales;
 
         public event Action<Vector2, MoodKind> Changed;
         public Vector2 NormalizedPosition => m_NormalizedPosition;
@@ -102,9 +105,16 @@ namespace Moodium.MoodCheck
             if (m_TintBase == null || m_GlowRenderer == null)
                 return;
             var blend = 1f - Mathf.Exp(-10f * Time.deltaTime);
-            m_TintBase.color = Color.Lerp(m_TintBase.color,
-                new Color(m_TargetTint.r, m_TargetTint.g, m_TargetTint.b, m_TargetTint.a * .6f), blend);
-            m_GlowRenderer.color = Color.Lerp(m_GlowRenderer.color, m_TargetTint, blend);
+            m_TintBase.color = new Color(1f, 1f, 1f, .92f);
+            m_GlowRenderer.color = Color.Lerp(m_GlowRenderer.color, new Color(1f, 1f, 1f, IsDragging ? .42f : .30f), blend);
+            if (m_Halo != null)
+            {
+                m_Halo.color = Color.Lerp(m_Halo.color, m_TargetTint, blend);
+                // Token itself already grows by 1.12 during drag.
+                var factor = IsDragging ? 1.15f / 1.12f : 1f;
+                m_Halo.transform.localScale = Vector3.Lerp(m_Halo.transform.localScale, m_HaloBaseScale * factor, blend);
+            }
+            UpdateIconEmphasis(blend);
         }
 
         void ResolveVisuals()
@@ -116,10 +126,21 @@ namespace Moodium.MoodCheck
             m_MoodiSprite ??= transform.Find("Token/MoodiSprite")?.GetComponent<SpriteRenderer>();
             m_TintBase ??= transform.Find("PlateTintBase")?.GetComponent<SpriteRenderer>();
             m_GlowRenderer ??= m_PlateGlow != null ? m_PlateGlow.GetComponent<SpriteRenderer>() : null;
+            if (m_Halo == null)
+            {
+                m_Halo = transform.Find("Token/Halo")?.GetComponent<SpriteRenderer>();
+                if (m_Halo != null) m_HaloBaseScale = m_Halo.transform.localScale;
+            }
             if (m_QuadrantIcons == null || m_QuadrantIcons.Length == 0)
             {
                 var root = transform.Find("QuadrantIcons");
                 m_QuadrantIcons = root != null ? root.GetComponentsInChildren<SpriteRenderer>(true) : Array.Empty<SpriteRenderer>();
+            }
+            if (m_IconBaseScales == null || m_IconBaseScales.Length != m_QuadrantIcons.Length)
+            {
+                m_IconBaseScales = new Vector3[m_QuadrantIcons.Length];
+                for (var i = 0; i < m_IconBaseScales.Length; i++)
+                    m_IconBaseScales[i] = m_QuadrantIcons[i] != null ? m_QuadrantIcons[i].transform.localScale : Vector3.one;
             }
             if (m_Token != null && m_TokenBaseScale == Vector3.one)
                 m_TokenBaseScale = m_Token.localScale;
@@ -143,7 +164,7 @@ namespace Moodium.MoodCheck
             if (m_Trail != null)
             {
                 var intensity = m_NormalizedPosition.magnitude;
-                m_Trail.gameObject.SetActive(intensity >= .08f);
+                m_Trail.gameObject.SetActive(false);
                 m_Trail.localPosition = new Vector3(position.x * .5f, position.y * .5f, -.004f);
                 m_Trail.localScale = new Vector3(.0005f, intensity * m_EffectiveRadius, 1f);
                 if (intensity > 0f)
@@ -160,16 +181,22 @@ namespace Moodium.MoodCheck
             m_LastVisualMood = CurrentMood;
             m_LastVisualIntensity = intensity;
             var tint = Tint(CurrentMood);
-            m_TargetTint = new Color(tint.r, tint.g, tint.b, .22f + .5f * intensity);
+            m_TargetTint = new Color(tint.r, tint.g, tint.b, .95f);
             if (immediate)
             {
                 if (m_TintBase != null)
-                    m_TintBase.color = new Color(tint.r, tint.g, tint.b, (.10f + .14f * intensity) * .6f);
+                    m_TintBase.color = new Color(1f, 1f, 1f, .92f);
                 if (m_GlowRenderer != null)
-                    m_GlowRenderer.color = m_TargetTint;
+                    m_GlowRenderer.color = new Color(1f, 1f, 1f, IsDragging ? .42f : .30f);
+                if (m_Halo != null) m_Halo.color = m_TargetTint;
             }
             if (m_MoodiSprite != null && m_MoodSprites != null && (int)CurrentMood < m_MoodSprites.Length)
                 m_MoodiSprite.sprite = m_MoodSprites[(int)CurrentMood];
+            if (immediate) UpdateIconEmphasis(1f);
+        }
+
+        void UpdateIconEmphasis(float blend)
+        {
             for (var i = 0; i < m_QuadrantIcons.Length; i++)
             {
                 var renderer = m_QuadrantIcons[i];
@@ -179,18 +206,20 @@ namespace Moodium.MoodCheck
                              (CurrentMood == MoodKind.Low && i == 2) ||
                              (CurrentMood == MoodKind.Tense && i == 3);
                 var color = renderer.color;
-                color.a = active ? .95f : .26f;
+                color.a = Mathf.Lerp(color.a, active ? .95f : .45f, blend);
                 renderer.color = color;
+                renderer.transform.localScale = Vector3.Lerp(renderer.transform.localScale,
+                    m_IconBaseScales[i] * (active ? 1.15f : 1f), blend);
             }
         }
 
-        static Color Tint(MoodKind mood) => mood switch
+        public static Color Tint(MoodKind mood) => mood switch
         {
-            MoodKind.Happy => new Color(1f, 200f / 255f, 120f / 255f),
-            MoodKind.Calm => new Color(140f / 255f, 226f / 255f, 200f / 255f),
-            MoodKind.Low => new Color(140f / 255f, 166f / 255f, 206f / 255f),
-            MoodKind.Tense => new Color(232f / 255f, 128f / 255f, 112f / 255f),
-            _ => new Color(214f / 255f, 220f / 255f, 232f / 255f)
+            MoodKind.Happy => new Color(1f, 207f / 255f, 110f / 255f),
+            MoodKind.Calm => new Color(127f / 255f, 221f / 255f, 190f / 255f),
+            MoodKind.Low => new Color(142f / 255f, 168f / 255f, 230f / 255f),
+            MoodKind.Tense => new Color(240f / 255f, 134f / 255f, 118f / 255f),
+            _ => new Color(228f / 255f, 230f / 255f, 240f / 255f)
         };
     }
 }

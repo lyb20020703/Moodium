@@ -58,7 +58,7 @@ namespace Moodium.Interaction
                 return;
             if (m_LeftContactTarget == target) m_LeftContactTarget = null;
             if (m_RightContactTarget == target) m_RightContactTarget = null;
-            if (target.IsPinched) target.PalmContactEnded();
+            target.PalmContactEnded();
             RemoveGeneratedTargetCollider(target);
             m_LastTriggerTimes.Remove(target);
         }
@@ -166,8 +166,15 @@ namespace Moodium.Interaction
             var rightTarget = m_RightPalmTracked ? FindTouchingTarget(rightCenter, rightRotation) : null;
             m_LeftPalmTouching = leftTarget != null;
             m_RightPalmTouching = rightTarget != null;
+            if(m_LeftContactTarget!=null&&!m_LeftPalmTracked&&rightTarget!=m_LeftContactTarget)
+                m_LeftContactTarget.NotifyTrackingLost();
+            if(m_RightContactTarget!=null&&!m_RightPalmTracked&&leftTarget!=m_RightContactTarget)
+                m_RightContactTarget.NotifyTrackingLost();
             UpdateHandContact(ref m_LeftContactTarget, leftTarget, m_RightContactTarget, "left", now);
             UpdateHandContact(ref m_RightContactTarget, rightTarget, m_LeftContactTarget, "right", now);
+            if(m_LeftContactTarget!=null)m_LeftContactTarget.HandContactHeld(leftCenter);
+            if(m_RightContactTarget!=null&&m_RightContactTarget!=m_LeftContactTarget)
+                m_RightContactTarget.HandContactHeld(rightCenter);
         }
 
         bool TryGetPalmBox(XRHand hand, out Vector3 center, out Quaternion rotation)
@@ -311,10 +318,9 @@ namespace Moodium.Interaction
 
         void EndCurrentContact()
         {
-            if (m_LeftContactTarget != null && m_LeftContactTarget.IsPinched)
+            if (m_LeftContactTarget != null)
                 m_LeftContactTarget.PalmContactEnded();
-            if (m_RightContactTarget != null && m_RightContactTarget != m_LeftContactTarget &&
-                m_RightContactTarget.IsPinched)
+            if (m_RightContactTarget != null && m_RightContactTarget != m_LeftContactTarget)
                 m_RightContactTarget.PalmContactEnded();
             m_LeftContactTarget = null;
             m_RightContactTarget = null;
@@ -335,7 +341,7 @@ namespace Moodium.Interaction
                 return;
             var previous = current;
             current = next;
-            if (previous != null && previous != otherHand && previous.IsPinched)
+            if (previous != null && previous != otherHand)
                 previous.PalmContactEnded();
             if (next == null || next == otherHand)
                 return;
