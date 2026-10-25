@@ -29,6 +29,7 @@ namespace Moodium.NatureWorld
         CandyEnergyWristUI m_WristUI;
         Transform m_Root;
         Transform m_Guide;
+        Moodium.Characters.MoodiCompanionAnimator m_GuideMoodi;
         SpriteRenderer m_Glow;
         SpriteRenderer m_Ring;
         SpriteRenderer m_Invite;
@@ -107,7 +108,12 @@ namespace Moodium.NatureWorld
             m_Glow = Sprite("walk_guide_glow", .14f, false);
             m_Guide = new GameObject("Walking Light Guide").transform;
             m_Guide.SetParent(m_Root, false);
-            if (guidePrefab != null) PrepareGuide(Instantiate(guidePrefab, m_Guide));
+            if (guidePrefab != null)
+            {
+                var visual=Instantiate(guidePrefab,m_Guide);
+                PrepareGuide(visual);
+                m_GuideMoodi=visual.GetComponent<Moodium.Characters.MoodiCompanionAnimator>();
+            }
             m_Ring.gameObject.SetActive(false); m_Invite.gameObject.SetActive(false);
             m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
             for (var i = 0; i < 12; i++)
@@ -281,6 +287,7 @@ namespace Moodium.NatureWorld
             m_Trail.SetWalkingEnabled(true);
             Play(m_Hop, m_Target, .25f);
             StartCoroutine(DemonstrateGrowth(m_Target));
+            if(m_GuideMoodi!=null)m_GuideMoodi.PlayWave();
         }
 
         System.Collections.IEnumerator DemonstrateGrowth(Vector3 target)
@@ -329,6 +336,7 @@ namespace Moodium.NatureWorld
                 CreateLollipop(m_Target + new Vector3(.12f, 0f, -.06f), garden, 1);
             }
             Play(m_Chime, m_Target, .4f);
+            if(m_GuideMoodi!=null)m_GuideMoodi.PlayHappy();
             ShowCard($"walk_counter_{World}_{m_Gardens.Count}_{Language}", m_Target + Vector3.up * .7f, .35f, true);
             m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
             if (m_Gardens.Count >= 3)

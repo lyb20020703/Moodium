@@ -432,6 +432,8 @@ namespace Moodium.Flow
             label.color = new Color(1f, 1f, 1f, .95f);
             label.rectTransform.sizeDelta = new Vector2(.18f, .025f);
             tag.AddComponent<MoodRecommendationTagPulse>();
+            var moodi=entry.Root.GetComponentInChildren<Moodium.Characters.MoodiCompanionAnimator>(true);
+            if(moodi!=null)moodi.PlayHappy();
         }
 
         string ShortMoodName(MoodKind mood)

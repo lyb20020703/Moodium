@@ -66,6 +66,11 @@ namespace Moodium.Flow
             if (entryRoot == null)
                 return null;
 
+            // The rigged companion owns its Animator. Never create a legacy wrapper
+            // or PlayableGraph for it, including during its first appearance frame.
+            if(entryRoot.GetComponentInChildren<Moodium.Characters.MoodiCompanionAnimator>(true)!=null)
+                return null;
+
             var animators = entryRoot.GetComponentsInChildren<Animator>(true);
             foreach (var animator in animators)
                 if (animator != null && animator.transform.name == "IP_Unity_3Clips")
