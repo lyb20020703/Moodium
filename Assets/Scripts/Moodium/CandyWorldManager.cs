@@ -57,6 +57,8 @@ namespace Moodium.CandyWorld
         System.Action m_ExitAction;
         bool m_NatureWorldActive;
         bool m_Running;
+        Moodium.Guide.WorldGuideCards m_WorldGuide;
+        bool m_ExploreGuideShown;
         bool m_RewardReleased;
         float m_LastNatureProgress;
         Vector3 m_LastNatureSoftOrigin;
@@ -319,6 +321,10 @@ namespace Moodium.CandyWorld
             m_EnergyUI.gameObject.SetActive(true);
             if (m_Running)
                 return;
+            m_ExploreGuideShown=false;
+            m_WorldGuide=GetComponent<Moodium.Guide.WorldGuideCards>()??gameObject.AddComponent<Moodium.Guide.WorldGuideCards>();
+            m_WorldGuide.ShowTutorial(m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish(),
+                Camera.main!=null?Camera.main.transform:null);
             m_Running = true;
             ChocolateCapsuleInteraction.AnyCapsulePinched += OnCapsulePinched;
             m_Energy.EnergyChanged += OnEnergyChanged;
@@ -328,6 +334,7 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
+            m_WorldGuide?.Hide(true);
             m_SqueezeModes?.StopSession();
             m_SqueezeStageRewards?.StopAndClear();
             m_WalkTrailGuide?.StopAndClear();
@@ -546,6 +553,12 @@ namespace Moodium.CandyWorld
 
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
+            if(!m_ExploreGuideShown&&normalizedProgress>=1f&&m_WorldGuide!=null)
+            {
+                m_ExploreGuideShown=true;
+                m_WorldGuide.ShowExplore(m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish(),
+                    Camera.main!=null?Camera.main.transform:null);
+            }
             m_WalkTrailGuide?.SetProgress(normalizedProgress);
             if(Time.unscaledTime>=m_NextEnergyUIUpdate||normalizedProgress>=1f||normalizedProgress<=0)
             {

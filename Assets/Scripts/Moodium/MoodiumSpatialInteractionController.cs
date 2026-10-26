@@ -22,6 +22,7 @@ namespace Moodium.Flow
         readonly Dictionary<int, SensoryBagCalibrationHandle> m_CalibrationInteractions = new();
         readonly Dictionary<int, MoodCheckPlateHandle> m_MoodCheckInteractions = new();
         readonly Dictionary<int, GlassSlideToEnter> m_GlassSliderInteractions = new();
+        readonly Dictionary<int, Moodium.Guide.WorldGuideSwipeHandle> m_GuideSwipeInteractions=new();
         readonly HashSet<MoodiumSpatialButton> m_HoveredButtons = new();
         readonly HashSet<MoodiumSpatialButton> m_ButtonsThisFrame = new();
         readonly HashSet<MoodiumObjectPickerItem> m_HoveredPickerItems = new();
@@ -30,6 +31,8 @@ namespace Moodium.Flow
 #if UNITY_EDITOR
         const int MousePointerId = int.MaxValue;
         MoodCheckPlateHandle m_MousePlate;
+        Moodium.Guide.WorldGuideSwipeHandle m_MouseGuide;
+        SensoryBagCalibrationHandle m_MouseCalibration;
         Plane m_MouseDragPlane;
 
         void UpdateEditorMouse()
@@ -38,6 +41,40 @@ namespace Moodium.Flow
             var camera = Camera.main;
             if (mouse == null || camera == null) return;
             var ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            if(m_MouseCalibration!=null)
+            {
+                if(!m_MouseCalibration.CanInteract)
+                {
+                    m_MouseCalibration.PointerEnded(MousePointerId);m_MouseCalibration=null;return;
+                }
+                if(m_MouseDragPlane.Raycast(ray,out var calibrationDistance))
+                    m_MouseCalibration.PointerMoved(MousePointerId,ray.GetPoint(calibrationDistance));
+                if(mouse.leftButton.wasReleasedThisFrame||!mouse.leftButton.isPressed)
+                {
+                    m_MouseCalibration.PointerEnded(MousePointerId);m_MouseCalibration=null;
+                }
+                return;
+            }
+            if(m_MouseGuide!=null)
+            {
+                if(!m_MouseGuide.isActiveAndEnabled)
+                {
+                    m_MouseGuide.CancelPointer(MousePointerId);m_MouseGuide=null;return;
+                }
+                if(m_MouseDragPlane.Raycast(ray,out var guideDistance))
+                {
+                    m_MouseGuide.PointerMoved(MousePointerId,ray.GetPoint(guideDistance));
+                    if(mouse.leftButton.wasReleasedThisFrame||!mouse.leftButton.isPressed)
+                    {
+                        var guide=m_MouseGuide;m_MouseGuide=null;guide.PointerEnded(MousePointerId);
+                    }
+                }
+                else if(!mouse.leftButton.isPressed)
+                {
+                    m_MouseGuide.CancelPointer(MousePointerId);m_MouseGuide=null;
+                }
+                return;
+            }
             if (m_MousePlate != null)
             {
                 if (!m_MousePlate.isActiveAndEnabled)
@@ -71,12 +108,28 @@ namespace Moodium.Flow
             if (!Physics.Raycast(ray, out var hit, 20f, Physics.DefaultRaycastLayers,
                     QueryTriggerInteraction.Collide)) return;
             var button = hit.collider.GetComponentInParent<MoodiumSpatialButton>();
+            var calibration=hit.collider.GetComponentInParent<SensoryBagCalibrationHandle>();
+            if(calibration!=null&&calibration.CanInteract)
+            {
+                if(calibration.IsDragHandle)
+                {
+                    m_MouseCalibration=calibration;
+                    m_MouseDragPlane=new Plane(calibration.IsHeightHandle?camera.transform.forward:calibration.FrameNormal,hit.point);
+                }
+                calibration.PointerStarted(MousePointerId,hit.point);return;
+            }
             if (button != null && button.isActiveAndEnabled)
             {
                 button.Press();
                 return;
             }
             var handle = hit.collider.GetComponentInParent<MoodCheckPlateHandle>();
+            var guideHandle=hit.collider.GetComponentInParent<Moodium.Guide.WorldGuideSwipeHandle>();
+            if(guideHandle!=null&&guideHandle.CanInteract)
+            {
+                m_MouseGuide=guideHandle;m_MouseDragPlane=new Plane(guideHandle.transform.forward,hit.point);
+                guideHandle.PointerStarted(MousePointerId,hit.point);return;
+            }
             if (handle != null && handle.isActiveAndEnabled)
             {
                 m_MousePlate = handle;
@@ -85,12 +138,24 @@ namespace Moodium.Flow
             }
         }
 
+#endif
+
         void OnDisable()
         {
-            if (m_MousePlate != null) m_MousePlate.CancelPointer(MousePointerId);
-            m_MousePlate = null;
-        }
+#if UNITY_EDITOR
+            if(m_MousePlate!=null)m_MousePlate.CancelPointer(MousePointerId);
+            if(m_MouseGuide!=null)m_MouseGuide.CancelPointer(MousePointerId);
+            if(m_MouseCalibration!=null)m_MouseCalibration.PointerEnded(MousePointerId);
+            m_MouseCalibration=null;
+            m_MousePlate=null;m_MouseGuide=null;
 #endif
+            foreach(var pair in m_GuideSwipeInteractions)
+                if(pair.Value!=null)pair.Value.CancelPointer(pair.Key);
+            m_GuideSwipeInteractions.Clear();
+            foreach(var pair in m_CalibrationInteractions)
+                if(pair.Value!=null)pair.Value.PointerEnded(pair.Key);
+            m_CalibrationInteractions.Clear();
+        }
 
         void OnEnable()
         {
@@ -124,6 +189,16 @@ namespace Moodium.Flow
                     var target = pointer.targetObject;
                     if (target != null)
                     {
+                        var guideSwipe=target.GetComponentInParent<Moodium.Guide.WorldGuideSwipeHandle>();
+                        if(guideSwipe!=null)
+                        {
+                            if(guideSwipe.CanInteract)
+                            {
+                                m_GuideSwipeInteractions[id]=guideSwipe;
+                                guideSwipe.PointerStarted(id,pointer.interactionPosition);
+                            }
+                            continue;
+                        }
                         var pickerItem = target.GetComponentInParent<MoodiumObjectPickerItem>();
                         if (pickerItem != null)
                         {
@@ -207,6 +282,22 @@ namespace Moodium.Flow
                             }
                         }
                     }
+                }
+
+                if(m_GuideSwipeInteractions.TryGetValue(id,out var guideSwipeInteraction))
+                {
+                    if(guideSwipeInteraction==null){m_GuideSwipeInteractions.Remove(id);continue;}
+                    if(pointer.phase==SpatialPointerPhase.Moved)
+                        guideSwipeInteraction.PointerMoved(id,pointer.interactionPosition);
+                    else if(pointer.phase==SpatialPointerPhase.Ended)
+                    {
+                        guideSwipeInteraction.PointerEnded(id);m_GuideSwipeInteractions.Remove(id);
+                    }
+                    else if(pointer.phase==SpatialPointerPhase.Cancelled||pointer.phase==SpatialPointerPhase.None)
+                    {
+                        guideSwipeInteraction.CancelPointer(id);m_GuideSwipeInteractions.Remove(id);
+                    }
+                    continue;
                 }
 
                 if (m_GlassSliderInteractions.TryGetValue(id, out var glassSliderInteraction))

@@ -76,7 +76,12 @@ namespace Moodium.Squeeze
             if(anchor==null||root==null)return;
             var rotation=presentation!=null?presentation.AnchorOrientation:anchor.rotation;
             var normal=rotation*Vector3.up;if(Vector3.Dot(normal,Vector3.up)<0)rotation=rotation*Quaternion.Euler(180,0,0);
-            root.SetPositionAndRotation((presentation!=null?presentation.CenterWorldPosition:anchor.position)-rotation*Vector3.up*depth,rotation);
+            // Calibrated presentations now already originate at the supporting tabletop.
+            // Only the legacy top-sticker path needs its thickness subtracted.
+            var tableOrigin=presentation!=null
+                ? presentation.CenterWorldPosition+rotation*Vector3.up*.002f
+                : anchor.position-rotation*Vector3.up*depth;
+            root.SetPositionAndRotation(tableOrigin,rotation);
         }
         void Update()
         {

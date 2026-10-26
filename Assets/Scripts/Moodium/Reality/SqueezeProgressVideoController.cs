@@ -50,6 +50,7 @@ namespace Moodium.Reality
         Transform m_SurfaceAnchor;
         Vector3 m_AnchorLocalPosition;
         Vector3 m_AnchorLocalNormal = Vector3.up;
+        Vector3 m_AnchorLocalForward = Vector3.forward;
         double m_TargetTime;
         float m_NormalizedProgress;
         bool m_Advancing;
@@ -143,6 +144,9 @@ namespace Moodium.Reality
             var worldPosition = BuildSurfacePosition(trackingCenter, softTopY, surfaceNormal, m_SurfaceOffset);
             m_AnchorLocalPosition = m_SurfaceAnchor.InverseTransformPoint(worldPosition);
             m_AnchorLocalNormal = m_SurfaceAnchor.InverseTransformDirection(surfaceNormal).normalized;
+            var surfaceOrientation=presentation!=null ? presentation.AnchorOrientation :
+                follower!=null&&follower.Anchor!=null ? follower.Anchor.rotation : capsule.transform.rotation;
+            m_AnchorLocalForward=m_SurfaceAnchor.InverseTransformDirection(surfaceOrientation*Vector3.forward);
             m_BoundToSoft = true;
             UpdateDisplayPose();
             UpdateDisplayVisibility();
@@ -259,6 +263,13 @@ namespace Moodium.Reality
             if (surfaceNormal.sqrMagnitude < .000001f)
                 surfaceNormal = Vector3.up;
             return Quaternion.FromToRotation(Vector3.up, surfaceNormal.normalized);
+        }
+
+        public static Quaternion BuildSurfaceRotation(Vector3 surfaceNormal,Vector3 surfaceForward)
+        {
+            var normal=surfaceNormal.sqrMagnitude<.000001f?Vector3.up:surfaceNormal.normalized;
+            var forward=Vector3.ProjectOnPlane(surfaceForward,normal);
+            return forward.sqrMagnitude<.000001f ? BuildSurfaceRotation(normal) : Quaternion.LookRotation(forward.normalized,normal);
         }
 
         public static Vector3 BuildSurfacePosition(Vector3 trackingCenter, float softTopY,
@@ -421,7 +432,8 @@ namespace Moodium.Reality
                 return;
             var worldPosition = m_SurfaceAnchor.TransformPoint(m_AnchorLocalPosition);
             var worldNormal = m_SurfaceAnchor.TransformDirection(m_AnchorLocalNormal).normalized;
-            m_Display.transform.SetPositionAndRotation(worldPosition, BuildSurfaceRotation(worldNormal));
+            var worldForward=m_SurfaceAnchor.TransformDirection(m_AnchorLocalForward);
+            m_Display.transform.SetPositionAndRotation(worldPosition, BuildSurfaceRotation(worldNormal,worldForward));
         }
 
         void UpdateDisplayVisibility()

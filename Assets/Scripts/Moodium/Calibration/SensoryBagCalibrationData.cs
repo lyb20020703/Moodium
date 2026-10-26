@@ -79,7 +79,8 @@ namespace Moodium.Calibration
                 Height = settings.DefaultHeight,
                 Depth = settings.DefaultDepth,
                 CenterOffset = settings.DefaultCenterOffset,
-                PlaneLocalOffset = Vector3.zero,
+                // Sticker is attached to the top of the real bag, not its supporting table.
+                PlaneLocalOffset = Vector3.down * settings.DefaultDepth,
                 // The reference image lives in the anchor's X/Z plane on visionOS.
                 // Runtime calibration visuals are authored in local X/Y, therefore
                 // rotate that visual plane onto the horizontal bag/table plane.

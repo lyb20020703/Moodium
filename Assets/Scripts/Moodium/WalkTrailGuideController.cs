@@ -52,7 +52,7 @@ namespace Moodium.NatureWorld
         string Language => m_English ? "en" : "cn";
         public int DiscoveredGardenCount => m_Gardens.Count;
         public static bool ShouldOfferWalk(bool rainSeen, bool rainPlaying, float secondsSinceFull) =>
-            secondsSinceFull >= 25f || (rainSeen && !rainPlaying && secondsSinceFull >= 3f);
+            secondsSinceFull >= 3f;
         public static int NextNoteIndex(int current) => current < 7 ? current + 1 : 3;
         public static float AdvanceGuideDistance(float current, float length, float distanceFromViewer, float deltaTime) =>
             distanceFromViewer > 1.2f ? current : Mathf.MoveTowards(current, length, Mathf.Max(0f, deltaTime) * .45f);

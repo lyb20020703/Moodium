@@ -12,7 +12,8 @@ namespace Moodium.Calibration
         TopLeft,
         TopRight,
         BottomLeft,
-        BottomRight
+        BottomRight,
+        Height
     }
 
     /// <summary>Anchor-local two-dimensional bag bounds. It has no world-space mutable state.</summary>
@@ -39,6 +40,14 @@ namespace Moodium.Calibration
         public void MoveTo(Vector2 centerOffset)
         {
             m_Data.CenterOffset = centerOffset;
+        }
+
+        public void SetPlaneHeight(float offset)
+        {
+            if(float.IsNaN(offset)||float.IsInfinity(offset))return;
+            var plane=m_Data.PlaneLocalOffset;
+            plane.y=Mathf.Clamp(offset,-.25f,.10f);
+            m_Data.PlaneLocalOffset=plane;
         }
 
         public void ResizeFromHandle(CalibrationHandleKind handle, Vector2 point)

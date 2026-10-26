@@ -521,8 +521,8 @@ MonoBehaviour:
   m_ImageSpawner: {fileID: 339371883}
   m_CandyReferenceImageName: CandyWorldPhoneTracking
   m_NatureReferenceImageName: NatureWorldPhoneTracking
-  m_DefaultWidth: 0.25
-  m_DefaultHeight: 0.17
+  m_DefaultWidth: 0.4
+  m_DefaultHeight: 0.25
   m_DefaultDepth: 0.05
   m_DefaultCenterOffset: {x: 0, y: 0}
   m_MinWidth: 0.08

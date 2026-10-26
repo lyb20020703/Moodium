@@ -1,0 +1,41 @@
+# Walking invitation: three seconds after full energy
+
+User changed the existing automatic invitation from 25 seconds to 3 seconds, independent of reward-rain state, for both worlds. WorldGuide ZIP integration is not yet implemented; its proposed explore card at 2.5 seconds would overlap this schedule unless later coordinated.
+
+- Changed only ShouldOfferWalk and its regression test.
+- RED: 3-second/no-rain case failed before production change.
+- GREEN: WalkingInvitationAppearsThreeSecondsAfterFullEnergyRegardlessOfRain passed in full Unity EditMode run, checking 0, 2.99 and 3 seconds with unseen/playing/finished rain.
+- Runtime/Editor build: 0 errors, existing warnings. Log /tmp/moodium-walk-3s-build.log.
+- Full suite: 410/437 passed, 27 failed. Prior 26 remain; additional CandyWorldProgressControllerTests.DisabledSpatialTransformationDoesNotStartCandyMeshOverlay timed out after a temporary ARMeshManager hierarchy modal (180000ms timeout). Not wholly green.
+- Restored test-generated MoodCheck prefabs. Inter font dynamic atlas updates remain; no manual font/UI redesign. No commit/push or device timing verification.
+
+## Full-run failed tests
+
+- CalibratedSensoryBagPresentationTests.VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ
+- CalibratedSensoryBagPresentationTests.VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ
+- CandyBurstControllerTests.NatureBurstWrapper_DisablesLegacyMaterialAndBoundsCompatibility
+- CandyWorldProgressControllerTests.DisabledSpatialTransformationDoesNotStartCandyMeshOverlay
+- DualTrackingRealityFlowTests.ImageTrackedCapsuleIncreasesSharedCandyEnergy
+- ImageTrackingCapsuleSpawnerTests.SceneUsesTenCentimetreTestImageLibrary
+- MoodCheckFlowIntegrationTests.ExitWithPreSampleOpensPostAndSkipClosesVisit
+- MoodiBreathingFloatTests.CandyWorldUI_MoodiMeshy_HasBreathingFloat
+- MoodiBreathingFloatTests.NatureWorldUI_MoodiMeshy_HasBreathingFloat
+- MoodiumOpeningPersistenceTests.OpeningPrefab_KeepsAllRuntimeIntroAssetsAssigned
+- NatureForestGrowthControllerTests.StopAndClearRemovesSpawnedForestTrees
+- NatureLeafParticleControllerTests.SoftSqueezeFeedbackCreatesTheExistingWhiteCircularBurstAtTheSoftCenter
+- NatureLeafParticleControllerTests.WhiteBurstCircleTextureHasTransparentCornersAndAnOpaqueCenter
+- OpeningGestureGuideTests.OpeningPrefabShowsGestureGuideThreeSecondsAfterCandyInFrontOfCandy
+- PalmPressWorldSpaceContactTests.DetachedTrackedCapsuleStillIncreasesCandyEnergy
+- PortalFallingBagControllerTests.PortalPrefabContainsConfiguredBagRainAndInvisibleChamber
+- PortalFallingBagControllerTests.PortalPrefabIncludesCandyBagInTheFiftyBagLibrary
+- PortalFallingBagControllerTests.PortalPrefabProvidesFloorAndCapacityForPersistentBagStack
+- PortalFallingBagControllerTests.PortalPrefabUsesLargerBalancedBagsForTheFullStack
+- PortalFallingBagControllerTests.SpawnedBagReceivesPhysicsAndStaysInsideSpawnBounds
+- RealityModeTableVisibilityTests.SelectingRealityCandyWorldDoesNotCreateSpatialTable
+- RealityWorldModelCarouselTests.RealityCarouselBuildsOnlyCandyAndNatureWithCandyInitiallySelected
+- RealityWorldModelCarouselTests.RealityCarouselNotifiesCandyAsInitialPreview
+- SensoryBagCalibrationRectangleTests.ProjectWorldPointToAnchorPlane_DiscardsLocalDepth
+- StickerWorldSelectionControllerTests.MoodEntry_ChangesSummaryAndRaisesRequest
+- StickerWorldSelectionControllerTests.RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons
+- StickerWorldSelectionControllerTests.WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton
+

@@ -44,7 +44,7 @@ public sealed class SensoryBagCalibratorTests
         Assert.That(calibrator.CurrentData.Width, Is.EqualTo(expectedLocalData.Width));
         Assert.That(calibrator.CurrentData.Height, Is.EqualTo(expectedLocalData.Height));
         Assert.That(calibrator.CurrentData.CenterOffset, Is.EqualTo(expectedLocalData.CenterOffset));
-        Assert.That(calibrator.FrameRoot.position, Is.EqualTo(m_Anchor.transform.TransformPoint(new Vector3(0.06f, 0f, 0.02f))));
+        Assert.That(calibrator.FrameRoot.position, Is.EqualTo(m_Anchor.transform.TransformPoint(new Vector3(0.06f, -.05f, 0.02f))));
     }
 
     [Test]
@@ -77,8 +77,8 @@ public sealed class SensoryBagCalibratorTests
             ?.GetComponent<TextMeshProUGUI>();
         Assert.That(confirm, Is.Not.Null);
         Assert.That(reset, Is.Not.Null);
-        Assert.That(confirm.fontSize, Is.EqualTo(7f));
-        Assert.That(reset.fontSize, Is.EqualTo(7f));
+        Assert.That(confirm.fontSize, Is.EqualTo(18f));
+        Assert.That(reset.fontSize, Is.EqualTo(18f));
     }
 
     [Test]

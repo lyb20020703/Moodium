@@ -39,6 +39,8 @@ namespace Moodium.Calibration
                     visual.AddComponent<TrackedCapsuleHandCollision>();
             }
             InteractionVolume.Configure(data.Width, data.Height, data.Depth);
+            // The interaction region spans above the table, not symmetrically through it.
+            InteractionVolume.Collider.center=Quaternion.Inverse(data.LocalOrientation)*Vector3.up*(data.Depth*.5f);
             SyncNow();
             SetTrackingVisible(true);
         }
@@ -106,6 +108,9 @@ namespace Moodium.Calibration
             // overall X/Z scale rather than either dimension independently.
             VisualRoot.localScale = CalculateTablePlaneFitScale(
                 m_Data.Width, m_Data.Height, bounds, authoredRootScale);
+            // Align the actual geometry, not its authoring pivot, with the base plane.
+            var bottom=Mathf.Min(bounds.min.y*authoredRootScale.y,bounds.max.y*authoredRootScale.y);
+            visual.transform.localPosition=new Vector3(-bounds.center.x*authoredRootScale.x,-bottom,-bounds.center.z*authoredRootScale.z);
         }
 
         /// <summary>
@@ -147,10 +152,14 @@ namespace Moodium.Calibration
             var result = new Bounds(Vector3.zero, Vector3.zero);
             foreach (var renderer in renderers)
             {
-                var local = root.InverseTransformPoint(renderer.bounds.center);
-                var extents = root.InverseTransformVector(renderer.bounds.extents);
-                var bounds = new Bounds(local, new Vector3(Mathf.Abs(extents.x), Mathf.Abs(extents.y), Mathf.Abs(extents.z)) * 2f);
-                if (hasBounds) result.Encapsulate(bounds); else { result = bounds; hasBounds = true; }
+                // A world AABB cannot be inverted into an accurate tilted local bound.
+                var bounds=renderer.localBounds;
+                var matrix=root.worldToLocalMatrix*renderer.localToWorldMatrix;
+                for(int x=-1;x<=1;x+=2)for(int y=-1;y<=1;y+=2)for(int z=-1;z<=1;z+=2)
+                {
+                    var point=matrix.MultiplyPoint3x4(bounds.center+Vector3.Scale(bounds.extents,new Vector3(x,y,z)));
+                    if(hasBounds)result.Encapsulate(point);else{result=new Bounds(point,Vector3.zero);hasBounds=true;}
+                }
             }
             return hasBounds ? result : new Bounds(Vector3.zero, Vector3.one);
         }

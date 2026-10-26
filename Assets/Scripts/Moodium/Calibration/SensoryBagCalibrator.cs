@@ -10,15 +10,14 @@ namespace Moodium.Calibration
     public sealed class SensoryBagCalibrator : MonoBehaviour
     {
         [Header("Calibration")]
-        [SerializeField, Min(0.01f)] float m_DefaultWidth = 0.25f;
-        [SerializeField, Min(0.01f)] float m_DefaultHeight = 0.17f;
+        [SerializeField, Min(0.01f)] float m_DefaultWidth = 0.40f;
+        [SerializeField, Min(0.01f)] float m_DefaultHeight = 0.25f;
         [SerializeField, Min(0.005f)] float m_DefaultDepth = 0.05f;
         [SerializeField] Vector2 m_DefaultCenterOffset;
         [SerializeField, Min(0.01f)] float m_MinWidth = 0.08f;
         [SerializeField, Min(0.01f)] float m_MaxWidth = 0.6f;
         [SerializeField, Min(0.01f)] float m_MinHeight = 0.06f;
         [SerializeField, Min(0.01f)] float m_MaxHeight = 0.45f;
-        [SerializeField] float m_PlaneLocalOffset;
 
         [Header("Calibration UI")]
         [SerializeField, Min(0.001f)] float m_BorderThickness = 0.004f;
@@ -43,6 +42,10 @@ namespace Moodium.Calibration
         readonly Dictionary<int, CalibrationHandleKind> m_Drags = new();
         readonly Dictionary<int, Vector2> m_DragStartPointer = new();
         readonly Dictionary<int, Vector2> m_DragStartCenter = new();
+        readonly Dictionary<int,float> m_DragStartNormal = new();
+        readonly Dictionary<int,float> m_DragStartPlane = new();
+        Transform m_HeightRail;
+        TextMeshProUGUI m_HeightValueLabel;
 
         Transform m_Anchor;
         Transform m_FrameRoot;
@@ -86,6 +89,7 @@ namespace Moodium.Calibration
             SensoryBagCalibrationSettings settings)
         {
             m_Anchor = anchor;
+            ClearDrags();
             m_Settings = settings;
             m_TrackingState = "Tracking";
             m_DefaultData = SensoryBagCalibrationData.CreateDefault(
@@ -115,6 +119,7 @@ namespace Moodium.Calibration
 
         public void SetTrackingVisible(bool tracked)
         {
+            if(!tracked)ClearDrags();
             m_TrackingState = tracked ? "Tracking" : "Temporarily lost";
             if (!m_Confirmed)
                 SetFrameVisible(tracked);
@@ -136,14 +141,27 @@ namespace Moodium.Calibration
             RefreshVisuals();
         }
 
+        public void SetPlaneHeight(float offsetMeters)
+        {
+            if(m_Rectangle==null||!m_FrameVisible||m_Confirmed)return;
+            m_Rectangle.SetPlaneHeight(offsetMeters);RefreshVisuals();
+        }
+
+        public void AdjustPlaneHeight(float deltaMeters)
+        {
+            if(m_Rectangle!=null)SetPlaneHeight(m_Rectangle.Data.PlaneLocalOffset.y+deltaMeters);
+        }
+
         public void BeginPointerDrag(int pointerId, CalibrationHandleKind kind, Vector3 worldPosition)
         {
-            if (!m_FrameVisible || m_Rectangle == null || m_Anchor == null)
+            if (!m_FrameVisible || m_Confirmed || m_Rectangle == null || m_Anchor == null || m_Drags.ContainsKey(pointerId))
                 return;
             var localPoint = SensoryBagCalibrationRectangle.ProjectWorldPointToAnchorPlane(m_Anchor, worldPosition);
             m_Drags[pointerId] = kind;
             m_DragStartPointer[pointerId] = localPoint;
             m_DragStartCenter[pointerId] = m_Rectangle.Data.CenterOffset;
+            m_DragStartNormal[pointerId]=m_Anchor.InverseTransformPoint(worldPosition).y;
+            m_DragStartPlane[pointerId]=m_Rectangle.Data.PlaneLocalOffset.y;
         }
 
         public void MovePointerDrag(int pointerId, Vector3 worldPosition)
@@ -151,6 +169,11 @@ namespace Moodium.Calibration
             if (!m_Drags.TryGetValue(pointerId, out var kind) || m_Anchor == null)
                 return;
             var localPoint = SensoryBagCalibrationRectangle.ProjectWorldPointToAnchorPlane(m_Anchor, worldPosition);
+            if(kind==CalibrationHandleKind.Height)
+            {
+                SetPlaneHeight(m_DragStartPlane[pointerId]+m_Anchor.InverseTransformPoint(worldPosition).y-m_DragStartNormal[pointerId]);
+                return;
+            }
             if (kind == CalibrationHandleKind.Frame)
             {
                 var delta = localPoint - m_DragStartPointer[pointerId];
@@ -165,10 +188,17 @@ namespace Moodium.Calibration
             m_Drags.Remove(pointerId);
             m_DragStartPointer.Remove(pointerId);
             m_DragStartCenter.Remove(pointerId);
+            m_DragStartNormal.Remove(pointerId);m_DragStartPlane.Remove(pointerId);
+        }
+
+        void ClearDrags()
+        {
+            m_Drags.Clear();m_DragStartPointer.Clear();m_DragStartCenter.Clear();m_DragStartNormal.Clear();m_DragStartPlane.Clear();
         }
 
         public void ResetCalibration()
         {
+            ClearDrags();
             if (m_Rectangle == null)
                 return;
             m_Rectangle = new SensoryBagCalibrationRectangle(m_DefaultData, m_Settings);
@@ -183,6 +213,7 @@ namespace Moodium.Calibration
             if (m_Rectangle == null || m_Confirmed)
                 return;
             m_Confirmed = true;
+            ClearDrags();
             SetFrameVisible(false);
             var data = m_Rectangle.Data;
             Debug.Log($"[Sensory Bag Calibration] Confirmed {data.ReferenceImageName}: " +
@@ -196,8 +227,6 @@ namespace Moodium.Calibration
                 return;
             var data = m_Rectangle.Data;
             var planeOffset = data.PlaneLocalOffset;
-            if (Mathf.Approximately(planeOffset.y, 0f))
-                planeOffset.y = m_PlaneLocalOffset;
             m_FrameRoot.SetPositionAndRotation(
                 m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, planeOffset.y, data.CenterOffset.y)),
                 m_Anchor.rotation * data.LocalOrientation);
@@ -233,11 +262,21 @@ namespace Moodium.Calibration
             CreateVisual("Bottom Right Corner Handle", m_HandleColor, CalibrationHandleKind.BottomRight);
             CreateAction("确认 / Confirm", m_ConfirmColor, CalibrationAction.Confirm);
             CreateAction("重置 / Reset", m_ResetColor, CalibrationAction.Reset);
+            CreateVisual("Table Height Drag Handle",m_HandleColor,CalibrationHandleKind.Height);
+            var rail=GameObject.CreatePrimitive(PrimitiveType.Cube);rail.name="Table Height Rail";
+            rail.transform.SetParent(m_FrameRoot,false);rail.GetComponent<Collider>().enabled=false;
+            rail.GetComponent<Renderer>().sharedMaterial=GetRuntimeUiMaterial();SetColor(rail.GetComponent<Renderer>(),new Color(.7f,.85f,1f,.8f));
+            m_HeightRail=rail.transform;
+            CreateAction("Raise Table",m_ResetColor,CalibrationAction.RaiseTable);
+            CreateAction("Lower Table",m_ResetColor,CalibrationAction.LowerTable);
+            var readout=new GameObject("Table Height Readout");readout.transform.SetParent(m_FrameRoot,false);
+            var readoutVisual=CreateRoundedButtonVisual(readout.transform,m_ResetColor);
+            m_HeightValueLabel=CreateLabel(readoutVisual.transform);
         }
 
         GameObject CreateVisual(string name, Color color, CalibrationHandleKind kind)
         {
-            var visual = kind is CalibrationHandleKind.TopLeft or CalibrationHandleKind.TopRight or
+            var visual = kind==CalibrationHandleKind.Height?GameObject.CreatePrimitive(PrimitiveType.Sphere):kind is CalibrationHandleKind.TopLeft or CalibrationHandleKind.TopRight or
                 CalibrationHandleKind.BottomLeft or CalibrationHandleKind.BottomRight
                 ? GameObject.CreatePrimitive(PrimitiveType.Capsule)
                 : GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -247,6 +286,7 @@ namespace Moodium.Calibration
             SetColor(visual.GetComponent<Renderer>(), color);
             var handle = visual.AddComponent<SensoryBagCalibrationHandle>();
             handle.Configure(this, kind);
+            if(kind==CalibrationHandleKind.Height)visual.GetComponent<SphereCollider>().radius=.7f;
             m_Visuals[kind] = visual.transform;
             return visual;
         }
@@ -260,25 +300,32 @@ namespace Moodium.Calibration
             button.AddComponent<SensoryBagCalibrationHandle>().Configure(this, CalibrationHandleKind.Frame, action);
 
             var visual = CreateRoundedButtonVisual(button.transform, color);
-            var label = new GameObject("Label", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-            label.transform.SetParent(visual.transform, false);
-            label.rectTransform.anchorMin = Vector2.zero;
-            label.rectTransform.anchorMax = Vector2.one;
-            label.rectTransform.offsetMin = Vector2.zero;
-            label.rectTransform.offsetMax = Vector2.zero;
+            var label=CreateLabel(visual.transform);
             var english = PlayerPrefs.GetString("Moodium.Language", "Chinese").Equals("English", System.StringComparison.OrdinalIgnoreCase);
-            label.text = action == CalibrationAction.Confirm
-                ? (english ? "Confirm" : "确认")
-                : (english ? "Reset" : "重置");
-            label.font = english ? m_EnglishFont : m_ChineseFont;
-            label.fontSize = 7f;
-            label.alignment = TextAlignmentOptions.Center;
-            label.rectTransform.sizeDelta = new Vector2(10f, 3f);
-            label.color = Color.white;
-            if (action == CalibrationAction.Confirm)
-                button.transform.name = "Calibration Confirm Button";
-            else
-                button.transform.name = "Calibration Reset Button";
+            label.text=action switch
+            {
+                CalibrationAction.Confirm=>english?"Confirm":"确认",
+                CalibrationAction.Reset=>english?"Reset":"重置",
+                CalibrationAction.RaiseTable=>english?"Up 0.5 cm":"升高 0.5 厘米",
+                _=>english?"Down 0.5 cm":"降低 0.5 厘米"
+            };
+            button.name=action switch
+            {
+                CalibrationAction.Confirm=>"Calibration Confirm Button",
+                CalibrationAction.Reset=>"Calibration Reset Button",
+                CalibrationAction.RaiseTable=>"Calibration Raise Table Button",
+                _=>"Calibration Lower Table Button"
+            };
+        }
+
+        TextMeshProUGUI CreateLabel(Transform parent)
+        {
+            var label=new GameObject("Label",typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            label.transform.SetParent(parent,false);label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;
+            label.rectTransform.offsetMin=Vector2.zero;label.rectTransform.offsetMax=Vector2.zero;
+            var english=PlayerPrefs.GetString("Moodium.Language","Chinese").Equals("English",StringComparison.OrdinalIgnoreCase);
+            label.font=english?m_EnglishFont:m_ChineseFont;label.fontSize=18f;label.alignment=TextAlignmentOptions.Center;label.color=Color.white;
+            return label;
         }
 
         GameObject CreateRoundedButtonVisual(Transform parent, Color color)
@@ -350,6 +397,19 @@ namespace Moodium.Calibration
             {
                 reset.localPosition = new Vector3(m_ButtonWidth * 0.6f, -halfHeight - 0.10f, 0f);
                 reset.localScale = Vector3.one;
+            }
+            var controlX=halfWidth+.12f;
+            SetVisual(CalibrationHandleKind.Height,new Vector3(controlX,0,-.10f),Vector3.one*.03f);
+            if(m_HeightRail!=null){m_HeightRail.localPosition=new Vector3(controlX,0,-.06f);m_HeightRail.localScale=new Vector3(.004f,.004f,.12f);}
+            var raise=m_FrameRoot.Find("Calibration Raise Table Button");var lower=m_FrameRoot.Find("Calibration Lower Table Button");
+            if(raise!=null)raise.localPosition=new Vector3(controlX,.075f,-.10f);
+            if(lower!=null)lower.localPosition=new Vector3(controlX,-.075f,-.10f);
+            if(m_HeightValueLabel!=null)
+            {
+                m_FrameRoot.Find("Table Height Readout").localPosition=new Vector3(controlX,-.15f,-.10f);
+                var english=PlayerPrefs.GetString("Moodium.Language","Chinese").Equals("English",StringComparison.OrdinalIgnoreCase);
+                m_HeightValueLabel.text=(english?"Table height\n":"桌面高度\n")+
+                    (m_Rectangle.Data.PlaneLocalOffset.y*100f).ToString("+0.0;-0.0;0.0",System.Globalization.CultureInfo.InvariantCulture)+(english?" cm":" 厘米");
             }
             SyncFrameNow();
         }
