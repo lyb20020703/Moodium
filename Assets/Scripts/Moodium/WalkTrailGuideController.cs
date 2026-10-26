@@ -30,6 +30,15 @@ namespace Moodium.NatureWorld
         Transform m_Root;
         Transform m_Guide;
         Moodium.Characters.MoodiCompanionAnimator m_GuideMoodi;
+        Moodium.Characters.MoodiVoice m_GuideVoice;
+        Moodium.Characters.MoodiHandCompanion m_HandCompanion;
+        // Companion polish: look back while leading, wait and wave when the viewer falls behind,
+        // come closer when the viewer stands still.
+        float m_NextLookBack, m_LookBackUntil, m_WaitSince = -1f, m_NextWaitWave, m_StillSince = -1f;
+        int m_LookBacks;
+        bool m_ToldGrowth, m_SaidStill;
+        Vector3 m_StillAnchor;
+        bool HandHasGuide => m_HandCompanion != null && m_HandCompanion.HasControl;
         SpriteRenderer m_Glow;
         SpriteRenderer m_Ring;
         SpriteRenderer m_Invite;
@@ -71,6 +80,21 @@ namespace Moodium.NatureWorld
             groundPoint.y=CompanionFollowPoint(viewer,Vector3.forward).y+Mathf.Clamp(bob,-.015f,.015f);
             return groundPoint;
         }
+        /// <summary>Where Moodi floats when the viewer has stood still for a while: in front, looking up at them.</summary>
+        public static Vector3 ApproachPoint(Vector3 viewer, Vector3 forward)
+        {
+            forward = Vector3.ProjectOnPlane(forward, Vector3.up).normalized;
+            if (forward.sqrMagnitude < .01f) forward = Vector3.forward;
+            return viewer + forward * .5f - Vector3.up * .28f;
+        }
+        /// <summary>True when the guide is outside a cone around where the viewer looks.</summary>
+        public static bool IsOutOfView(Vector3 viewerForward, Vector3 toGuide, float maxAngle = 70f)
+        {
+            viewerForward = Vector3.ProjectOnPlane(viewerForward, Vector3.up);
+            toGuide = Vector3.ProjectOnPlane(toGuide, Vector3.up);
+            if (viewerForward.sqrMagnitude < 1e-4f || toGuide.sqrMagnitude < 1e-4f) return false;
+            return Vector3.Angle(viewerForward, toGuide) > maxAngle;
+        }
 
         public void BeginSession(NatureFootstepGrassController trail, CandyRainRewardController rain,
             Transform viewer, Transform wrist, bool candy, GameObject[] decorations, GameObject guidePrefab = null)
@@ -85,6 +109,11 @@ namespace Moodium.NatureWorld
             m_NextSearch = m_NextSafety = 0f; m_Note = 0; m_LastStep = -100f;
             m_LastWaitReason = null;
             m_HasGuidePosition = false;
+            m_NextLookBack = m_LookBackUntil = m_NextWaitWave = 0f;
+            m_WaitSince = m_StillSince = -1f;
+            m_LookBacks = 0;
+            m_ToldGrowth = m_SaidStill = false;
+            Moodium.Characters.MoodiVoice.ResetSession();
             m_Trail.SetGuidedMode(true);
             m_Trail.StepGrown += OnStep;
             if (decorations != null)
@@ -113,6 +142,11 @@ namespace Moodium.NatureWorld
                 var visual=Instantiate(guidePrefab,m_Guide);
                 PrepareGuide(visual);
                 m_GuideMoodi=visual.GetComponent<Moodium.Characters.MoodiCompanionAnimator>();
+                if(m_GuideMoodi!=null)m_GuideMoodi.SetFacingViewer(m_Viewer);
+                if (!visual.TryGetComponent(out m_GuideVoice))
+                    m_GuideVoice = visual.AddComponent<Moodium.Characters.MoodiVoice>();
+                m_HandCompanion = m_Guide.gameObject.AddComponent<Moodium.Characters.MoodiHandCompanion>();
+                m_HandCompanion.Initialize(m_Guide, visual.transform, m_GuideMoodi, m_GuideVoice, viewer, m_Tint);
             }
             m_Ring.gameObject.SetActive(false); m_Invite.gameObject.SetActive(false);
             m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
@@ -176,6 +210,7 @@ namespace Moodium.NatureWorld
                 m_Phase = Phase.Walking;
                 m_Invite.gameObject.SetActive(false);
                 m_LastHead = m_Viewer.position;
+                if (!m_ToldGrowth && m_GuideVoice != null) { m_ToldGrowth = true; m_GuideVoice.Say("D3"); }
             }
             if (m_Phase == Phase.Inviting && Time.time - m_InvitedAt >= 60f)
             {
@@ -204,7 +239,7 @@ namespace Moodium.NatureWorld
                          Vector3.ProjectOnPlane(m_Target - m_Viewer.position, Vector3.up).normalized) < .5f))
                 {
                     m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
-                    m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
+                    if (!HandHasGuide) { m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false); }
                 }
             }
             if (m_HasTarget && HorizontalDistance(m_Viewer.position, m_Target) <= .4f)
@@ -288,6 +323,8 @@ namespace Moodium.NatureWorld
             Play(m_Hop, m_Target, .25f);
             StartCoroutine(DemonstrateGrowth(m_Target));
             if(m_GuideMoodi!=null)m_GuideMoodi.PlayWave();
+            if (m_GuideVoice != null) { m_GuideVoice.Say("A1"); m_GuideVoice.Say("A2"); }
+            if (m_HandCompanion != null) m_HandCompanion.NotifyInvited();
         }
 
         System.Collections.IEnumerator DemonstrateGrowth(Vector3 target)
@@ -337,6 +374,11 @@ namespace Moodium.NatureWorld
             }
             Play(m_Chime, m_Target, .4f);
             if(m_GuideMoodi!=null)m_GuideMoodi.PlayHappy();
+            if (m_GuideVoice != null)
+            {
+                if (m_Gardens.Count >= 3) m_GuideVoice.Say("D7");
+                else m_GuideVoice.SayGardenFound(m_Candy);
+            }
             ShowCard($"walk_counter_{World}_{m_Gardens.Count}_{Language}", m_Target + Vector3.up * .7f, .35f, true);
             m_HasTarget = false; m_Ring.gameObject.SetActive(false); HideDots();
             if (m_Gardens.Count >= 3)
@@ -365,7 +407,8 @@ namespace Moodium.NatureWorld
             var routeLength = HorizontalDistance(m_RouteStart, m_Target);
             var routeDirection = Vector3.ProjectOnPlane(m_Target - m_RouteStart, Vector3.up).normalized;
             var invite = Mathf.Clamp01((Time.time - m_InvitedAt) / .8f);
-            if (m_Phase != Phase.Inviting || invite >= 1f)
+            var holding = UpdateLookBack() | UpdateWaitForViewer();
+            if ((m_Phase != Phase.Inviting || invite >= 1f) && !holding)
                 m_GuideDistance = AdvanceGuideDistance(m_GuideDistance, routeLength,
                     HorizontalDistance(m_Viewer.position, m_RouteStart + routeDirection * m_GuideDistance), Time.deltaTime);
             var guidePoint = m_RouteStart + routeDirection * m_GuideDistance;
@@ -414,7 +457,9 @@ namespace Moodium.NatureWorld
         void UpdateCompanionFollow()
         {
             m_Guide.gameObject.SetActive(true); m_Glow.gameObject.SetActive(true);
-            var companion = CompanionFollowPoint(m_Viewer.position, m_Viewer.forward);
+            var companion = IsViewerResting()
+                ? ApproachPoint(m_Viewer.position, m_Viewer.forward)
+                : CompanionFollowPoint(m_Viewer.position, m_Viewer.forward);
             companion.y += Mathf.Sin(Time.time * 2f) * .015f;
             MoveGuideSmoothly(companion);
             Face(m_Glow.transform, m_Guide.position);
@@ -423,9 +468,55 @@ namespace Moodium.NatureWorld
 
         void MoveGuideSmoothly(Vector3 destination)
         {
+            if (HandHasGuide) return; // Moodi is flying to, riding on or hopping off a palm
             m_Guide.position = m_HasGuidePosition
                 ? SmoothGuidePosition(m_Guide.position, destination, Time.deltaTime) : destination;
             m_HasGuidePosition = true;
+        }
+
+        /// <summary>Every 4–6 s while leading, Moodi stops for a second and turns back to look at the viewer
+        /// (MoodiCompanionAnimator faces the viewer whenever it stops). Every third time it says D4.</summary>
+        bool UpdateLookBack()
+        {
+            if (Time.time < m_LookBackUntil) return true;
+            if (m_NextLookBack <= 0f) m_NextLookBack = Time.time + Random.Range(4f, 6f);
+            if (Time.time < m_NextLookBack || HandHasGuide) return false;
+            m_LookBackUntil = Time.time + 1f;
+            m_NextLookBack = m_LookBackUntil + Random.Range(4f, 6f);
+            if (++m_LookBacks % 3 == 0 && m_GuideVoice != null) m_GuideVoice.SayOneOf("D4");
+            return true;
+        }
+
+        /// <summary>When the viewer falls 1.2 m behind or looks away, Moodi holds still, waves and says D5.</summary>
+        bool UpdateWaitForViewer()
+        {
+            var far = HorizontalDistance(m_Viewer.position, m_Guide.position) > 1.2f;
+            var away = IsOutOfView(m_Viewer.forward, m_Guide.position - m_Viewer.position);
+            if (!far && !away) { m_WaitSince = -1f; return false; }
+            if (m_WaitSince < 0f) m_WaitSince = Time.time;
+            var waited = Time.time - m_WaitSince;
+            if (waited > (far ? 1.5f : 2f) && Time.time >= m_NextWaitWave && !HandHasGuide)
+            {
+                m_NextWaitWave = Time.time + 8f;
+                if (m_GuideMoodi != null) m_GuideMoodi.PlayWave();
+                if (m_GuideVoice != null) m_GuideVoice.Say("D5");
+            }
+            return away && waited > .5f;
+        }
+
+        /// <summary>True after the viewer has stood still for 8 s (after the walk was offered). Says E1 once per rest.</summary>
+        bool IsViewerResting()
+        {
+            if (m_Phase == Phase.Waiting) return false;
+            var head = m_Viewer.position;
+            if (m_StillSince < 0f || HorizontalDistance(head, m_StillAnchor) > .3f)
+            {
+                m_StillAnchor = head; m_StillSince = Time.time; m_SaidStill = false;
+                return false;
+            }
+            if (Time.time - m_StillSince < 8f) return false;
+            if (!m_SaidStill && m_GuideVoice != null && m_Phase != Phase.Complete) { m_SaidStill = true; m_GuideVoice.Say("E1"); }
+            return true;
         }
 
         void Sparkle(Vector3 position)
@@ -567,6 +658,7 @@ namespace Moodium.NatureWorld
             StopAllCoroutines();
             if (m_Root != null) Destroy(m_Root.gameObject);
             m_Root = null;
+            m_HandCompanion = null; m_GuideVoice = null;
             m_Gardens.Clear(); m_Dots.Clear(); m_Cards.Clear(); m_Voices.Clear(); m_Decorations.Clear();
             m_GardenRings.Clear();
             if (m_CandyPink != null) Destroy(m_CandyPink);

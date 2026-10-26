@@ -9,6 +9,33 @@ using System.Reflection;
 public sealed class MoodiAnimatedTests
 {
     const string PrefabPath="Assets/prefab/Moodi meshy.prefab";
+    [TestCase(1f)]
+    [TestCase(0f)]
+    public void WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(float speed)
+    {
+        var moodi=Create(out var root);var viewer=new GameObject("Walking viewer");
+        try
+        {
+            var configure=typeof(MoodiCompanionAnimator).GetMethod("SetFacingViewer");
+            Assert.That(configure,Is.Not.Null,"Walking guides need a viewer-facing override, not travel-direction facing.");
+            configure.Invoke(moodi,new object[]{viewer.transform});
+            root.transform.position=new Vector3(2,1,3);viewer.transform.position=new Vector3(-2,1.8f,3);
+            typeof(MoodiCompanionAnimator).GetField("m_Velocity",Private).SetValue(moodi,Vector3.right);
+            var position=root.transform.position;var rotation=root.transform.rotation;
+            for(var i=0;i<10;i++)Call(moodi,"UpdateFacing",speed,.1f);
+            var face=(Vector3)typeof(MoodiCompanionAnimator).GetField("m_FaceInModel",Private).GetValue(moodi);
+            var actual=Vector3.ProjectOnPlane(moodi.Animator.transform.TransformDirection(face),Vector3.up).normalized;
+            Assert.That(Vector3.Dot(actual,Vector3.left),Is.GreaterThan(.99f));
+            Assert.That(root.transform.position,Is.EqualTo(position));
+            Assert.That(Quaternion.Angle(root.transform.rotation,rotation),Is.LessThan(.001f));
+            // The same companion keeps following the viewer after they walk to the other side.
+            viewer.transform.position=new Vector3(6,1.8f,3);
+            for(var i=0;i<10;i++)Call(moodi,"UpdateFacing",speed,.1f);
+            actual=Vector3.ProjectOnPlane(moodi.Animator.transform.TransformDirection(face),Vector3.up).normalized;
+            Assert.That(Vector3.Dot(actual,Vector3.right),Is.GreaterThan(.99f));
+        }
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(viewer);}
+    }
     [Test] public void UpgradedPrefabKeepsOriginalIdentityAndStaticBackup()
     {
         Assert.That(AssetDatabase.AssetPathToGUID(PrefabPath),Is.EqualTo("1c1c0c337d80f495e8342b47fb803074"));

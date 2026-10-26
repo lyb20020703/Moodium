@@ -68,6 +68,7 @@ namespace Moodium.Characters
         Vector3 m_FaceInModel; // Moodi's face direction, in the animated model's local space
         XRHandSubsystem m_Hands;
         XROrigin m_XROrigin;
+        Transform m_FacingViewer;
 
         /// <summary>Raised whenever Moodi reacts to a touch (hand or code).</summary>
         public event Action Touched;
@@ -75,6 +76,9 @@ namespace Moodium.Characters
         public Animator Animator => m_Animator;
         public Vector3 BodyCenterLocal => m_BodyCenterLocal;
         public float CurrentSpeed => m_Velocity.magnitude;
+
+        /// <summary>Keep a walking companion facing this viewer without changing its route or animation.</summary>
+        public void SetFacingViewer(Transform viewer) => m_FacingViewer = viewer;
 
         /// <summary>Signed yaw (degrees) to turn from one horizontal direction towards another,
         /// limited to maxStep and ignoring differences below the dead zone.</summary>
@@ -188,7 +192,9 @@ namespace Moodium.Characters
         void UpdateFacing(float speed, float dt)
         {
             Vector3 target;
-            if (m_TurnTowardWalkDirection && speed > WalkSpeed)
+            if (m_FacingViewer != null)
+                target = m_FacingViewer.position - transform.TransformPoint(m_BodyCenterLocal);
+            else if (m_TurnTowardWalkDirection && speed > WalkSpeed)
             {
                 target = m_Velocity;
                 m_HasWalked = true;
