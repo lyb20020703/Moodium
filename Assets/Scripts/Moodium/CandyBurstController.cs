@@ -31,6 +31,24 @@ namespace Moodium.CandyWorld
         readonly List<GameObject> m_NaturePrefabs = new();
         readonly List<CandyProjectile> m_ActiveProjectiles = new();
         bool m_UseNaturePrefabs;
+        int m_ReservedContactCandies;
+
+        static int ContactBurstCapacity(int live, int reserved, int requested) =>
+            Mathf.Clamp(requested, 0, Mathf.Max(0, 32 - live - reserved));
+
+        /// <summary>Bounded Candy-only prop feedback; keeps the existing CandySoft burst path unchanged.</summary>
+        public bool BurstAtContact(Vector3 center, Transform source)
+        {
+            if (!isActiveAndEnabled || source == null || m_CandyPrefabs.Count == 0) return false;
+            m_ActiveProjectiles.RemoveAll(item => item == null);
+            var count = ContactBurstCapacity(m_ActiveProjectiles.Count, m_ReservedContactCandies,
+                Random.Range(m_MinCandyPerBurst, m_MaxCandyPerBurst + 1));
+            if (count == 0) return false;
+            m_ReservedContactCandies += count;
+            StartCoroutine(SpawnBurst(center, source, source.GetComponentsInChildren<Collider>(true),
+                m_CandyPrefabs, count, contactBurst: true));
+            return true;
+        }
 
         public void Configure(GameObject[] prefabs)
         {
@@ -154,6 +172,7 @@ namespace Moodium.CandyWorld
         public void StopAndClear()
         {
             StopAllCoroutines();
+            m_ReservedContactCandies = 0;
             var removed = 0;
             foreach (var projectile in m_ActiveProjectiles)
             {
@@ -167,10 +186,13 @@ namespace Moodium.CandyWorld
         }
 
         IEnumerator SpawnBurst(Vector3 center, Transform source, Collider[] sourceColliders,
-            List<GameObject> prefabs, int count, bool pureNatureDebug = false)
+            List<GameObject> prefabs, int count, bool pureNatureDebug = false, bool contactBurst = false)
         {
             Debug.Log($"[Candy Burst] Spawning {count} miniature candies from Chocolate Capsule center at {center}.");
             var protectedVideo = FindFirstObjectByType<Moodium.Reality.SqueezeProgressVideoController>();
+            var remaining = contactBurst ? count : 0;
+            try
+            {
             for (var i = 0; i < count; i++)
             {
                 var prefab = prefabs[Random.Range(0, prefabs.Count)];
@@ -184,7 +206,7 @@ namespace Moodium.CandyWorld
                     Debug.Log($"[Nature Burst Debug][Before Instantiate] Prefab={prefab.name}; RootScale={prefab.transform.localScale}; Origin={origin}.");
                 var instance = Instantiate(prefab, origin, Random.rotation);
                 instance.name = $"{prefab.name} (Reality Capsule Burst Mini)";
-                var useNatureCompatibility = ShouldApplyNatureBurstCompatibility(
+                var useNatureCompatibility = !contactBurst && ShouldApplyNatureBurstCompatibility(
                     m_UseNaturePrefabs, m_EnableLegacyNatureBurstCompatibility, pureNatureDebug);
                 if (useNatureCompatibility)
                     ApplyNatureBurstMaterial(instance, prefab.name);
@@ -207,7 +229,13 @@ namespace Moodium.CandyWorld
                     previous.IgnoreCollisionsWith(projectile.Colliders);
                 }
                 m_ActiveProjectiles.Add(projectile);
+                if (contactBurst) { remaining--; m_ReservedContactCandies--; }
                 yield return new WaitForSeconds(m_SpawnInterval);
+            }
+            }
+            finally
+            {
+                m_ReservedContactCandies = Mathf.Max(0, m_ReservedContactCandies - remaining);
             }
         }
 

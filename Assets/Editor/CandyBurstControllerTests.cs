@@ -3,6 +3,40 @@ using NUnit.Framework;
 
 public sealed class CandyBurstControllerTests
 {
+    [TestCase(0,0,4,4)]
+    [TestCase(30,0,4,2)]
+    [TestCase(28,4,4,0)]
+    [TestCase(40,0,4,0)]
+    public void ContactBurstBudgetIncludesLiveAndNotYetSpawnedCandies(int live,int reserved,int requested,int expected)
+    {
+        var capacity=typeof(CandyBurstController).GetMethod("ContactBurstCapacity",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic);
+        Assert.That(capacity.Invoke(null,new object[]{live,reserved,requested}),Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void ContactBurstRejectsFullSharedPoolAndDisabledEmitter()
+    {
+        var host=new UnityEngine.GameObject("Candy emitter");var source=new UnityEngine.GameObject("Contact prop");
+        var prefab=new UnityEngine.GameObject("Star");
+        try
+        {
+            var emitter=host.AddComponent<CandyBurstController>();emitter.Configure(new[]{prefab});
+            var projectiles=(System.Collections.Generic.List<CandyProjectile>)typeof(CandyBurstController)
+                .GetField("m_ActiveProjectiles",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(emitter);
+            for(var i=0;i<32;i++)
+            {
+                var candy=new UnityEngine.GameObject("Existing candy");candy.transform.SetParent(source.transform);
+                projectiles.Add(candy.AddComponent<CandyProjectile>());
+            }
+            Assert.That(emitter.BurstAtContact(UnityEngine.Vector3.one,source.transform),Is.False);
+            projectiles.Clear();emitter.enabled=false;
+            Assert.That(emitter.BurstAtContact(UnityEngine.Vector3.one,source.transform),Is.False);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(host);UnityEngine.Object.DestroyImmediate(source);UnityEngine.Object.DestroyImmediate(prefab);
+        }
+    }
     [Test]
     public void NatureCandyPoolDiagnostic_UsesCandyPoolOnlyForNatureWorldWhenEnabled()
     {

@@ -26,7 +26,7 @@ public sealed class MoodiVoiceTests
     [Test]
     public void EveryLineHasAChineseAndAnEnglishClip()
     {
-        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(25));
+        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(28));
         foreach (var language in new[] { "zh", "en" })
         foreach (var id in MoodiVoice.AllIds)
         {
@@ -59,5 +59,34 @@ public sealed class MoodiVoiceTests
         Assert.That(voice.Say("A2"), Is.False, "teaching line repeats");
         MoodiVoice.MarkLearned("C1");
         Assert.That(voice.Say("C1"), Is.False, "learned teaching line still plays");
+    }
+
+    [Test]
+    public void StickerVoiceUsesSessionLanguageInsteadOfPlayerPreferences()
+    {
+        m_Host=new GameObject("Sticker Moodi");
+        var voice=m_Host.AddComponent<MoodiVoice>();
+        PlayerPrefs.SetString("Moodium.Language","Chinese");
+        voice.EnglishOverride=true;
+        var load=typeof(MoodiVoice).GetMethod("Load",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+        Assert.That(((AudioClip)load.Invoke(voice,new object[]{"S1c"})).name,Is.EqualTo("moodi_vo_S1c_en"));
+        voice.EnglishOverride=false;
+        Assert.That(((AudioClip)load.Invoke(voice,new object[]{"S1n"})).name,Is.EqualTo("moodi_vo_S1n_zh"));
+    }
+
+    [Test]
+    public void HidingOrStoppingMoodiCancelsItsDelayedInvitation()
+    {
+        m_Host=new GameObject("Sticker Moodi");var voice=m_Host.AddComponent<MoodiVoice>();
+        typeof(MoodiVoice).GetMethod("Awake",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(voice,null);
+        voice.SayAfter("S1c",0f);m_Host.SetActive(false);
+        // Ordinary MonoBehaviours do not receive OnDisable from EditMode tests.
+        typeof(MoodiVoice).GetMethod("OnDisable",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(voice,null);
+        m_Host.SetActive(true);
+        var update=typeof(MoodiVoice).GetMethod("Update",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+        update.Invoke(voice,null);
+        Assert.That(m_Host.GetComponent<AudioSource>().clip,Is.Null,"Hidden entry must discard the old invitation.");
+        voice.SayAfter("S1n",0f);voice.Stop();update.Invoke(voice,null);
+        Assert.That(m_Host.GetComponent<AudioSource>().clip,Is.Null,"Stop must cancel delayed speech too.");
     }
 }

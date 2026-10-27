@@ -75,6 +75,8 @@ namespace Moodium.Interaction
         float m_BaseY;
         bool m_Configured;
         MoodiumTouchAudio m_HoldAudio;
+        float m_ContactBurstCooldown;
+        public event System.Action<Vector3> ContactBurstRequested;
         const float CellSize = .1f;
 
         static Vector3Int Cell(Vector3 position) => Vector3Int.FloorToInt(position / CellSize);
@@ -243,6 +245,15 @@ namespace Moodium.Interaction
         {
             if (!m_Configured || deltaTime <= 0f) return;
             deltaTime = Mathf.Min(deltaTime, .05f);
+            m_ContactBurstCooldown = Mathf.Max(0f, m_ContactBurstCooldown - deltaTime);
+            if (m_ActiveContacts > 0 && m_ContactBurstCooldown <= 0f && ContactBurstRequested != null)
+            {
+                var strongest = m_Contacts[0];
+                for (var i = 1; i < m_ActiveContacts; i++)
+                    if (m_Contacts[i].Depth > strongest.Depth) strongest = m_Contacts[i];
+                m_ContactBurstCooldown = .8f;
+                ContactBurstRequested.Invoke(strongest.Point + strongest.Normal * .015f);
+            }
             foreach (var mesh in m_Meshes)
             {
                 if (m_ActiveContacts == 0 && !mesh.Moving) continue;
@@ -309,6 +320,7 @@ namespace Moodium.Interaction
             m_HoldAudio?.EndHold();
             m_HandSubsystem = null;
             m_ActiveContacts = 0;
+            m_ContactBurstCooldown = 0f;
             foreach (var mesh in m_Meshes)
             {
                 System.Array.Clear(mesh.Offsets, 0, mesh.Offsets.Length);

@@ -20,6 +20,8 @@ public sealed class MoodBandAssetPostprocessor : AssetPostprocessor
         { "wrist_chip_glass", new Vector4(48, 48, 48, 48) },
         { "wrist_chip_dark", new Vector4(48, 48, 48, 48) },
         { "wrist_chip_solid", new Vector4(48, 48, 48, 48) },
+        // v3 energy capsule: drawn at 2x (288 x 144, radius 72); the code sets pixelsPerUnitMultiplier = 2.
+        { "wrist_capsule_dark", new Vector4(72, 72, 72, 72) },
     };
 
     void OnPreprocessTexture()

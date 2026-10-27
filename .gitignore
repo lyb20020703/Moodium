@@ -40,3 +40,6 @@ sysinfo.txt
 crashlytics-build.properties
 mono_crash.*
 
+# Test runner output
+TestResults-*.xml
+

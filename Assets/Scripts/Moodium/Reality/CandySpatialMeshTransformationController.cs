@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using Moodium.Interaction;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -63,6 +64,8 @@ namespace Moodium.Reality
         Vector3 m_Origin;
         float m_Progress;
         bool m_Running;
+        readonly List<Vector3> m_UIVisibilityPoints = new();
+        float m_NextUIVisibilityCheck;
         CandyWrapperContactFeedback m_ContactFeedback;
         Vector3 m_ContactNormalA = Vector3.up;
         Vector3 m_ContactNormalB = Vector3.up;
@@ -188,6 +191,14 @@ namespace Moodium.Reality
             if (!m_Running || m_LevelMaterials == null)
                 return;
             UpdateSoftShellPresses();
+            // Native transparent sorting groups cannot order against other groups.
+            // Protect UI sightlines by hiding only the obstructing visual mesh chunks.
+            if (Time.unscaledTime >= m_NextUIVisibilityCheck)
+            {
+                m_NextUIVisibilityCheck = Time.unscaledTime + .2f;
+                RefreshUIVisibilityPoints();
+                ApplyToAllMeshes();
+            }
             if (m_CompletionFlashUntil > 0f && m_LevelColors != null)
             {
                 var remaining = Mathf.Clamp01((m_CompletionFlashUntil - Time.time) / .65f);
@@ -280,10 +291,51 @@ namespace Moodium.Reality
                 var level = Mathf.Clamp(
                     Mathf.RoundToInt(localProgress * (MaterialLevels - 1)), 0, MaterialLevels - 1);
                 entry.VisualRenderer.sharedMaterial = m_LevelMaterials[level];
-                entry.VisualRenderer.enabled = localProgress > 0.001f;
+                entry.VisualRenderer.enabled = localProgress > 0.001f && !ObscuresUI(entry);
             }
             foreach (var source in stale)
                 m_Overlays.Remove(source);
+        }
+
+        void RefreshUIVisibilityPoints()
+        {
+            m_UIVisibilityPoints.Clear();
+            foreach (var text in FindObjectsByType<TMP_Text>(FindObjectsSortMode.None))
+            {
+                if (!text.isActiveAndEnabled || text.color.a <= .01f || string.IsNullOrWhiteSpace(text.text))
+                    continue;
+                // Rect corners protect the full label, not just its pivot. Include
+                // Canvas-backed and 3D TMP labels used by the existing spatial UI.
+                var corners = new Vector3[4];
+                text.rectTransform.GetWorldCorners(corners);
+                var center = (corners[0] + corners[2]) * .5f;
+                m_UIVisibilityPoints.Add(center);
+                foreach (var corner in corners)
+                    m_UIVisibilityPoints.Add(Vector3.LerpUnclamped(center, corner, 1.15f));
+            }
+        }
+
+        bool ObscuresUI(OverlayEntry entry)
+        {
+            var camera = Camera.main;
+            if (camera == null || entry.SurfaceColliders == null) return false;
+            foreach (var point in m_UIVisibilityPoints)
+            {
+                if (Vector3.Dot(camera.transform.forward, point - camera.transform.position) <= 0f)
+                    continue;
+                foreach (var surface in entry.SurfaceColliders)
+                    if (BlocksUIPoint(surface, camera.transform.position, point)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Only suppress visual foil in front of UI; never modify the source collider.</summary>
+        public static bool BlocksUIPoint(Collider surface, Vector3 viewer, Vector3 uiPoint)
+        {
+            if (surface == null || !surface.enabled || !surface.gameObject.activeInHierarchy) return false;
+            var offset = uiPoint - viewer;
+            var distance = offset.magnitude;
+            return distance > .025f && surface.Raycast(new Ray(viewer, offset / distance), out _, distance + .015f);
         }
 
         void DisableAllOverlays()

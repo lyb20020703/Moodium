@@ -14,13 +14,14 @@ using Unity.XR.CoreUtils;
 namespace Moodium.CandyWorld
 {
     /// <summary>
-    /// Wrist UI v2 — "Mood Band".
+    /// Wrist UI v3 — "Mood Band" with a slim energy capsule.
     ///
     /// One slim glass bracelet hugs the wrist. Energy is a coloured light thread running inside the
     /// band across the back of the wrist; four gem sockets sit on the thread at 20/50/80/100%, so
-    /// progress and collected rewards read as one object. A small glass card (title, percentage,
-    /// gem dots, Release and Exit) appears only while the user looks at their wrist, and Exit needs
-    /// a second confirming press within a short window.
+    /// progress and collected rewards read as one object. While the user looks at their wrist a single
+    /// 18 mm row floats 28 mm above the band: [Release ◯] [energy capsule: percentage + 4 gift dots] [Exit ◯].
+    /// Exit leaves the world on one press (no confirmation); presses only count once the row has been
+    /// shown for m_ExitInputDelay seconds, so touching the band while raising the wrist does not exit.
     ///
     /// Drop-in replacement for the v1 component: class name, public events and the methods used by
     /// CandyWorldManager and the existing EditMode tests are unchanged.
@@ -32,7 +33,7 @@ namespace Moodium.CandyWorld
         static readonly float[] SocketProgressValues = { .2f, .5f, .8f, 1f };
         static readonly Color CandyRingColor = new(1f, 91f / 255f, 157f / 255f, 1f);
         static readonly Color NatureRingColor = new(141f / 255f, 220f / 255f, 135f / 255f, 1f);
-        static readonly Color ExitArmedTint = new(1f, .78f, .45f, .92f);
+        static readonly Color ReleaseOnIconColor = new(.11f, .09f, .14f, 1f);
 
         [Header("Band (metres, wrist-local)")]
         [Tooltip("Offset from the wrist joint. +Y runs along the forearm towards the fingers.")]
@@ -59,15 +60,19 @@ namespace Moodium.CandyWorld
         [SerializeField, Range(.1f,.8f)] float m_RaisedWristDrop = .45f;
         [SerializeField, Range(0f,1f)] float m_DorsalFacingDot = .25f;
         [SerializeField, Range(0f, 2f)] float m_MinCardSeconds = .6f;
-        [Tooltip("Height of the card centre above the top of the band, in metres.")]
-        [SerializeField, Range(.03f, .15f)] float m_CardLift = .072f;
+        [Tooltip("Height of the row centre above the top of the band, in metres.")]
+        [SerializeField, Range(.015f, .15f)] float m_CardLift = .028f;
 
         [Header("Exit")]
-        [SerializeField, Range(1f, 5f)] float m_ExitConfirmWindow = 2f;
+        [Tooltip("Exit leaves on one press, but only after the row has been visible this long (seconds).")]
+        [SerializeField, Range(0f, 1f)] float m_ExitInputDelay = .35f;
 
         const float CanvasScale = .00025f;   // 1 canvas unit = 0.25 mm
-        const float CardWidth = 420f;
-        const float CardHeight = 236f;
+        public const float RowHeight = 72f;     // 18 mm
+        public const float CapsuleWidth = 184f; // 46 mm
+        public const float CircleSize = 72f;    // 18 mm
+        public const float RowGap = 10f;        // 2.5 mm
+        public const float HitPadding = 16f;    // 4 mm extra on every side of a round button
 
         Camera m_Camera;
         XRHandSubsystem m_HandSubsystem;
@@ -89,27 +94,21 @@ namespace Moodium.CandyWorld
 
         RectTransform m_CardRect;
         CanvasGroup m_CardGroup;
-        Image m_CardMoodi;
-        TMP_Text m_Title;
-        TMP_Text m_Subtitle;
+        RectTransform m_Capsule;
         TMP_Text m_Percentage;
         readonly Image[] m_GemDots = new Image[4];
         GameObject m_ReleaseButtonRoot;
         Image m_ReleaseChip;
-        Image m_ReleaseKnob;
-        TMP_Text m_ReleaseLabel;
+        Image m_ReleaseIcon;
         GameObject m_ExitButtonRoot;
         Image m_ExitChip;
         Image m_ExitIcon;
-        Image m_ExitCountdown;
-        TMP_Text m_ExitLabel;
 
         RectTransform m_ToastRect;
         CanvasGroup m_ToastGroup;
         TMP_Text m_ToastLabel;
         float m_ToastUntil;
 
-        WristExitConfirmation m_ExitConfirmation;
         float m_TargetProgress;
         float m_DisplayedProgress;
         float m_TargetEnergy;
@@ -147,6 +146,15 @@ namespace Moodium.CandyWorld
             return (Mathf.Max(0f, ringRadius) + Mathf.Max(0f, ringThickness) * .5f + Mathf.Max(0f, clearance)) /
                    Mathf.Max(.000001f, canvasScale);
         }
+
+        /// <summary>Width of the row (canvas units) for the buttons that are shown.</summary>
+        public static float RowWidth(bool release, bool exit) =>
+            CapsuleWidth + (release ? CircleSize + RowGap : 0f) + (exit ? CircleSize + RowGap : 0f);
+
+        /// <summary>One press exits, but only on a visible, tracked, settled row.</summary>
+        public static bool CanPressExit(bool available, bool handTracked, bool inputReady, float glance,
+            float shownSeconds, float inputDelay) =>
+            available && handTracked && inputReady && glance >= .5f && shownSeconds >= inputDelay;
 
         public static string GetExitButtonLabel(bool english) => english ? "Exit World" : "退出世界";
         public static string GetExitConfirmLabel(bool english) => english ? "Tap again to exit" : "再点一次退出";
@@ -206,7 +214,6 @@ namespace Moodium.CandyWorld
             m_Font = font;
             m_FallbackRounded = roundedSprite;
             m_FallbackCircle = circleSprite;
-            m_ExitConfirmation = new WristExitConfirmation(m_ExitConfirmWindow);
             m_Sorting=gameObject.AddComponent<VisionOSSortingGroup>();
             BuildBand();
             BuildCard();
@@ -238,7 +245,6 @@ namespace Moodium.CandyWorld
         public void SetExitAvailable(bool available)
         {
             m_ExitAvailable = available;
-            if(!available)m_ExitConfirmation?.Reset();
             if (m_ExitButtonRoot != null) m_ExitButtonRoot.SetActive(available);
             LayoutButtons();
             RefreshTexts();
@@ -265,7 +271,6 @@ namespace Moodium.CandyWorld
                 m_CollectedGems = 0;
                 System.Array.Clear(m_SocketFlash,0,m_SocketFlash.Length);
                 m_DisplayedProgress=m_TargetProgress;m_DisplayedEnergy=m_TargetEnergy;m_LastThreadProgress=-1;
-                m_ExitConfirmation?.Reset();
             }
             if (!m_Completed && m_TargetProgress >= 1f)
             {
@@ -306,7 +311,6 @@ namespace Moodium.CandyWorld
             UpdateGlance(dt);
             UpdateProgressAnimation(dt);
             UpdateCardAndToast(dt);
-            UpdateExitConfirmation();
             ApplyColors();
         }
 
@@ -386,10 +390,8 @@ namespace Moodium.CandyWorld
             }
             // Input closes immediately; the minimum display time only holds the visual.
             m_InputReady=glancing;
-            if(!m_InputReady)m_ExitConfirmation?.Reset();
             if (glancing && !m_Glancing) m_GlanceSince = Time.time;
             if (HandTracked&&!glancing && m_Glancing && Time.time - m_GlanceSince < m_MinCardSeconds) glancing = true;
-            if (!glancing && m_Glancing) m_ExitConfirmation?.Reset();
             m_Glancing = glancing;
             m_Glance = Mathf.MoveTowards(m_Glance, glancing ? 1f : 0f, dt / (glancing ? .22f : .18f));
         }
@@ -443,33 +445,11 @@ namespace Moodium.CandyWorld
             m_BandRoot.localScale = Vector3.one * Mathf.Lerp(1f, 1.1f, m_Glance);
         }
 
-        void UpdateExitConfirmation()
-        {
-            if (m_ExitConfirmation == null || m_ExitChip == null) return;
-            var armed = m_ExitConfirmation.IsArmed(Time.time);
-            m_ExitCountdown.gameObject.SetActive(armed);
-            m_ExitIcon.gameObject.SetActive(!armed);
-            if (armed)
-            {
-                // WristExitConfirmation does not expose its deadline; track it from the press time.
-                var remaining = Mathf.Clamp01(1f - (Time.time - m_ExitArmedAt) / m_ExitConfirmWindow);
-                m_ExitCountdown.fillAmount = remaining;
-            }
-            var label = armed ? GetExitConfirmLabel(IsEnglish()) : GetExitButtonLabel(IsEnglish());
-            if (m_ExitLabel.text != label) m_ExitLabel.text = label;
-        }
-
-        float m_ExitArmedAt;
-
         void PressExit()
         {
-            if (!m_ExitAvailable || m_ExitConfirmation == null || !HandTracked||!m_InputReady||m_Glance < .5f) return;
-            if (m_ExitConfirmation.Press(Time.time))
-            {
-                ExitPressed?.Invoke();
+            if (!CanPressExit(m_ExitAvailable, HandTracked, m_InputReady, m_Glance, Time.time - m_GlanceSince, m_ExitInputDelay))
                 return;
-            }
-            m_ExitArmedAt = Time.time;
+            ExitPressed?.Invoke();
         }
 
         void PressRelease()
@@ -515,42 +495,24 @@ namespace Moodium.CandyWorld
 
             if (m_ReleaseChip != null)
             {
-                m_ReleaseChip.sprite = LoadSprite(m_ReleaseEnabled ? "wrist_chip_solid" : "wrist_chip_glass", m_FallbackRounded);
-                m_ReleaseChip.color = m_ReleaseEnabled ? new Color(accent.r, accent.g, accent.b, .92f) : Color.white;
-                var knob = (RectTransform)m_ReleaseKnob.transform;
-                knob.anchoredPosition = new Vector2(m_ReleaseEnabled ? -24f : -44f, 0f);
-                m_ReleaseLabel.color = m_ReleaseEnabled ? new Color(.1f, .08f, .14f, 1f) : Color.white;
+                // Off: dark solid circle, white icon. On: world-colour circle, dark icon.
+                m_ReleaseChip.sprite = LoadSprite(m_ReleaseEnabled ? "wrist_circle_light" : "wrist_circle_dark", m_FallbackCircle);
+                m_ReleaseChip.color = m_ReleaseEnabled ? accent : Color.white;
+                if (m_ReleaseIcon != null) m_ReleaseIcon.color = m_ReleaseEnabled ? ReleaseOnIconColor : Color.white;
             }
             if (m_ExitChip != null)
             {
-                var armed = m_ExitConfirmation != null && m_ExitConfirmation.IsArmed(Time.time);
-                m_ExitChip.sprite = LoadSprite(armed ? "wrist_chip_solid" : "wrist_chip_glass", m_FallbackRounded);
-                m_ExitChip.color = armed ? ExitArmedTint : Color.white;
-                m_ExitLabel.color = armed ? new Color(.25f, .14f, .04f, 1f) : Color.white;
+                m_ExitChip.sprite = LoadSprite("wrist_circle_dark", m_FallbackCircle);
+                m_ExitChip.color = Color.white;
                 m_ExitIcon.color = Color.white;
             }
-            if (m_CardMoodi != null)
-                m_CardMoodi.sprite = LoadSprite(m_DisplayedProgress >= .5f ? "moodi_happy" : "moodi_calm", m_FallbackCircle);
         }
 
         void RefreshTexts()
         {
-            var english = IsEnglish();
-            if (m_Title != null) m_Title.text = GetWorldEnergyTitle(m_NatureWorld, english);
-            if (m_Subtitle != null) m_Subtitle.text = m_CollectedGems>0?GetNextGiftLabel(m_CollectedGems,english):
-                (english?$"Energy stages · {ReachedSockets()}/4":$"能量阶段 · {ReachedSockets()}/4");
-            if (m_ReleaseLabel != null) m_ReleaseLabel.text = GetReleaseToggleLabel(m_ReleaseEnabled, english);
-            if (m_ExitLabel != null) m_ExitLabel.text = m_ExitConfirmation!=null&&m_ExitConfirmation.IsArmed(Time.time)?GetExitConfirmLabel(english):GetExitButtonLabel(english);
-            var rainIcon = m_ReleaseButtonRoot != null ? m_ReleaseButtonRoot.transform.Find("Icon")?.GetComponent<Image>() : null;
-            if (rainIcon != null) rainIcon.sprite = LoadSprite(m_NatureWorld ? "icon_rain_nature" : "icon_rain_candy", m_FallbackCircle);
-        }
-
-        int ReachedSockets()
-        {
-            var count = 0;
-            foreach (var p in SocketProgressValues)
-                if (m_TargetProgress >= p - .0005f) count++;
-            return count;
+            // v3 shows no words on the wrist: the percentage and dots are language-free, the buttons are icons.
+            // The localized helpers (GetWorldEnergyTitle, GetExitButtonLabel, ...) stay public for other UI and tests.
+            if (m_ReleaseIcon != null) m_ReleaseIcon.sprite = LoadSprite(m_NatureWorld ? "icon_rain_nature" : "icon_rain_candy", m_FallbackCircle);
         }
 
         static bool IsEnglish() =>
@@ -733,7 +695,7 @@ namespace Moodium.CandyWorld
                 typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
             canvasObject.transform.SetParent(transform, false);
             m_CardRect = (RectTransform)canvasObject.transform;
-            m_CardRect.sizeDelta = new Vector2(CardWidth, CardHeight);
+            m_CardRect.sizeDelta = new Vector2(RowWidth(false, false), RowHeight);
             m_CardRect.localScale = Vector3.one * CanvasScale;
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
@@ -743,95 +705,70 @@ namespace Moodium.CandyWorld
             m_CardGroup.alpha = 0f;
             m_CardGroup.blocksRaycasts=false;
 
-            var background = CreateImage("Card Glass", m_CardRect, Vector2.zero, new Vector2(CardWidth, CardHeight),
-                LoadSprite("wrist_card_glass", m_FallbackRounded), Color.white);
-            background.type = Image.Type.Sliced;
-
-            m_CardMoodi = CreateImage("Moodi", m_CardRect, new Vector2(-162f, 66f), new Vector2(60f, 60f),
-                LoadSprite("moodi_calm", m_FallbackCircle), Color.white);
-            m_CardMoodi.preserveAspect = true;
-            m_Title = CreateText("Title", m_CardRect, new Vector2(-40f, 80f), new Vector2(180f, 34f), 26f, TextAlignmentOptions.Left, Color.white);
-            m_Title.fontStyle = FontStyles.Bold;
-            m_Title.enableAutoSizing=true;m_Title.fontSizeMin=18;m_Title.fontSizeMax=26;
-            m_Title.textWrappingMode=TextWrappingModes.NoWrap;
-            m_Subtitle = CreateText("Subtitle", m_CardRect, new Vector2(-40f, 50f), new Vector2(180f, 26f), 17f, TextAlignmentOptions.Left, new Color(1f, 1f, 1f, .72f));
-            m_Percentage = CreateText("Percentage", m_CardRect, new Vector2(140f, 66f), new Vector2(120f, 56f), 40f, TextAlignmentOptions.Right, Color.white);
+            // Energy capsule: percentage on the left, four gift dots on the right.
+            var capsule = CreateImage("Energy Capsule", m_CardRect, Vector2.zero, new Vector2(CapsuleWidth, RowHeight),
+                LoadSprite("wrist_capsule_dark", m_FallbackRounded), Color.white);
+            capsule.type = Image.Type.Sliced;
+            capsule.pixelsPerUnitMultiplier = 2f; // the sprite is drawn at 2x
+            m_Capsule = (RectTransform)capsule.transform;
+            m_Percentage = CreateText("Percentage", m_Capsule, new Vector2(-CapsuleWidth * .5f + 22f + 40f, 0f),
+                new Vector2(80f, RowHeight), 26f, TextAlignmentOptions.Left, Color.white);
             m_Percentage.fontStyle = FontStyles.Bold;
-
+            m_Percentage.enableAutoSizing = true; m_Percentage.fontSizeMin = 18; m_Percentage.fontSizeMax = 26;
+            m_Percentage.textWrappingMode = TextWrappingModes.NoWrap;
             for (var i = 0; i < m_GemDots.Length; i++)
-                m_GemDots[i] = CreateImage($"Gem Dot {i + 1}", m_CardRect, new Vector2(-51f + i * 34f, 4f), new Vector2(22f, 22f),
+                m_GemDots[i] = CreateImage($"Gem Dot {i + 1}", m_Capsule,
+                    new Vector2(CapsuleWidth * .5f - 25f - (m_GemDots.Length - 1 - i) * 17f, 0f), new Vector2(10f, 10f),
                     LoadSprite("wrist_gem_dot_empty", m_FallbackCircle), Color.white);
 
-            m_ReleaseButtonRoot = CreateChip("Release Button", new Vector2(208f, 64f), out m_ReleaseChip, out var releaseIcon, out m_ReleaseLabel);
-            releaseIcon.sprite = LoadSprite("icon_rain_candy", m_FallbackCircle);
-            ((RectTransform)releaseIcon.transform).anchoredPosition=new Vector2(-86f,0);
-            m_ReleaseLabel.rectTransform.anchoredPosition=new Vector2(-16f,0);
-            m_ReleaseLabel.rectTransform.sizeDelta=new Vector2(102f,64f);
-            m_ReleaseLabel.enableAutoSizing=true;m_ReleaseLabel.fontSizeMin=12;m_ReleaseLabel.fontSizeMax=17;
-            m_ReleaseLabel.textWrappingMode=TextWrappingModes.NoWrap;
-            m_ReleaseKnob = CreateImage("Toggle Knob", m_ReleaseButtonRoot.transform, new Vector2(-26f, 0f), new Vector2(40f, 40f),
-                LoadSprite("wrist_toggle_knob", m_FallbackCircle), Color.white);
-            var knobRect = (RectTransform)m_ReleaseKnob.transform;
-            knobRect.anchorMin = knobRect.anchorMax = new Vector2(1f, .5f);
-            m_ReleaseButtonRoot.AddComponent<MoodiumSpatialButton>().Configure(m_ReleaseLabel, null, PressRelease);
+            m_ReleaseButtonRoot = CreateCircleButton("Release Button", out m_ReleaseChip, out m_ReleaseIcon);
+            m_ReleaseIcon.sprite = LoadSprite("icon_rain_candy", m_FallbackCircle);
+            m_ReleaseButtonRoot.AddComponent<MoodiumSpatialButton>().Configure(null, null, PressRelease);
             m_ReleaseButtonRoot.SetActive(false);
 
-            m_ExitButtonRoot = CreateChip("Exit World Button", new Vector2(168f, 64f), out m_ExitChip, out m_ExitIcon, out m_ExitLabel);
+            m_ExitButtonRoot = CreateCircleButton("Exit World Button", out m_ExitChip, out m_ExitIcon);
             m_ExitIcon.sprite = LoadSprite("icon_exit", m_FallbackCircle);
-            m_ExitLabel.enableAutoSizing=true;m_ExitLabel.fontSizeMin=12;m_ExitLabel.fontSizeMax=20;
-            m_ExitLabel.textWrappingMode=TextWrappingModes.NoWrap;
-            m_ExitCountdown = CreateImage("Countdown", m_ExitButtonRoot.transform, new Vector2(-56f, 0f), new Vector2(32f, 32f),
-                LoadSprite("wrist_countdown_ring", m_FallbackCircle), new Color(.25f, .14f, .04f, 1f));
-            m_ExitCountdown.type = Image.Type.Filled;
-            m_ExitCountdown.fillMethod = Image.FillMethod.Radial360;
-            m_ExitCountdown.fillOrigin = (int)Image.Origin360.Top;
-            m_ExitCountdown.fillClockwise = false;
-            m_ExitCountdown.gameObject.SetActive(false);
-            m_ExitButtonRoot.AddComponent<MoodiumSpatialButton>().Configure(m_ExitLabel, null, PressExit);
+            m_ExitButtonRoot.AddComponent<MoodiumSpatialButton>().Configure(null, null, PressExit);
             m_ExitButtonRoot.SetActive(false);
             LayoutButtons();
         }
 
-        GameObject CreateChip(string objectName, Vector2 size, out Image chip, out Image icon, out TMP_Text label)
+        GameObject CreateCircleButton(string objectName, out Image circle, out Image icon)
         {
             var root = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(BoxCollider));
             root.transform.SetParent(m_CardRect, false);
             var rect = (RectTransform)root.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
-            rect.sizeDelta = size;
-            chip = root.GetComponent<Image>();
-            chip.sprite = LoadSprite("wrist_chip_glass", m_FallbackRounded);
-            chip.type = Image.Type.Sliced;
-            chip.raycastTarget = false;
-            root.GetComponent<BoxCollider>().size = new Vector3(size.x + 16f, size.y + 16f, 24f);
-            root.GetComponent<BoxCollider>().enabled=false;
-            root.AddComponent<VisionOSHoverEffect>().Type=VisionOSHoverEffect.EffectType.Highlight;
-            icon = CreateImage("Icon", root.transform, new Vector2(-size.x * .5f + 36f, 0f), new Vector2(30f, 30f), null, Color.white);
-            label = CreateText("Label", root.transform, new Vector2(14f, 0f), new Vector2(size.x - 64f, size.y), 20f, TextAlignmentOptions.Center, Color.white);
+            rect.sizeDelta = new Vector2(CircleSize, CircleSize);
+            circle = root.GetComponent<Image>();
+            circle.sprite = LoadSprite("wrist_circle_dark", m_FallbackCircle);
+            circle.preserveAspect = true;
+            circle.raycastTarget = false;
+            var collider = root.GetComponent<BoxCollider>();
+            collider.size = new Vector3(CircleSize + HitPadding * 2f, CircleSize + HitPadding * 2f, 24f);
+            collider.enabled = false;
+            root.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
+            icon = CreateImage("Icon", root.transform, Vector2.zero, new Vector2(30f, 30f), null, Color.white);
+            icon.preserveAspect = true;
             return root;
         }
 
+        /// <summary>[Release] [Capsule] [Exit], centred; buttons that are not available take no space.</summary>
         void LayoutButtons()
         {
-            if (m_ExitButtonRoot == null || m_ReleaseButtonRoot == null) return;
-            var exitRect = (RectTransform)m_ExitButtonRoot.transform;
-            var releaseRect = (RectTransform)m_ReleaseButtonRoot.transform;
-            if (m_ReleaseAvailable)
+            if (m_CardRect == null || m_Capsule == null) return;
+            var width = RowWidth(m_ReleaseAvailable, m_ExitAvailable);
+            m_CardRect.sizeDelta = new Vector2(width, RowHeight);
+            var x = -width * .5f;
+            if (m_ReleaseAvailable && m_ReleaseButtonRoot != null)
             {
-                releaseRect.anchoredPosition = new Vector2(-92f, -74f);
-                exitRect.sizeDelta = new Vector2(168f, 64f);
-                exitRect.anchoredPosition = new Vector2(112f, -74f);
+                ((RectTransform)m_ReleaseButtonRoot.transform).anchoredPosition = new Vector2(x + CircleSize * .5f, 0f);
+                x += CircleSize + RowGap;
             }
-            else
-            {
-                exitRect.sizeDelta = new Vector2(236f, 64f);
-                exitRect.anchoredPosition = new Vector2(0f, -74f);
-            }
-            exitRect.GetComponent<BoxCollider>().size = new Vector3(exitRect.sizeDelta.x + 16f, exitRect.sizeDelta.y + 16f, 24f);
-            var exitIconRect = (RectTransform)m_ExitIcon.transform;
-            exitIconRect.anchoredPosition = new Vector2(-exitRect.sizeDelta.x * .5f + 36f, 0f);
-            ((RectTransform)m_ExitCountdown.transform).anchoredPosition = exitIconRect.anchoredPosition;
-            ((RectTransform)m_ExitLabel.transform).sizeDelta = new Vector2(exitRect.sizeDelta.x - 64f, 64f);
+            m_Capsule.anchoredPosition = new Vector2(x + CapsuleWidth * .5f, 0f);
+            x += CapsuleWidth + RowGap;
+            if (m_ExitAvailable && m_ExitButtonRoot != null)
+                ((RectTransform)m_ExitButtonRoot.transform).anchoredPosition = new Vector2(x + CircleSize * .5f, 0f);
         }
 
         void SetButtonsInteractable(bool interactable)
@@ -914,7 +851,7 @@ namespace Moodium.CandyWorld
         }
         void OnDisable()
         {
-            m_ExitConfirmation?.Reset();m_InputReady=m_Glancing=HandTracked=false;m_Glance=m_VisualAlpha=0;
+            m_InputReady=m_Glancing=HandTracked=false;m_Glance=m_VisualAlpha=0;
             m_ToastUntil=0;
             if(m_CardGroup!=null){m_CardGroup.alpha=0;m_CardGroup.blocksRaycasts=false;}
             if(m_ToastGroup!=null)m_ToastGroup.alpha=0;

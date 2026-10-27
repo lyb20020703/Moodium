@@ -37,6 +37,11 @@ namespace Moodium.Flow
         [SerializeField] float m_ButtonLocalForwardOffset = -0.03f;
 
         readonly Dictionary<TrackableId, StickerWorldEntry> m_Entries = new();
+        // Moodi's spoken invitation when a world entry appears (voice lines S1c / S1n / S2).
+        readonly Dictionary<string, float> m_LastMoodiInvite = new();
+        float m_LastAnyMoodiInvite = -100f;
+        public const float MoodiInviteGap = 4f;
+        public const float MoodiInviteWorldCooldown = 20f;
         OpeningVideoSession m_Session;
         TextMeshPro m_Instruction;
         MoodiumSpatialButton m_MoodCheckButton;
@@ -65,6 +70,19 @@ namespace Moodium.Flow
         public GameObject NatureWorldUiPrefab => m_NatureWorldUiPrefab;
         public Vector3 EntryLocalPosition => m_EntryLocalPosition;
         public MoodiumSpatialButton MoodCheckButton => m_MoodCheckButton;
+
+        /// <summary>Line Moodi says when a world entry appears: the recommendation for the recommended world,
+        /// otherwise the world's own invitation.</summary>
+        public static string MoodiInviteLine(string worldId, string recommendedWorldId)
+        {
+            if (!string.IsNullOrEmpty(recommendedWorldId) &&
+                string.Equals(worldId, recommendedWorldId, StringComparison.OrdinalIgnoreCase)) return "S2";
+            return string.Equals(worldId, "candy", StringComparison.OrdinalIgnoreCase) ? "S1c" : "S1n";
+        }
+
+        /// <summary>At most one Moodi speaks every few seconds, and the same world waits longer before repeating.</summary>
+        public static bool CanMoodiInvite(float now, float lastAny, float lastThisWorld, bool ignoreWorldCooldown = false) =>
+            now - lastAny >= MoodiInviteGap && (ignoreWorldCooldown || now - lastThisWorld >= MoodiInviteWorldCooldown);
 
         public static Vector3 GetCompensatedLocalScale(float targetWorldScale, Vector3 parentScale) => new(
             SafeScaleDivide(targetWorldScale, parentScale.x),
@@ -242,8 +260,10 @@ namespace Moodium.Flow
                 return;
             }
 
+            var appeared = false;
             if (!m_Entries.TryGetValue(trackableId, out var entry) || entry.Root == null)
             {
+                appeared = true;
                 var root = Instantiate(prefab, anchor);
                 root.name = $"Sticker World Entry - {world.DisplayName}";
                 root.transform.localPosition = m_EntryLocalPosition;
@@ -269,7 +289,26 @@ namespace Moodium.Flow
                 follower.Configure(anchor, m_EntryLocalPosition, m_EntryLocalScale);
             }
 
+            if (!entry.Root.activeSelf) appeared = true;
             entry.Root.SetActive(true);
+            if (appeared) MoodiSays(entry, MoodiInviteLine(entry.World != null ? entry.World.WorldId : null, m_RecommendedWorldId), false);
+        }
+
+        void MoodiSays(StickerWorldEntry entry, string lineId, bool ignoreWorldCooldown)
+        {
+            if (entry?.Root == null || string.IsNullOrEmpty(lineId)) return;
+            var key = entry.World != null && entry.World.WorldId != null ? entry.World.WorldId : entry.ReferenceImageName ?? "";
+            if (!m_LastMoodiInvite.TryGetValue(key, out var last)) last = -100f;
+            var now = Time.time;
+            if (!CanMoodiInvite(now, m_LastAnyMoodiInvite, last, ignoreWorldCooldown)) return;
+            var moodi = entry.Root.GetComponentInChildren<Moodium.Characters.MoodiCompanionAnimator>(true);
+            if (moodi == null) return;
+            if (!moodi.TryGetComponent(out Moodium.Characters.MoodiVoice voice))
+                voice = moodi.gameObject.AddComponent<Moodium.Characters.MoodiVoice>();
+            voice.EnglishOverride = m_English;
+            voice.SayAfter(lineId, .6f); // let the entry appear and Moodi start its wave first
+            m_LastAnyMoodiInvite = now;
+            m_LastMoodiInvite[key] = now;
         }
 
         public StickerWorldEntry GetEntry(TrackableId trackableId)
@@ -434,6 +473,7 @@ namespace Moodium.Flow
             tag.AddComponent<MoodRecommendationTagPulse>();
             var moodi=entry.Root.GetComponentInChildren<Moodium.Characters.MoodiCompanionAnimator>(true);
             if(moodi!=null)moodi.PlayHappy();
+            MoodiSays(entry, "S2", true);
         }
 
         string ShortMoodName(MoodKind mood)

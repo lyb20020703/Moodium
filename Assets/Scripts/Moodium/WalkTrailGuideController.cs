@@ -135,6 +135,8 @@ namespace Moodium.NatureWorld
             m_Ring = Sprite("walk_floor_ring", .6f, true);
             m_Invite = Sprite($"walk_floor_invite_{World}_{Language}", .6f, true, false);
             m_Glow = Sprite("walk_guide_glow", .14f, false);
+            // Keep the legacy node for existing layout code, but never render a halo.
+            m_Glow.enabled = false;
             m_Guide = new GameObject("Walking Light Guide").transform;
             m_Guide.SetParent(m_Root, false);
             if (guidePrefab != null)
@@ -618,7 +620,7 @@ namespace Moodium.NatureWorld
             var bounds = new Bounds(visual.transform.position, Vector3.zero);
             foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
             var size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-            if (size > .0001f) visual.transform.localScale *= .04f / size;
+            if (size > .0001f) visual.transform.localScale *= .20f / size;
         }
 
         void CreateLollipop(Vector3 position, Transform garden, int index)

@@ -289,6 +289,7 @@ namespace Moodium.CandyWorld
                     m_SpatialMeshManager, m_CandyCompletionHousePrefab, m_CandyLittleCompletionHousePrefab,
                     m_RewardTouchSound);
                 m_CandyCompletionHouse.ConfigureDeformationSound(m_CandyPrefabDeformationSound);
+                m_CandyCompletionHouse.ConfigureContactBursts(m_BurstController);
                 GameObject honeyJar = null;
                 if (world != null && world.Prefabs != null)
                     foreach (var prefab in world.Prefabs)

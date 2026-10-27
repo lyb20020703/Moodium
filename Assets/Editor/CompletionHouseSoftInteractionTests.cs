@@ -6,6 +6,36 @@ using UnityEngine;
 
 public sealed class CompletionHouseSoftInteractionTests
 {
+    [TestCase(0f)]
+    [TestCase(20f)]
+    public void CandyBurstUsesRealSurfaceContactAndIsThrottledWhileHeld(float tilt)
+    {
+        CreatePatch("Roof",0f);
+        m_House.transform.SetPositionAndRotation(new Vector3(2,0,3),Quaternion.Euler(tilt,35,0));
+        m_House.transform.localScale=new Vector3(2,1,3);
+        var soft=m_House.AddComponent<CompletionHouseSoftInteraction>();soft.Configure();Physics.SyncTransforms();
+        var burstEvent=typeof(CompletionHouseSoftInteraction).GetEvent("ContactBurstRequested");
+        Assert.That(burstEvent,Is.Not.Null,"The existing actual surface contact must drive candy emission.");
+        var emitted=new System.Collections.Generic.List<Vector3>();
+        System.Action<Vector3> handler=point=>emitted.Add(point);burstEvent.AddEventHandler(soft,handler);
+        Press(soft,new[]{new Vector3(20,20,20)},1);
+        Assert.That(emitted,Is.Empty);
+        var fingertips=new[]{m_House.transform.TransformPoint(new Vector3(0,.49f,0)),m_House.transform.TransformPoint(new Vector3(.03f,.49f,0))};
+        Press(soft,fingertips,1);
+        Assert.That(emitted.Count,Is.EqualTo(1));
+        var expected=m_House.transform.TransformPoint(new Vector3(0,.5f,0))+m_House.transform.up*.015f;
+        // The existing contact solver casts along six world axes, so a sloped roof
+        // can land a few millimetres sideways from the perpendicular projection.
+        Assert.That(Vector3.Distance(emitted[0],expected),Is.LessThan(.01f),"Surface plus a small outward offset, not root center or finger depth.");
+        Assert.That(Vector3.Dot(emitted[0]-m_House.transform.TransformPoint(new Vector3(0,.5f,0)),m_House.transform.up),
+            Is.EqualTo(.015f).Within(.0002f),"Emission offset follows the tilted surface normal.");
+        Press(soft,fingertips,20);
+        Assert.That(emitted.Count,Is.EqualTo(1),"Multiple fingertips must not create a burst every frame.");
+        Press(soft,fingertips,60);
+        Assert.That(emitted.Count,Is.InRange(2,3));
+        var before=emitted.Count;Press(soft,new Vector3[0],120);
+        Assert.That(emitted.Count,Is.EqualTo(before),"No candy after release.");
+    }
     GameObject m_House;
     Mesh m_Source;
 
@@ -106,13 +136,19 @@ public sealed class CompletionHouseSoftInteractionTests
 
     [TestCase("Assets/prefab/CandyHouse.prefab")]
     [TestCase("Assets/prefab/CandyLittleHouse.prefab")]
+    [TestCase("Assets/prefab/Honey Jar.prefab")]
     public void ActualHousePrefabDeformsItsVisibleMeshAtItsAuthoredScale(string path)
     {
         m_House = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path));
         m_House.transform.localScale *= 3f;
         var soft = m_House.GetComponent<CompletionHouseSoftInteraction>();
+        // Honey Jar is upgraded by CandyCompletionHouseController.SpawnHouse at runtime.
+        if (soft == null && path == "Assets/prefab/Honey Jar.prefab")
+            soft = m_House.AddComponent<CompletionHouseSoftInteraction>();
         Assert.That(soft, Is.Not.Null, "Prefab settings must be editable before entering Play mode.");
         soft.Configure();
+        var bursts=new System.Collections.Generic.List<Vector3>();
+        soft.ContactBurstRequested+=point=>bursts.Add(point);
         Physics.SyncTransforms();
         var renderer = m_House.GetComponentInChildren<MeshRenderer>();
         var surface = m_House.GetComponentInChildren<MeshCollider>();
@@ -124,6 +160,8 @@ public sealed class CompletionHouseSoftInteractionTests
         var scale = m_House.transform.localScale;
         var timer = System.Diagnostics.Stopwatch.StartNew();
         Press(soft, new[] { hit.point - hit.normal * .015f });
+        Assert.That(bursts.Count,Is.EqualTo(1));
+        Assert.That(Vector3.Distance(bursts[0],hit.point),Is.LessThan(.04f),"Real assets emit at the touched surface, not their pivot.");
         timer.Stop();
         var deformed = filter.sharedMesh.vertices;
         var displaced = 0;

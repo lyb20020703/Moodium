@@ -33,6 +33,9 @@ namespace Moodium.CandyWorld
         GameObject m_HouseInstance;
         GameObject m_LittleHouseInstance;
         bool m_Started;
+        CandyBurstController m_ContactBursts;
+
+        public void ConfigureContactBursts(CandyBurstController bursts) => m_ContactBursts = bursts;
 
         public static Vector2 GetViewerRelativeSpawnOffset() => ViewerRelativeSpawnOffset;
         public static float GetHouseScaleMultiplier() => HouseScaleMultiplier;
@@ -112,6 +115,11 @@ namespace Moodium.CandyWorld
                 softInteraction = instance.AddComponent<CompletionHouseSoftInteraction>();
             softInteraction.Configure();
             softInteraction.ConfigureHoldSound(m_DeformationSound);
+            softInteraction.ContactBurstRequested += point =>
+            {
+                if (m_Started && m_ContactBursts != null && instance != null)
+                    m_ContactBursts.BurstAtContact(point, instance.transform);
+            };
             return instance;
         }
 

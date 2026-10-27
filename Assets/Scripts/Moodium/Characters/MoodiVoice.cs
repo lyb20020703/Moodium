@@ -15,6 +15,7 @@ namespace Moodium.Characters
     /// - Some lines have their own cooldown (C5 20 s, D5 15 s, E1 60 s).
     /// - Variant groups (B1, C2, D4) pick a random line and never repeat the previous pick.
     /// The voice comes from Moodi's own position (3D AudioSource).
+    /// S1c / S1n / S2 are said by the Moodi on a sticker's world entry (CandyWorldUI / NatureWorldUI).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MoodiVoice : MonoBehaviour
@@ -28,7 +29,8 @@ namespace Moodium.Characters
             "B1a", "B1b", "B2",
             "C1", "C2a", "C2b", "C2c", "C3", "C4", "C5", "C6",
             "D1", "D2", "D3", "D4a", "D4b", "D5", "D6n", "D6c", "D7",
-            "E1", "E2"
+            "E1", "E2",
+            "S1c", "S1n", "S2"
         };
 
         static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2" };
@@ -54,10 +56,17 @@ namespace Moodium.Characters
         readonly Dictionary<string, string> m_LastVariant = new();
         string m_Pending;
         string m_Current;
+        string m_Delayed;
+        float m_DelayedAt;
         float m_SpeechEndsAt = -10f;
 
         public static string LanguageCode =>
             PlayerPrefs.GetString("Moodium.Language", "Chinese") == "English" ? "en" : "zh";
+
+        /// <summary>Set to force a language for this Moodi (e.g. the opening session's choice); null follows PlayerPrefs.</summary>
+        public bool? EnglishOverride { get; set; }
+
+        string Language => EnglishOverride.HasValue ? (EnglishOverride.Value ? "en" : "zh") : LanguageCode;
 
         public static bool IsTeaching(string id) => TeachingIds.Contains(id);
 
@@ -75,8 +84,21 @@ namespace Moodium.Characters
 
         void Awake() => EnsureSource();
 
+        // A hidden Moodi (sticker lost, mood check open) must not speak a stale line when it comes back.
+        void OnDisable()
+        {
+            m_Delayed = null;
+            m_Pending = null;
+        }
+
         void Update()
         {
+            if (m_Delayed != null && Time.time >= m_DelayedAt)
+            {
+                var delayed = m_Delayed;
+                m_Delayed = null;
+                Say(delayed);
+            }
             if (m_Pending == null || IsSpeaking || Time.time < m_SpeechEndsAt + m_TeachingGap) return;
             var id = m_Pending;
             m_Pending = null;
@@ -114,12 +136,20 @@ namespace Moodium.Characters
             return Play(pick);
         }
 
+        /// <summary>Say a line after a short delay (e.g. once a model has appeared). A newer request replaces an older one.</summary>
+        public void SayAfter(string id, float delay)
+        {
+            m_Delayed = id;
+            m_DelayedAt = Time.time + Mathf.Max(0f, delay);
+        }
+
         /// <summary>D6 for the world you are in.</summary>
         public bool SayGardenFound(bool candy) => Say(candy ? "D6c" : "D6n");
 
         public void Stop()
         {
             m_Pending = null;
+            m_Delayed = null;
             if (m_Source != null) m_Source.Stop();
         }
 
@@ -140,7 +170,7 @@ namespace Moodium.Characters
 
         AudioClip Load(string id)
         {
-            var path = ClipResourcePath(id, LanguageCode);
+            var path = ClipResourcePath(id, Language);
             if (m_Clips.TryGetValue(path, out var cached)) return cached;
             var clip = Resources.Load<AudioClip>(path);
             if (clip == null) Debug.LogWarning($"[Moodi Voice] Missing clip {path}");

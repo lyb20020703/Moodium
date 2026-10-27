@@ -4,7 +4,8 @@ using UnityEngine;
 using Moodium.Flow;
 using System.Reflection;
 
-/// <summary>Tests for the v2 "Mood Band" helpers. The existing CandyEnergyWristRingTests must keep passing too.</summary>
+/// <summary>Tests for the "Mood Band" wrist UI (v3: slim energy capsule, round buttons, one-press exit).
+/// The existing CandyEnergyWristRingTests must keep passing too.</summary>
 public sealed class MoodBandWristUITests
 {
     [Test]
@@ -36,6 +37,9 @@ public sealed class MoodBandWristUITests
         typeof(CandyEnergyWristUI).GetProperty("HandTracked").SetValue(ui,tracked);
         Call(ui,"UpdateGlance",.3f);Call(ui,"UpdateCardAndToast",.3f);
     }
+    // The row has been on screen long enough for presses to count.
+    static void Settle(CandyEnergyWristUI ui)=>Set(ui,"m_GlanceSince",Time.time-1f);
+
     [Test] public void CardInputIsDisabledInitiallyAndImmediatelyOnTrackingLoss()
     {
         var ui=Create(out var root,out var camera);
@@ -45,72 +49,136 @@ public sealed class MoodBandWristUITests
             var exit=Get<GameObject>(ui,"m_ExitButtonRoot").GetComponent<BoxCollider>();
             Assert.That(exit.enabled,Is.False,"Hidden card must never have live colliders.");
             Present(ui,true);Assert.That(exit.enabled,Is.True);
-            Call(ui,"PressExit");Assert.That(Get<WristExitConfirmation>(ui,"m_ExitConfirmation").IsArmed(Time.time),Is.True);
             Present(ui,false);Assert.That(exit.enabled,Is.False);
-            Assert.That(Get<WristExitConfirmation>(ui,"m_ExitConfirmation").IsArmed(Time.time),Is.False);
         }
         finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
     }
-    [Test] public void ExitNeedsTwoVisiblePressesAndAvailabilityRefreshDoesNotCancelIt()
+
+    [Test] public void ExitLeavesOnOnePressOnceTheRowHasSettled()
     {
         var ui=Create(out var root,out var camera);
         try
         {
             ui.SetExitAvailable(true);Present(ui,true);int exits=0;ui.ExitPressed+=()=>exits++;
-            Call(ui,"PressExit");Assert.That(exits,Is.Zero);
-            ui.SetExitAvailable(true);ui.SetReleaseAvailable(false);
-            Assert.That(Get<WristExitConfirmation>(ui,"m_ExitConfirmation").IsArmed(Time.time),Is.True);
-            Call(ui,"PressExit");Assert.That(exits,Is.EqualTo(1));
-            root.SetActive(false);
-            Assert.That(Get<WristExitConfirmation>(ui,"m_ExitConfirmation").IsArmed(Time.time),Is.False);
+            Call(ui,"PressExit");
+            Assert.That(exits,Is.Zero,"A touch while the wrist is still coming up must not exit.");
+            Settle(ui);
+            Call(ui,"PressExit");
+            Assert.That(exits,Is.EqualTo(1),"One press exits; there is no confirmation step.");
         }
         finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
     }
-    [Test] public void ProgressResetClearsSocketsAndShowsRealEnergyStagesNotUncollectedGifts()
+
+    [Test] public void ExitIsIgnoredWhenUnavailableOrHidden()
+    {
+        var ui=Create(out var root,out var camera);
+        try
+        {
+            int exits=0;ui.ExitPressed+=()=>exits++;
+            ui.SetExitAvailable(false);Present(ui,true);Settle(ui);
+            Call(ui,"PressExit");Assert.That(exits,Is.Zero);
+            ui.SetExitAvailable(true);Present(ui,false);Settle(ui);
+            Call(ui,"PressExit");Assert.That(exits,Is.Zero);
+        }
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
+    }
+
+    [Test]
+    public void ExitPressRules()
+    {
+        Assert.That(CandyEnergyWristUI.CanPressExit(true,true,true,1f,.5f,.35f),Is.True);
+        Assert.That(CandyEnergyWristUI.CanPressExit(true,true,true,1f,.2f,.35f),Is.False,"too soon after the row appeared");
+        Assert.That(CandyEnergyWristUI.CanPressExit(true,true,true,.3f,.5f,.35f),Is.False,"row still fading in");
+        Assert.That(CandyEnergyWristUI.CanPressExit(true,false,true,1f,.5f,.35f),Is.False,"hand not tracked");
+        Assert.That(CandyEnergyWristUI.CanPressExit(false,true,true,1f,.5f,.35f),Is.False,"exit not available");
+        Assert.That(CandyEnergyWristUI.CanPressExit(true,true,false,1f,.5f,.35f),Is.False,"wrist no longer presented");
+    }
+
+    [Test] public void ProgressResetClearsSocketsAndTheCapsuleShowsZero()
     {
         var ui=Create(out var root,out var camera);
         try
         {
             ui.SetProgress(62,.62f);
-            Assert.That(Get<TMPro.TMP_Text>(ui,"m_Subtitle").text,Does.Contain("2/4"));
             ui.SetCollectedGems(2);ui.SetProgress(0,0);
             Assert.That(ui.DisplayedProgress,Is.Zero);
             Assert.That(Get<int>(ui,"m_CollectedGems"),Is.Zero);
-            Assert.That(Get<TMPro.TMP_Text>(ui,"m_Subtitle").text,Does.Contain("0/4"));
+            Call(ui,"UpdateProgressAnimation",.016f);
+            Assert.That(Get<TMPro.TMP_Text>(ui,"m_Percentage").text,Is.EqualTo("0%"));
         }
         finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
     }
-    [TestCase(false,false)] [TestCase(false,true)] [TestCase(true,false)] [TestCase(true,true)]
-    public void ReleaseTextDoesNotOverlapItsIconOrToggleKnob(bool english,bool on)
+
+    [Test] public void RowIsReleaseThenCapsuleThenExitWithoutOverlap()
     {
-        var priorLanguage=PlayerPrefs.GetString("Moodium.Language","Chinese");
-        PlayerPrefs.SetString("Moodium.Language",english?"English":"Chinese");
         var ui=Create(out var root,out var camera);
         try
         {
-            ui.SetReleaseAvailable(true);ui.SetReleaseToggleState(on);
-            var chip=Get<GameObject>(ui,"m_ReleaseButtonRoot").transform;
-            var text=RectTransformUtility.CalculateRelativeRectTransformBounds(chip,Get<TMPro.TMP_Text>(ui,"m_ReleaseLabel").transform);
-            var knob=RectTransformUtility.CalculateRelativeRectTransformBounds(chip,Get<UnityEngine.UI.Image>(ui,"m_ReleaseKnob").transform);
-            var icon=RectTransformUtility.CalculateRelativeRectTransformBounds(chip,chip.Find("Icon"));
-            Assert.That(text.max.x,Is.LessThan(knob.min.x));
-            Assert.That(icon.max.x,Is.LessThan(text.min.x));
+            ui.SetReleaseAvailable(true);ui.SetExitAvailable(true);
+            var card=Get<RectTransform>(ui,"m_CardRect");
+            var release=RectTransformUtility.CalculateRelativeRectTransformBounds(card,Get<GameObject>(ui,"m_ReleaseButtonRoot").transform);
+            var capsule=RectTransformUtility.CalculateRelativeRectTransformBounds(card,Get<RectTransform>(ui,"m_Capsule"));
+            var exit=RectTransformUtility.CalculateRelativeRectTransformBounds(card,Get<GameObject>(ui,"m_ExitButtonRoot").transform);
+            Assert.That(release.max.x,Is.LessThan(capsule.min.x));
+            Assert.That(capsule.max.x,Is.LessThan(exit.min.x));
+            Assert.That(card.sizeDelta.x,Is.EqualTo(CandyEnergyWristUI.RowWidth(true,true)));
+            Assert.That(card.sizeDelta.y,Is.EqualTo(CandyEnergyWristUI.RowHeight));
+            Assert.That(Mathf.Abs(capsule.center.x-(release.center.x+exit.center.x)*.5f),Is.LessThan(.01f),"capsule stays centred between the buttons");
+
+            ui.SetReleaseAvailable(false);
+            Assert.That(card.sizeDelta.x,Is.EqualTo(CandyEnergyWristUI.RowWidth(false,true)));
         }
-        finally{PlayerPrefs.SetString("Moodium.Language",priorLanguage);Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
     }
-    [Test] public void EnglishTitleRemainsOneLineAboveTheSubtitle()
+
+    [Test] public void PercentageAndGiftDotsFitInsideTheCapsule()
     {
-        var prior=PlayerPrefs.GetString("Moodium.Language","Chinese");PlayerPrefs.SetString("Moodium.Language","English");
         var ui=Create(out var root,out var camera);
         try
         {
-            var font=UnityEditor.AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/UI/Moodium/Fonts/Inter-Regular SDF.asset");
-            ui.ConfigureLanguageFonts(null,font);
-            var title=Get<TMPro.TMP_Text>(ui,"m_Title");title.ForceMeshUpdate(true,true);
-            Assert.That(title.textInfo.lineCount,Is.EqualTo(1));
+            var capsule=Get<RectTransform>(ui,"m_Capsule");
+            var percentage=Get<TMPro.TMP_Text>(ui,"m_Percentage");
+            percentage.text="100%";percentage.ForceMeshUpdate(true,true);
+            Assert.That(percentage.textInfo.lineCount,Is.EqualTo(1));
+            var text=RectTransformUtility.CalculateRelativeRectTransformBounds(capsule,percentage.transform);
+            var dots=Get<UnityEngine.UI.Image[]>(ui,"m_GemDots");
+            var firstDot=RectTransformUtility.CalculateRelativeRectTransformBounds(capsule,dots[0].transform);
+            var lastDot=RectTransformUtility.CalculateRelativeRectTransformBounds(capsule,dots[3].transform);
+            Assert.That(text.max.x,Is.LessThanOrEqualTo(firstDot.min.x));
+            Assert.That(text.min.x,Is.GreaterThanOrEqualTo(-CandyEnergyWristUI.CapsuleWidth*.5f));
+            Assert.That(lastDot.max.x,Is.LessThanOrEqualTo(CandyEnergyWristUI.CapsuleWidth*.5f));
         }
-        finally{PlayerPrefs.SetString("Moodium.Language",prior);Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
     }
+
+    [Test] public void RowIsSmallAndSitsLowAboveTheBand()
+    {
+        var ui=Create(out var root,out var camera);
+        try
+        {
+            const float canvasScale=.00025f;
+            Assert.That(CandyEnergyWristUI.RowHeight*canvasScale,Is.EqualTo(.018f).Within(.0001f),"18 mm tall");
+            Assert.That(CandyEnergyWristUI.RowWidth(true,true)*canvasScale,Is.EqualTo(.087f).Within(.0001f),"87 mm with every button");
+            Assert.That(Get<float>(ui,"m_CardLift"),Is.EqualTo(.028f).Within(.0001f),"28 mm above the band");
+        }
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
+    }
+
+    [Test] public void ReleaseButtonTurnsWorldColourWhenOn()
+    {
+        var ui=Create(out var root,out var camera);
+        try
+        {
+            ui.SetWorldTheme(true);ui.SetReleaseAvailable(true);
+            var chip=Get<UnityEngine.UI.Image>(ui,"m_ReleaseChip");
+            ui.SetReleaseToggleState(true);
+            Assert.That(chip.color,Is.EqualTo(CandyEnergyWristUI.GetProgressRingColor(true)));
+            ui.SetReleaseToggleState(false);
+            Assert.That(chip.color,Is.EqualTo(Color.white),"off = dark circle sprite, untinted");
+        }
+        finally{Object.DestroyImmediate(root);Object.DestroyImmediate(camera.gameObject);}
+    }
+
     [Test]
     public void Sockets_SitAtTheFourRewardStages()
     {
