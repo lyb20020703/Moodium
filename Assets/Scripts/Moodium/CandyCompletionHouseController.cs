@@ -110,6 +110,18 @@ namespace Moodium.CandyWorld
                 AudioSource.PlayClipAtPoint(m_PrefabSpawnSound, ground.Position, 0.7f);
             instance.transform.localScale *= scaleMultiplier;
             AlignVisualBaseToSurface(instance, ground.Position.y);
+            // Point-cloud look: a baked cloud (Resources/MoodiumPointClouds) replaces the mesh; touching bursts points
+            // out of the surface instead of denting the mesh, and still sends the contact sparkles.
+            var points = Moodium.PointClouds.PointCloudModel.TryAttach(instance, prefab.name);
+            if (points != null)
+            {
+                points.Touched += point =>
+                {
+                    if (m_Started && m_ContactBursts != null && instance != null)
+                        m_ContactBursts.BurstAtContact(point, instance.transform);
+                };
+                return instance;
+            }
             var softInteraction = instance.GetComponent<CompletionHouseSoftInteraction>();
             if (softInteraction == null)
                 softInteraction = instance.AddComponent<CompletionHouseSoftInteraction>();

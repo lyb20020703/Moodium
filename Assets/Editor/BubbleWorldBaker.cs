@@ -43,6 +43,11 @@ public static class BubbleWorldBaker
         }
         var meshFolder = folder + "Meshes/";
         Directory.CreateDirectory(meshFolder);
+        var atlas = BubbleWorldData.BuildRoundAtlas(cloud);
+        var atlasPath = folder + "point_colors_round.png";
+        File.WriteAllBytes(atlasPath, atlas.EncodeToPNG());
+        Object.DestroyImmediate(atlas);
+        AssetDatabase.ImportAsset(atlasPath, ImportAssetOptions.ForceSynchronousImport);
         for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)
         {
             EditorUtility.DisplayProgressBar("Bubble World", $"{folder} · layer {layer + 1}/{BubbleWorldData.LayerCount}",

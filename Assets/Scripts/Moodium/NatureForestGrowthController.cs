@@ -89,11 +89,17 @@ namespace Moodium.NatureWorld
             m_Running = false;
             foreach (var tree in m_SpawnedTrees)
                 if (tree != null)
-                    Destroy(tree);
+                {
+                    if (Application.isPlaying) Destroy(tree);
+                    else DestroyImmediate(tree);
+                }
             m_SpawnedTrees.Clear();
 
             if (m_ForestRoot != null)
-                Destroy(m_ForestRoot.gameObject);
+            {
+                if (Application.isPlaying) Destroy(m_ForestRoot.gameObject);
+                else DestroyImmediate(m_ForestRoot.gameObject);
+            }
             m_ForestRoot = null;
             m_NextThresholdIndex = 0;
         }
@@ -133,7 +139,10 @@ namespace Moodium.NatureWorld
             if (ground.HasSpatialSurface)
                 AlignVisualBaseToSurface(instance, ground.Position.y);
             m_SpawnedTrees.Add(instance);
-            instance.AddComponent<NatureTreeGrowIn>();
+            // Point-cloud look: when Resources/MoodiumPointClouds has a baked cloud for this tree, its points fly in
+            // and scatter under the hand; otherwise the mesh keeps the original scale grow-in.
+            if (Moodium.PointClouds.PointCloudModel.TryAttach(instance, prefab.name) == null)
+                instance.AddComponent<NatureTreeGrowIn>();
         }
 
         Vector3 FindSeparatedDesiredPosition(int index, Vector3 right, Vector3 forward)

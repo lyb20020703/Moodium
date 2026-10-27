@@ -25,6 +25,15 @@ public sealed class BubbleWorldAssetPostprocessor : AssetPostprocessor
         importer.isReadable = false;
         switch (name)
         {
+            case "point_colors_round":
+                importer.mipmapEnabled = false;
+                importer.filterMode = FilterMode.Bilinear;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.maxTextureSize = 4096;
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.alphaIsTransparency = false;
+                break;
             case "point_colors":
                 importer.mipmapEnabled = false;
                 importer.filterMode = FilterMode.Point;

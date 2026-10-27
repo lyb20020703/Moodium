@@ -410,7 +410,7 @@ namespace Moodium.NatureWorld
         IEnumerator Build()
         {
             var points = Resources.Load<TextAsset>(BubbleWorldData.PointsResource(m_Folder));
-            var colors = Resources.Load<Texture2D>(BubbleWorldData.ColorsResource(m_Folder));
+            var colors = Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(m_Folder));
             var panorama = Resources.Load<Texture2D>(BubbleWorldData.PanoramaResource(m_Folder));
             var film = Resources.Load<Texture2D>(BubbleWorldData.FilmResource);
             if (points == null || colors == null || panorama == null)
@@ -427,6 +427,7 @@ namespace Moodium.NatureWorld
             m_MiniLayerCount = MiniLayerCount(m_LayerRadii, MiniWorldRadius);
 
             m_PointMaterial = BubbleWorldData.CreateUnlit("Bubble World Points", colors, false, CullMode.Off, Color.white);
+            BubbleWorldData.ConfigureRoundPoints(m_PointMaterial);
             m_SkyMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky", panorama, false, CullMode.Back, Color.white);
             m_SkyMaterial.renderQueue = BackgroundRenderQueue;
             m_SkyFadeMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky Fade", panorama, true, CullMode.Back, Color.white);

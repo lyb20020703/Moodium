@@ -5,6 +5,32 @@ using UnityEngine;
 
 public sealed class BubbleWorldTests
 {
+    [Test]
+    public void RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed()
+    {
+        BubbleWorldData.TryParse(MakeCloud(Spiral(8, 3f)), out var cloud);
+        var atlas = BubbleWorldData.BuildRoundAtlas(cloud);
+        Material material = null;
+        try
+        {
+            Assert.That(atlas.GetPixel(1, 1).a, Is.EqualTo(1f).Within(.005f));
+            Assert.That(atlas.GetPixel(0, 0).a, Is.LessThan(.1f));
+            Assert.That(atlas.GetPixel(0, 1).a, Is.LessThan(.5f));
+            Assert.That(((Color32)atlas.GetPixel(5, 1)).r, Is.EqualTo(cloud.Colors[1].r));
+            material = BubbleWorldData.CreateUnlit("Test round points", atlas, false,
+                UnityEngine.Rendering.CullMode.Off, Color.white);
+            BubbleWorldData.ConfigureRoundPoints(material);
+            Assert.That(material.GetFloat("_AlphaClip"), Is.EqualTo(1f));
+            Assert.That(material.GetFloat("_Cutoff"), Is.Zero);
+            Assert.That(material.IsKeywordEnabled("_ALPHATEST_ON"), Is.True);
+        }
+        finally
+        {
+            Object.DestroyImmediate(atlas);
+            if (material != null) Object.DestroyImmediate(material);
+        }
+    }
+
     static byte[] MakeCloud(Vector3[] positions, float size = .05f, float eye = 1.3f)
     {
         using var stream = new MemoryStream();
@@ -120,7 +146,8 @@ public sealed class BubbleWorldTests
             var vertices = mesh.vertices;
             for (var q = 0; q < 32; q++)
             {
-                Assert.That(uvs[q * 4 + 3], Is.EqualTo(uvs[q * 4]));
+                Assert.That(uvs[q * 4 + 3].y, Is.GreaterThan(uvs[q * 4].y));
+                Assert.That(uvs[q * 4 + 2].x, Is.GreaterThan(uvs[q * 4].x));
                 var centre = (vertices[q * 4] + vertices[q * 4 + 2]) * .5f;
                 Assert.That(Vector3.Distance(centre, cloud.Positions[16 + q]), Is.LessThan(1e-4f));
                 Assert.That(Vector3.Distance(vertices[q * 4], vertices[q * 4 + 2]), Is.EqualTo(.1f * Mathf.Sqrt(2f)).Within(2e-3f));
@@ -260,9 +287,10 @@ public sealed class BubbleWorldTests
             Assert.That(mesh.vertexCount, Is.EqualTo(40000));
         }
         Assert.That(Resources.Load<Mesh>(BubbleWorldData.MeshResource(folder, BubbleWorldData.PanoramaMeshName)), Is.Not.Null);
-        var texture = Resources.Load<Texture2D>(BubbleWorldData.ColorsResource(folder));
+        var texture = Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder));
         Assert.That(texture, Is.Not.Null);
-        Assert.That(texture.filterMode, Is.EqualTo(FilterMode.Point));
+        Assert.That(texture.filterMode, Is.EqualTo(FilterMode.Bilinear));
+        Assert.That(texture.width, Is.EqualTo(2048));
         Assert.That(texture.mipmapCount, Is.EqualTo(1));
     }
 

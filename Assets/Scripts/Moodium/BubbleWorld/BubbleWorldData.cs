@@ -27,6 +27,7 @@ namespace Moodium.NatureWorld
         public static string FolderFor(bool candyWorld) => candyWorld ? CandyFolder : NatureFolder;
         public static string PointsResource(string folder) => folder + "points";
         public static string ColorsResource(string folder) => folder + "point_colors";
+        public static string RoundColorsResource(string folder) => folder + "point_colors_round";
         public static string PanoramaResource(string folder) => folder + "panorama";
         public static string MeshResource(string folder, string meshName) => folder + "Meshes/" + meshName;
         public const int LayerCount = 20;
@@ -121,13 +122,59 @@ namespace Moodium.NatureWorld
             return size;
         }
 
+        public static int RoundAtlasSizeFor(int count)
+        {
+            var size = 4;
+            while ((long)(size / 4) * (size / 4) < count) size *= 2;
+            return size;
+        }
+
+        public static void WriteRoundUVs(Vector2[] uvs, int offset, int index, int atlasSize)
+        {
+            // Share the model atlas layout helper, using one block per scan point rather than own/glow pairs.
+            Moodium.PointClouds.PointCloudFx.WriteBlockUVs(uvs, offset, index / 2, index % 2 != 0, atlasSize);
+        }
+
+        public static Texture2D BuildRoundAtlas(Cloud cloud)
+        {
+            var size = RoundAtlasSizeFor(cloud.Count);
+            var pixels = new Color32[size * size];
+            var perRow = size / 4;
+            for (var i = 0; i < cloud.Count; i++)
+            {
+                var color = cloud.Colors[i];
+                var x0 = i % perRow * 4;
+                var y0 = i / perRow * 4;
+                for (var y = 0; y < 4; y++)
+                for (var x = 0; x < 4; x++)
+                {
+                    color.a = (byte)Mathf.RoundToInt(Moodium.PointClouds.PointCloudFx.BlobAlpha(x, y) * 255f);
+                    pixels[(y0 + y) * size + x0 + x] = color;
+                }
+            }
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false, false)
+                { name = "Bubble World Round Colours", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        public static void ConfigureRoundPoints(Material material)
+        {
+            material.SetFloat("_AlphaClip", 1f);
+            material.SetFloat("_Cutoff", 0f);
+            material.EnableKeyword("_ALPHATEST_ON");
+            material.SetOverrideTag("RenderType", "TransparentCutout");
+            material.renderQueue = (int)RenderQueue.AlphaTest;
+        }
+
         /// <summary>
-        /// One quad per point, facing the scan centre (where the viewer stands), turned by a per-point angle so
-        /// the squares don't line up. Front faces point at the centre.
+        /// One soft round textured quad per point, facing the scan centre (where the viewer stands), turned by a
+        /// per-point angle. Front faces point at the centre.
         /// </summary>
         public static Mesh BuildLayerMesh(Cloud cloud, int start, int end, string name, float sizeScale = 1f)
         {
-            var atlas = AtlasSizeFor(cloud.Count);
+            var atlas = RoundAtlasSizeFor(cloud.Count);
             var n = Mathf.Max(0, end - start);
             var vertices = new Vector3[n * 4];
             var uvs = new Vector2[n * 4];
@@ -149,8 +196,7 @@ namespace Moodium.NatureWorld
                 vertices[v + 1] = c + tr - br;
                 vertices[v + 2] = c + tr + br;
                 vertices[v + 3] = c - tr + br;
-                var uv = ColorUV(i, atlas);
-                uvs[v] = uvs[v + 1] = uvs[v + 2] = uvs[v + 3] = uv;
+                WriteRoundUVs(uvs, v, i, atlas);
                 var q = k * 6;
                 indices[q] = v; indices[q + 1] = v + 1; indices[q + 2] = v + 2;
                 indices[q + 3] = v; indices[q + 4] = v + 2; indices[q + 5] = v + 3;
