@@ -1,0 +1,75 @@
+using System.IO;
+using Moodium.NatureWorld;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>
+/// Moodium ▸ Bubble World ▸ Bake Meshes: for every world folder (Resources/MoodiumBubbleWorld/ for Nature,
+/// Resources/MoodiumBubbleWorld/Candy/ for Candy) turns points.bytes into 20 point-layer mesh assets plus the sky sphere
+/// under that folder's Meshes/. PolySpatial mirrors imported mesh assets reliably on device; runtime-built meshes are
+/// only a fallback. Re-run after replacing a points.bytes.
+/// </summary>
+public static class BubbleWorldBaker
+{
+    static readonly string[] Folders = { BubbleWorldData.NatureFolder, BubbleWorldData.CandyFolder };
+
+    [MenuItem("Moodium/Bubble World/Bake Meshes")]
+    public static void Bake()
+    {
+        var baked = 0;
+        try
+        {
+            foreach (var folder in Folders)
+                if (BakeFolder("Assets/Resources/" + folder)) baked++;
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        if (baked == 0)
+            EditorUtility.DisplayDialog("Bubble World", "No points.bytes found under Assets/Resources/MoodiumBubbleWorld/ or .../Candy/.", "OK");
+    }
+
+    static bool BakeFolder(string folder)
+    {
+        var points = AssetDatabase.LoadAssetAtPath<TextAsset>(folder + "points.bytes");
+        if (points == null) return false;
+        if (!BubbleWorldData.TryParse(points.bytes, out var cloud))
+        {
+            Debug.LogError($"[Bubble World] {folder}points.bytes is not a valid MSPC v1 file.");
+            return false;
+        }
+        var meshFolder = folder + "Meshes/";
+        Directory.CreateDirectory(meshFolder);
+        for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)
+        {
+            EditorUtility.DisplayProgressBar("Bubble World", $"{folder} · layer {layer + 1}/{BubbleWorldData.LayerCount}",
+                layer / (float)BubbleWorldData.LayerCount);
+            BubbleWorldData.LayerRange(layer, cloud.Count, BubbleWorldData.LayerCount, out var s, out var e);
+            var mesh = BubbleWorldData.BuildLayerMesh(cloud, s, e, BubbleWorldData.LayerMeshName(layer));
+            Save(mesh, meshFolder + mesh.name + ".asset");
+        }
+        Save(BubbleWorldData.BuildPanoramaSphere(), meshFolder + BubbleWorldData.PanoramaMeshName + ".asset");
+        var radii = BubbleWorldData.LayerOuterRadii(cloud, BubbleWorldData.LayerCount);
+        Debug.Log($"[Bubble World] {folder}: baked {cloud.Count} points into {BubbleWorldData.LayerCount} layers " +
+                  $"(the small bubble shows {BubbleWorldController.MiniLayerCount(radii, BubbleWorldController.MiniWorldRadius)} layers, " +
+                  $"farthest {cloud.MaxRadius:0.0} m, eye height {cloud.EyeHeight:0.00} m).");
+        return true;
+    }
+
+    static void Save(Mesh mesh, string path)
+    {
+        var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+        if (existing != null)
+        {
+            EditorUtility.CopySerialized(mesh, existing);
+            Object.DestroyImmediate(mesh);
+        }
+        else
+        {
+            AssetDatabase.CreateAsset(mesh, path);
+        }
+    }
+}

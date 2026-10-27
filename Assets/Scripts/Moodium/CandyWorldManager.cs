@@ -29,11 +29,18 @@ namespace Moodium.CandyWorld
         NatureForestGrowthController m_NatureForestGrowth;
         NatureFootstepGrassController m_NatureFootstepGrass;
         NatureCompletionPanoramaController m_NatureCompletionPanorama;
+        // Completion reward in both worlds: a bubble holding a tiny scanned world that grows around the viewer.
+        BubbleWorldController m_BubbleWorld;
         CandyCompletionHouseController m_CandyCompletionHouse;
         NatureIvySpatialGrowthController m_NatureIvyGrowth;
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
         CandyHandOpenBurstGesture m_HandOpenBurstGesture;
         SqueezeProgressVideoController m_SqueezeProgressVideo;
+        // Squeeze rescue story: Moodi falls into the bag, the user squeezes it back out.
+        MoodiRescueDirector m_Rescue;
+        Coroutine m_BindVideoRoutine;
+        bool m_TutorialShown;
+        const float RescueExploreDelay = 14f; // leave room for the thank-you and the palm teaching
         SqueezeModeController m_SqueezeModes;
         RewardSequenceController m_SqueezeStageRewards;
         MoodCheckContext m_SqueezeContext;
@@ -303,6 +310,10 @@ namespace Moodium.CandyWorld
                 m_CandyCompletionHouse.StartDisplay();
                 m_NatureIvyGrowth.StopAndClear();
             }
+            if (m_BubbleWorld == null && !TryGetComponent(out m_BubbleWorld))
+                m_BubbleWorld = gameObject.AddComponent<BubbleWorldController>();
+            m_BubbleWorld.ConfigureTouchSound(m_RewardTouchSound);
+            m_BubbleWorld.Begin(Camera.main, BubbleWorldData.FolderFor(!m_NatureWorldActive));
             m_WalkTrailGuide = GetComponent<WalkTrailGuideController>() ?? gameObject.AddComponent<WalkTrailGuideController>();
             m_WalkTrailGuide.BeginSession(m_NatureFootstepGrass, m_RainReward,
                 Camera.main != null ? Camera.main.transform : null,
@@ -317,6 +328,8 @@ namespace Moodium.CandyWorld
             m_NextEnergyUIUpdate=0;
             m_ProgressController.StartProgress();
             m_SqueezeProgressVideo?.Begin(m_NatureWorldActive);
+            if (!m_Running) m_TutorialShown = false;
+            BeginSqueezeRescue();
             m_SpatialTouchFeedback?.SetInteractionEnabled(true);
             m_HandOpenBurstGesture?.SetGestureEnabled(true);
             m_EnergyUI.gameObject.SetActive(true);
@@ -324,8 +337,8 @@ namespace Moodium.CandyWorld
                 return;
             m_ExploreGuideShown=false;
             m_WorldGuide=GetComponent<Moodium.Guide.WorldGuideCards>()??gameObject.AddComponent<Moodium.Guide.WorldGuideCards>();
-            m_WorldGuide.ShowTutorial(m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish(),
-                Camera.main!=null?Camera.main.transform:null);
+            // The tutorial card now follows Moodi's request to be squeezed out (MoodiRescueDirector.IntroFinished).
+            if (m_Rescue == null || m_Rescue.IntroDone) ShowWorldTutorial();
             m_Running = true;
             ChocolateCapsuleInteraction.AnyCapsulePinched += OnCapsulePinched;
             m_Energy.EnergyChanged += OnEnergyChanged;
@@ -339,6 +352,7 @@ namespace Moodium.CandyWorld
             m_SqueezeModes?.StopSession();
             m_SqueezeStageRewards?.StopAndClear();
             m_WalkTrailGuide?.StopAndClear();
+            StopSqueezeRescue();
             if (m_Running)
             {
                 ChocolateCapsuleInteraction.AnyCapsulePinched -= OnCapsulePinched;
@@ -359,6 +373,7 @@ namespace Moodium.CandyWorld
             m_NatureForestGrowth?.StopAndClear();
             m_NatureFootstepGrass?.StopAndClear();
             m_NatureCompletionPanorama?.StopAndClear();
+            m_BubbleWorld?.StopAndClear();
             m_CandyCompletionHouse?.StopAndClear();
             m_NatureIvyGrowth?.StopAndClear();
             m_BurstController?.StopAndClear();
@@ -372,6 +387,69 @@ namespace Moodium.CandyWorld
                 m_EnergyUI.ExitPressed -= RequestExit;
             }
             StopExperience();
+        }
+
+        void BeginSqueezeRescue()
+        {
+            // Show the jelly dome and video as soon as the calibrated soft model exists, not on the first press.
+            if (m_BindVideoRoutine != null) StopCoroutine(m_BindVideoRoutine);
+            m_BindVideoRoutine = StartCoroutine(BindSqueezeVideoWhenSoftAppears());
+            if (m_Rescue == null && !TryGetComponent(out m_Rescue))
+                m_Rescue = gameObject.AddComponent<MoodiRescueDirector>();
+            m_Rescue.IntroFinished -= ShowWorldTutorial;
+            m_Rescue.IntroFinished += ShowWorldTutorial;
+            m_Rescue.Rescued -= OnMoodiRescued;
+            m_Rescue.Rescued += OnMoodiRescued;
+            m_Energy.StageReached -= OnEnergyStageReached;
+            m_Energy.StageReached += OnEnergyStageReached;
+            m_Rescue.Begin(m_WalkTrailGuidePrefab, m_SqueezeProgressVideo, Camera.main != null ? Camera.main.transform : null);
+        }
+
+        void StopSqueezeRescue()
+        {
+            if (m_BindVideoRoutine != null) StopCoroutine(m_BindVideoRoutine);
+            m_BindVideoRoutine = null;
+            if (m_Energy != null) m_Energy.StageReached -= OnEnergyStageReached;
+            if (m_Rescue == null) return;
+            m_Rescue.IntroFinished -= ShowWorldTutorial;
+            m_Rescue.Rescued -= OnMoodiRescued;
+            m_Rescue.StopAndClear();
+        }
+
+        System.Collections.IEnumerator BindSqueezeVideoWhenSoftAppears()
+        {
+            var deadline = Time.time + 10f;
+            while (Time.time < deadline)
+            {
+                var capsule = FindActiveCalibratedNatureCapsule(); // finds the calibrated Candy or Nature soft
+                if (capsule != null)
+                {
+                    m_SqueezeProgressVideo?.BindToSoft(capsule);
+                    break;
+                }
+                yield return null;
+            }
+            m_BindVideoRoutine = null;
+        }
+
+        void ShowWorldTutorial()
+        {
+            if (m_TutorialShown || this == null || !isActiveAndEnabled) return;
+            m_TutorialShown = true;
+            if (m_WorldGuide == null && !TryGetComponent(out m_WorldGuide))
+                m_WorldGuide = gameObject.AddComponent<Moodium.Guide.WorldGuideCards>();
+            m_WorldGuide.ShowTutorial(m_NatureWorldActive, Moodium.Guide.WorldGuideCards.IsEnglish(),
+                Camera.main != null ? Camera.main.transform : null);
+        }
+
+        void OnEnergyStageReached(int stage)
+        {
+            if (m_Rescue != null) m_Rescue.NotifyStage(stage);
+        }
+
+        void OnMoodiRescued(Vector3 position)
+        {
+            m_WalkTrailGuide?.AppearFromRescue(position);
         }
 
         void RequestExit()
@@ -416,6 +494,7 @@ namespace Moodium.CandyWorld
             }
             if(m_SqueezeModes!=null)m_SqueezeModes.AcceptPinch(capsule);
             else m_Energy.RegisterPinch();
+            if (m_Rescue != null) m_Rescue.NotifyPinch();
             SpawnSoftSqueezeFeedback(visualCenter);
             m_BurstController.Burst(visualCenter, capsule.transform);
         }
@@ -558,9 +637,10 @@ namespace Moodium.CandyWorld
             {
                 m_ExploreGuideShown=true;
                 m_WorldGuide.ShowExplore(m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish(),
-                    Camera.main!=null?Camera.main.transform:null);
+                    Camera.main!=null?Camera.main.transform:null, m_Rescue != null ? RescueExploreDelay : -1f);
             }
             m_WalkTrailGuide?.SetProgress(normalizedProgress);
+            if (m_Rescue != null) m_Rescue.NotifyProgress(normalizedProgress);
             if(Time.unscaledTime>=m_NextEnergyUIUpdate||normalizedProgress>=1f||normalizedProgress<=0)
             {
                 m_NextEnergyUIUpdate=Time.unscaledTime+.1f;
@@ -574,6 +654,7 @@ namespace Moodium.CandyWorld
                 m_NatureForestGrowth.SetProgress(normalizedProgress);
                 m_NatureFootstepGrass?.SetProgress(normalizedProgress);
                 m_NatureCompletionPanorama?.SetProgress(normalizedProgress);
+                m_BubbleWorld?.SetProgress(normalizedProgress);
                 m_NatureLeaves?.UpdateLeafIntensity(normalizedProgress);
                 if (m_LastNatureProgress < 1f && normalizedProgress >= 1f && m_LastNatureSoftOrigin != Vector3.zero)
                     m_NatureIvyGrowth?.TryStartCompletionBurst(m_LastNatureSoftOrigin);
@@ -584,6 +665,7 @@ namespace Moodium.CandyWorld
                 m_NatureFootstepGrass?.SetProgress(normalizedProgress);
                 m_CandyCompletionHouse?.SetProgress(normalizedProgress);
                 m_NatureCompletionPanorama?.SetProgress(normalizedProgress);
+                m_BubbleWorld?.SetProgress(normalizedProgress);
             }
         }
 

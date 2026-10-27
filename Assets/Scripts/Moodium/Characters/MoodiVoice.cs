@@ -30,18 +30,20 @@ namespace Moodium.Characters
             "C1", "C2a", "C2b", "C2c", "C3", "C4", "C5", "C6",
             "D1", "D2", "D3", "D4a", "D4b", "D5", "D6n", "D6c", "D7",
             "E1", "E2",
-            "S1c", "S1n", "S2"
+            "S1c", "S1n", "S2",
+            "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8a", "K8b", "K8c", "K9", "K10"
         };
 
-        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2" };
+        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2", "K3" };
 
-        static readonly Dictionary<string, float> Cooldowns = new() { { "C5", 20f }, { "D5", 15f }, { "E1", 60f } };
+        static readonly Dictionary<string, float> Cooldowns = new() { { "C5", 20f }, { "D5", 15f }, { "E1", 60f }, { "K9", 30f } };
 
         static readonly Dictionary<string, string[]> Variants = new()
         {
             { "B1", new[] { "B1a", "B1b" } },
             { "C2", new[] { "C2a", "C2b", "C2c" } },
-            { "D4", new[] { "D4a", "D4b" } }
+            { "D4", new[] { "D4a", "D4b" } },
+            { "K8", new[] { "K8a", "K8b", "K8c" } }
         };
 
         static readonly HashSet<string> s_Taught = new();
@@ -59,6 +61,21 @@ namespace Moodium.Characters
         string m_Delayed;
         float m_DelayedAt;
         float m_SpeechEndsAt = -10f;
+        AudioLowPassFilter m_LowPass;
+
+        /// <summary>Low-pass cutoff for a muffle amount: 0 = clear (22 kHz), 1 = deep inside the jelly (1.4 kHz).</summary>
+        public static float MuffleCutoff(float amount) => 22000f * Mathf.Pow(1400f / 22000f, Mathf.Clamp01(amount));
+
+        /// <summary>Make Moodi sound like it is inside the squeeze bag (K lines). 0 turns the filter off.</summary>
+        public void Muffle(float amount)
+        {
+            EnsureSource();
+            if (m_LowPass == null && !TryGetComponent(out m_LowPass))
+                m_LowPass = gameObject.AddComponent<AudioLowPassFilter>();
+            m_LowPass.enabled = amount > .001f;
+            m_LowPass.cutoffFrequency = MuffleCutoff(amount);
+            m_LowPass.lowpassResonanceQ = 1f;
+        }
 
         public static string LanguageCode =>
             PlayerPrefs.GetString("Moodium.Language", "Chinese") == "English" ? "en" : "zh";
@@ -80,6 +97,7 @@ namespace Moodium.Characters
         public static void MarkLearned(string id) => s_Taught.Add(id);
 
         public bool IsSpeaking => m_Source != null && m_Source.isPlaying;
+        public bool HasPendingSpeech => m_Pending != null || m_Delayed != null;
         public string CurrentLine => IsSpeaking ? m_Current : null;
 
         void Awake() => EnsureSource();

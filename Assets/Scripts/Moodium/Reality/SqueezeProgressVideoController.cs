@@ -13,6 +13,11 @@ namespace Moodium.Reality
     /// Presents a non-looping squeeze video whose timeline follows the existing
     /// CandyEnergyController normalized progress. The controller only owns video
     /// presentation; it never changes squeeze energy or completion gameplay.
+    ///
+    /// Jelly dome feedback: the transparent dome over the video squashes while the bound
+    /// CandySoft/NatureSoft is pressed and springs back with a small overshoot when released
+    /// (a damped spring on a squash value, 0 = rest, 1 = pressed). At 100% the dome swells and
+    /// "pops" before hiding, and Popped reports where Moodi should jump out.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class SqueezeProgressVideoController : MonoBehaviour
@@ -30,6 +35,25 @@ namespace Moodium.Reality
         [SerializeField, Range(-.05f, .05f)] float m_SurfaceOffset = -.005f;
         [SerializeField, Min(.01f)] float m_DomeRadius = .042f;
         [SerializeField, Range(0f, .5f)] float m_DomeOpacity = .10f;
+
+        [Header("Jelly dome squash")]
+        [Tooltip("How much the dome loses height when fully pressed (0.30 = 70% height).")]
+        [SerializeField, Range(0f, .6f)] float m_SquashHeight = .30f;
+        [Tooltip("How much the dome widens when fully pressed.")]
+        [SerializeField, Range(0f, .4f)] float m_SquashWidth = .14f;
+        [Tooltip("How much the flat video disc spreads when pressed (it never stretches vertically).")]
+        [SerializeField, Range(0f, .3f)] float m_DiscSpread = .08f;
+        [SerializeField, Range(0f, .01f)] float m_DiscSink = .003f;
+        [SerializeField, Min(1f)] float m_PressStiffness = 2500f;
+        [SerializeField, Range(.05f, 2f)] float m_PressDamping = .85f;
+        [SerializeField, Min(1f)] float m_ReleaseStiffness = 220f;
+        [SerializeField, Range(.05f, 2f)] float m_ReleaseDamping = .32f;
+        [Tooltip("Extra downward kick on every accepted squeeze, so repeated presses keep the jelly wobbling.")]
+        [SerializeField, Range(0f, 6f)] float m_PressImpulse = 2.5f;
+        [Tooltip("Gentle idle breathing of the dome while untouched (fraction of its height).")]
+        [SerializeField, Range(0f, .05f)] float m_BreathAmount = .015f;
+        [SerializeField, Range(.05f, .5f)] float m_PopSeconds = .12f;
+        [SerializeField, Range(1f, 2f)] float m_PopScale = 1.25f;
         [SerializeField] Color m_CandyDomeColor = new(1f, .38f, .62f, 1f);
         [SerializeField] Color m_NatureDomeColor = new(.55f, .86f, .53f, 1f);
 
@@ -58,6 +82,17 @@ namespace Moodium.Reality
         bool m_Completed;
         bool m_BoundToSoft;
         bool m_NatureWorld;
+        Transform m_Dome;
+        ChocolateCapsuleInteraction m_BoundCapsule;
+        float m_Squash;
+        float m_SquashVelocity;
+        bool m_PressedByEvent;
+        Coroutine m_PopRoutine;
+
+        /// <summary>Raised once when the finished video pops; the position is the centre of the dome.</summary>
+        public event Action<Vector3> Popped;
+        /// <summary>Current squash amount (0 rest, 1 pressed, negative while springing back taller).</summary>
+        public float Squash => m_Squash;
 
         public bool IsVisible => m_DiscRenderer != null && m_DiscRenderer.enabled;
         public VideoClip ActiveClip => m_Player != null ? m_Player.clip : null;
@@ -85,6 +120,48 @@ namespace Moodium.Reality
             if (Mathf.Abs(Vector3.Dot(relative, normal)) > .012f + normalExtent) return false;
             var projected = Vector3.ProjectOnPlane(relative, normal);
             return projected.magnitude <= radius + bounds.extents.magnitude;
+        }
+
+        /// <summary>Centre and up direction of the dome, once the video is bound to the soft model.</summary>
+        public bool TryGetDomeCenter(out Vector3 center, out Vector3 up)
+        {
+            center = default;
+            up = Vector3.up;
+            if (!m_BoundToSoft || m_Display == null) return false;
+            UpdateDisplayPose();
+            center = m_Display.transform.position;
+            up = m_Display.transform.up;
+            return true;
+        }
+
+        /// <summary>Squash the dome by <paramref name="amount"/> (1 = fully pressed, more = harder) and let it spring back.</summary>
+        public void Splash(float amount)
+        {
+            m_Squash = amount;
+            m_SquashVelocity = 0f;
+            m_PressedByEvent = false;
+        }
+
+        /// <summary>One step of a damped spring (semi-implicit Euler, sub-stepped at 240 Hz for stability).</summary>
+        public static float StepSpring(float value, ref float velocity, float target, float stiffness, float dampingRatio, float deltaTime)
+        {
+            if (deltaTime <= 0f) return value;
+            var steps = Mathf.Max(1, Mathf.CeilToInt(deltaTime * 240f));
+            var h = deltaTime / steps;
+            var damping = 2f * dampingRatio * Mathf.Sqrt(Mathf.Max(0f, stiffness));
+            for (var i = 0; i < steps; i++)
+            {
+                velocity += (stiffness * (target - value) - damping * velocity) * h;
+                value += velocity * h;
+            }
+            return value;
+        }
+
+        /// <summary>Dome scale for a squash amount: shorter and wider when pressed, taller and narrower when overshooting back.</summary>
+        public static Vector3 DomeScale(float squash, float heightLoss, float widthGain)
+        {
+            var width = Mathf.Max(.5f, 1f + widthGain * squash);
+            return new Vector3(width, Mathf.Max(.2f, 1f - heightLoss * squash), width);
         }
 
         public void Configure(Camera camera, VideoClip candyClip, VideoClip natureClip)
@@ -144,6 +221,7 @@ namespace Moodium.Reality
             var worldPosition = BuildSurfacePosition(trackingCenter, softTopY, surfaceNormal, m_SurfaceOffset);
             m_AnchorLocalPosition = m_SurfaceAnchor.InverseTransformPoint(worldPosition);
             m_AnchorLocalNormal = m_SurfaceAnchor.InverseTransformDirection(surfaceNormal).normalized;
+            m_BoundCapsule = capsule;
             var surfaceOrientation=presentation!=null ? presentation.AnchorOrientation :
                 follower!=null&&follower.Anchor!=null ? follower.Anchor.rotation : capsule.transform.rotation;
             m_AnchorLocalForward=m_SurfaceAnchor.InverseTransformDirection(surfaceOrientation*Vector3.forward);
@@ -184,6 +262,15 @@ namespace Moodium.Reality
                 StopCoroutine(m_PrepareRoutine);
                 m_PrepareRoutine = null;
             }
+            if (m_PopRoutine != null)
+            {
+                StopCoroutine(m_PopRoutine);
+                m_PopRoutine = null;
+            }
+            m_Dome = null;
+            m_BoundCapsule = null;
+            m_Squash = m_SquashVelocity = 0f;
+            m_PressedByEvent = false;
             m_Advancing = false;
             m_Prepared = false;
             m_Completed = false;
@@ -357,6 +444,7 @@ namespace Moodium.Reality
         {
             var dome = new GameObject("Squeeze Video Transparent Dome");
             dome.transform.SetParent(m_Display.transform, false);
+            m_Dome = dome.transform;
             m_DomeMesh = CreateHemisphereMesh(m_DomeRadius, DomeRings, DomeSegments);
             dome.AddComponent<MeshFilter>().sharedMesh = m_DomeMesh;
             m_DomeRenderer = dome.AddComponent<MeshRenderer>();
@@ -486,7 +574,64 @@ namespace Moodium.Reality
             m_Advancing = false;
         }
 
-        void LateUpdate() => UpdateDisplayPose();
+        void OnEnable()
+        {
+            ChocolateCapsuleInteraction.AnyCapsulePinched += OnAnyCapsulePinched;
+            ChocolateCapsuleInteraction.AnyCapsuleHeld += OnAnyCapsuleHeld;
+            ChocolateCapsuleInteraction.AnyCapsuleReleased += OnAnyCapsuleReleased;
+            ChocolateCapsuleInteraction.AnyCapsuleTrackingLost += OnAnyCapsuleReleased;
+        }
+
+        void OnDisable()
+        {
+            ChocolateCapsuleInteraction.AnyCapsulePinched -= OnAnyCapsulePinched;
+            ChocolateCapsuleInteraction.AnyCapsuleHeld -= OnAnyCapsuleHeld;
+            ChocolateCapsuleInteraction.AnyCapsuleReleased -= OnAnyCapsuleReleased;
+            ChocolateCapsuleInteraction.AnyCapsuleTrackingLost -= OnAnyCapsuleReleased;
+        }
+
+        bool AcceptsCapsule(ChocolateCapsuleInteraction capsule) =>
+            capsule != null && (m_BoundCapsule == null || capsule == m_BoundCapsule);
+
+        void OnAnyCapsulePinched(ChocolateCapsuleInteraction capsule, Vector3 position)
+        {
+            if (!AcceptsCapsule(capsule)) return;
+            m_PressedByEvent = true;
+            m_SquashVelocity += m_PressImpulse;
+        }
+
+        void OnAnyCapsuleHeld(ChocolateCapsuleInteraction capsule, Vector3 position)
+        {
+            if (AcceptsCapsule(capsule)) m_PressedByEvent = true;
+        }
+
+        void OnAnyCapsuleReleased(ChocolateCapsuleInteraction capsule)
+        {
+            if (AcceptsCapsule(capsule)) m_PressedByEvent = false;
+        }
+
+        void LateUpdate()
+        {
+            UpdateDisplayPose();
+            UpdateSquash(Time.deltaTime);
+        }
+
+        void UpdateSquash(float deltaTime)
+        {
+            if (m_Display == null || m_PopRoutine != null) return;
+            // The bound soft model knows whether it is held right now (hand contact, palm press or pointer);
+            // events only cover the moment before the first press binds it.
+            var pressed = m_BoundCapsule != null ? m_BoundCapsule.IsPinched : m_PressedByEvent;
+            m_Squash = StepSpring(m_Squash, ref m_SquashVelocity, pressed ? 1f : 0f,
+                pressed ? m_PressStiffness : m_ReleaseStiffness, pressed ? m_PressDamping : m_ReleaseDamping, deltaTime);
+            var spread = 1f + m_DiscSpread * m_Squash;
+            m_Display.transform.localScale = new Vector3(spread, 1f, spread);
+            m_Display.transform.position -= m_Display.transform.up * (m_DiscSink * Mathf.Max(0f, m_Squash));
+            if (m_Dome == null) return;
+            var dome = DomeScale(m_Squash, m_SquashHeight, m_SquashWidth);
+            var breath = !pressed && Mathf.Abs(m_Squash) < .05f ? Mathf.Sin(Time.time * Mathf.PI) * m_BreathAmount : 0f;
+            m_Dome.localScale = new Vector3(dome.x / spread, dome.y + breath, dome.z / spread);
+        }
 
         void OnLoopPointReached(VideoPlayer player)
         {
@@ -497,16 +642,52 @@ namespace Moodium.Reality
 
         void CompleteAndHide()
         {
+            var firstCompletion = !m_Completed;
+            var wasVisible = IsVisible;
             m_Completed = true;
             m_Advancing = false;
             if (m_Player != null)
             {
                 m_Player.isLooping = false;
                 m_Player.Pause();
-                m_Player.Stop();
             }
+            if (firstCompletion && wasVisible && m_Display != null && Application.isPlaying)
+            {
+                // Keep the last frame on screen while the dome swells and pops, then hide.
+                Popped?.Invoke(m_Display.transform.position);
+                if (m_PopRoutine != null) StopCoroutine(m_PopRoutine);
+                m_PopRoutine = StartCoroutine(PopThenHide());
+                return;
+            }
+            if (m_Player != null) m_Player.Stop();
             if (m_Display != null)
                 UpdateDisplayVisibility();
+        }
+
+        IEnumerator PopThenHide()
+        {
+            var startScale = m_Dome != null ? m_Dome.localScale : Vector3.one;
+            var domeTint = m_NatureWorld ? m_NatureDomeColor : m_CandyDomeColor;
+            for (var t = 0f; t < m_PopSeconds; t += Time.deltaTime)
+            {
+                var k = Mathf.Clamp01(t / m_PopSeconds);
+                var eased = 1f - (1f - k) * (1f - k);
+                if (m_Dome != null) m_Dome.localScale = startScale * Mathf.Lerp(1f, m_PopScale, eased);
+                SetMaterialAlpha(m_DomeMaterial, domeTint, m_DomeOpacity * (1f - k));
+                SetMaterialAlpha(m_Material, Color.white, 1f - k);
+                yield return null;
+            }
+            m_PopRoutine = null;
+            if (m_Player != null) m_Player.Stop();
+            UpdateDisplayVisibility();
+        }
+
+        static void SetMaterialAlpha(Material material, Color color, float alpha)
+        {
+            if (material == null) return;
+            color.a = Mathf.Clamp01(alpha);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", color);
         }
 
         void OnDestroy()

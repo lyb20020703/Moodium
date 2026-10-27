@@ -26,7 +26,7 @@ public sealed class MoodiVoiceTests
     [Test]
     public void EveryLineHasAChineseAndAnEnglishClip()
     {
-        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(28));
+        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(40));
         foreach (var language in new[] { "zh", "en" })
         foreach (var id in MoodiVoice.AllIds)
         {
@@ -88,5 +88,36 @@ public sealed class MoodiVoiceTests
         Assert.That(m_Host.GetComponent<AudioSource>().clip,Is.Null,"Hidden entry must discard the old invitation.");
         voice.SayAfter("S1n",0f);voice.Stop();update.Invoke(voice,null);
         Assert.That(m_Host.GetComponent<AudioSource>().clip,Is.Null,"Stop must cancel delayed speech too.");
+    }
+
+    [Test]
+    public void SqueezeRescueLinesExistAndOnlyK3Teaches()
+    {
+        foreach (var id in new[] { "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8a", "K8b", "K8c", "K9", "K10" })
+        {
+            Assert.That(System.Array.IndexOf(MoodiVoice.AllIds, id), Is.GreaterThanOrEqualTo(0), id);
+            Assert.That(MoodiVoice.IsTeaching(id), Is.EqualTo(id == "K3"), id);
+        }
+    }
+
+    [Test]
+    public void MuffleGoesFromDeepInsideToClear()
+    {
+        Assert.That(MoodiVoice.MuffleCutoff(1f), Is.EqualTo(1400f).Within(1f));
+        Assert.That(MoodiVoice.MuffleCutoff(0f), Is.EqualTo(22000f).Within(1f));
+        Assert.That(MoodiVoice.MuffleCutoff(.5f), Is.LessThan(MoodiVoice.MuffleCutoff(.2f)));
+    }
+
+    [Test]
+    public void RescueTeachingWaitIncludesQueuedSpeechAndStopClearsIt()
+    {
+        m_Host = new GameObject("Rescue Moodi");
+        var voice = m_Host.AddComponent<MoodiVoice>();
+        typeof(MoodiVoice).GetField("m_SpeechEndsAt", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .SetValue(voice, Time.time);
+        Assert.That(voice.Say("K3"), Is.True);
+        Assert.That(voice.HasPendingSpeech, Is.True, "The tutorial must wait for the queued request.");
+        voice.Stop();
+        Assert.That(voice.HasPendingSpeech, Is.False);
     }
 }

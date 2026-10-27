@@ -39,6 +39,8 @@ namespace Moodium.NatureWorld
         bool m_ToldGrowth, m_SaidStill;
         Vector3 m_StillAnchor;
         bool HandHasGuide => m_HandCompanion != null && m_HandCompanion.HasControl;
+        // Set when the squeeze rescue handed Moodi over: it already thanked the user (K10).
+        bool m_RescueShown;
         SpriteRenderer m_Glow;
         SpriteRenderer m_Ring;
         SpriteRenderer m_Invite;
@@ -113,6 +115,7 @@ namespace Moodium.NatureWorld
             m_WaitSince = m_StillSince = -1f;
             m_LookBacks = 0;
             m_ToldGrowth = m_SaidStill = false;
+            m_RescueShown = false;
             Moodium.Characters.MoodiVoice.ResetSession();
             m_Trail.SetGuidedMode(true);
             m_Trail.StepGrown += OnStep;
@@ -161,6 +164,23 @@ namespace Moodium.NatureWorld
             enabled = true;
         }
 
+        /// <summary>
+        /// The squeeze rescue's Moodi jumped out and stopped at <paramref name="position"/>. Show the walk guide's
+        /// Moodi right there (same prefab and size), let it follow the user immediately, and start the palm
+        /// teaching (A2) after <paramref name="teachDelay"/> seconds so it follows the thank-you line.
+        /// </summary>
+        public void AppearFromRescue(Vector3 position, float teachDelay = 2.8f)
+        {
+            if (m_Guide == null) return;
+            m_RescueShown = true;
+            m_Guide.position = position;
+            m_HasGuidePosition = true;
+            m_Guide.gameObject.SetActive(true);
+            if (m_Glow != null) m_Glow.gameObject.SetActive(true);
+            if (m_GuideVoice != null) m_GuideVoice.SayAfter("A2", teachDelay);
+            if (m_HandCompanion != null) m_HandCompanion.NotifyInvited();
+        }
+
         public void SetProgress(float progress)
         {
             if (progress < .999f || m_HasCompletedEnergy) return;
@@ -179,7 +199,12 @@ namespace Moodium.NatureWorld
             if (m_Rain != null && m_Rain.IsPlaying) m_RainSeen = true;
             if (m_Phase == Phase.Waiting)
             {
-                if (!ShouldOfferWalk(m_RainSeen, m_Rain != null && m_Rain.IsPlaying, Time.time - m_FullAt)) return;
+                if (!ShouldOfferWalk(m_RainSeen, m_Rain != null && m_Rain.IsPlaying, Time.time - m_FullAt))
+                {
+                    // A rescued Moodi is already out: let it come over to the user instead of waiting hidden.
+                    if (m_RescueShown) UpdateCompanionFollow();
+                    return;
+                }
                 // Basic planting must not depend on finding a large, completely
                 // reconstructed garden target. Each plant still validates its floor.
                 m_Trail.SetWalkingEnabled(true);
@@ -325,7 +350,8 @@ namespace Moodium.NatureWorld
             Play(m_Hop, m_Target, .25f);
             StartCoroutine(DemonstrateGrowth(m_Target));
             if(m_GuideMoodi!=null)m_GuideMoodi.PlayWave();
-            if (m_GuideVoice != null) { m_GuideVoice.Say("A1"); m_GuideVoice.Say("A2"); }
+            // After the squeeze rescue Moodi has already thanked the user and started the palm teaching.
+            if (m_GuideVoice != null && !m_RescueShown) { m_GuideVoice.Say("A1"); m_GuideVoice.Say("A2"); }
             if (m_HandCompanion != null) m_HandCompanion.NotifyInvited();
         }
 
