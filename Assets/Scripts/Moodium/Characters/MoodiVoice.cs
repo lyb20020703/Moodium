@@ -30,12 +30,21 @@ namespace Moodium.Characters
             "C1", "C2a", "C2b", "C2c", "C3", "C4", "C5", "C6",
             "D1", "D2", "D3", "D4a", "D4b", "D5", "D6n", "D6c", "D7",
             "E1", "E2",
-            "F1", "F1t", "F2", "F3", "F4", "F5", "F6", "F7",
+            "F2", "F3", "F4", "F5", "F6", "F7",
             "S1c", "S1n", "S2",
             "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8a", "K8b", "K8c", "K9", "K10"
         };
 
-        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2", "K3", "F1", "F1t", "F2", "F4" };
+        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2", "K3", "F2", "F4" };
+        static readonly HashSet<string> OptionalIds = new() { "K4", "K5", "K6", "K7", "K8a", "K8b", "K8c", "K9", "B1a", "B1b", "C2a", "C2b", "C2c", "C3", "C4", "C5", "D1", "D2", "D4a", "D4b", "D5", "D6n", "D6c", "E1" };
+        static readonly Queue<QueuedLine> s_Queue = new();
+        static MoodiVoice s_Current;
+        static AudioSource s_Emitter;
+        static float s_BusyUntil = -10f;
+        const float GlobalGap = .35f;
+        const float QueueTimeout = 10f;
+        const int QueueLimit = 3;
+        struct QueuedLine { public MoodiVoice Voice; public string Id; public float Expires; public bool Reserved; }
 
         static readonly Dictionary<string, float> Cooldowns = new() { { "C5", 20f }, { "D5", 15f }, { "E1", 60f }, { "K9", 30f }, { "F5", 20f } };
 
@@ -57,11 +66,7 @@ namespace Moodium.Characters
         readonly Dictionary<string, AudioClip> m_Clips = new();
         readonly Dictionary<string, float> m_NextAllowed = new();
         readonly Dictionary<string, string> m_LastVariant = new();
-        string m_Pending;
         string m_Current;
-        string m_Delayed;
-        float m_DelayedAt;
-        float m_SpeechEndsAt = -10f;
         AudioLowPassFilter m_LowPass;
 
         /// <summary>Low-pass cutoff for a muffle amount: 0 = clear (22 kHz), 1 = deep inside the jelly (1.4 kHz).</summary>
@@ -70,9 +75,8 @@ namespace Moodium.Characters
         /// <summary>Make Moodi sound like it is inside the squeeze bag (K lines). 0 turns the filter off.</summary>
         public void Muffle(float amount)
         {
-            EnsureSource();
-            if (m_LowPass == null && !TryGetComponent(out m_LowPass))
-                m_LowPass = gameObject.AddComponent<AudioLowPassFilter>();
+            EnsureEmitter();
+            if (m_LowPass == null) m_LowPass = s_Emitter.GetComponent<AudioLowPassFilter>() ?? s_Emitter.gameObject.AddComponent<AudioLowPassFilter>();
             m_LowPass.enabled = amount > .001f;
             m_LowPass.cutoffFrequency = MuffleCutoff(amount);
             m_LowPass.lowpassResonanceQ = 1f;
@@ -97,31 +101,30 @@ namespace Moodium.Characters
         /// <summary>The user already did what this teaching line explains, so never say it this session.</summary>
         public static void MarkLearned(string id) => s_Taught.Add(id);
 
-        public bool IsSpeaking => m_Source != null && m_Source.isPlaying;
-        public bool HasPendingSpeech => m_Pending != null || m_Delayed != null;
+        public bool IsSpeaking => s_Current == this && s_Emitter != null && s_Emitter.isPlaying;
+        public static bool IsAnyoneSpeaking => s_Emitter != null && s_Emitter.isPlaying;
+        public bool HasPendingSpeech => HasQueued(this);
         public string CurrentLine => IsSpeaking ? m_Current : null;
 
-        void Awake() => EnsureSource();
+        void Awake() => EnsureEmitter();
 
         // A hidden Moodi (sticker lost, mood check open) must not speak a stale line when it comes back.
         void OnDisable()
         {
-            m_Delayed = null;
-            m_Pending = null;
+            if (s_Current == this) Stop();
+            RemoveQueued(this);
         }
 
         void Update()
         {
-            if (m_Delayed != null && Time.time >= m_DelayedAt)
+            if (s_Current == this && s_Emitter != null && !s_Emitter.isPlaying) { s_Current = null; m_Current = null; }
+            if (IsAnyoneSpeaking || Time.unscaledTime < s_BusyUntil) return;
+            while (s_Queue.Count > 0)
             {
-                var delayed = m_Delayed;
-                m_Delayed = null;
-                Say(delayed);
+                var q = s_Queue.Dequeue();
+                if (q.Voice == null || !q.Voice.isActiveAndEnabled || (!q.Reserved && Time.unscaledTime > q.Expires)) continue;
+                if (q.Voice.Play(q.Id)) break;
             }
-            if (m_Pending == null || IsSpeaking || Time.time < m_SpeechEndsAt + m_TeachingGap) return;
-            var id = m_Pending;
-            m_Pending = null;
-            Play(id);
         }
 
         /// <summary>Say one line by id. Returns true if it started (or was queued, for a teaching line).</summary>
@@ -132,34 +135,31 @@ namespace Moodium.Characters
             if (TeachingIds.Contains(id))
             {
                 if (s_Taught.Contains(id)) return false;
-                var busy = IsSpeaking || Time.time < m_SpeechEndsAt + m_TeachingGap;
-                if (busy && m_Pending != null) return false; // one queued teaching line at a time; ask again later
+                if (s_Taught.Contains(id)) return false;
                 s_Taught.Add(id);
-                if (busy) { m_Pending = id; return true; }
-                return Play(id);
+                return Request(id, true);
             }
-            if (IsSpeaking) return false;
+            if (OptionalIds.Contains(id) && IsAnyoneSpeaking) return false;
             if (m_NextAllowed.TryGetValue(id, out var next) && Time.time < next) return false;
-            return Play(id);
+            return Request(id, false);
         }
 
         /// <summary>Say a random line from a variant group ("B1", "C2" or "D4"), never the same one twice in a row.</summary>
         public bool SayOneOf(string group)
         {
             if (!Variants.TryGetValue(group, out var ids)) return Say(group);
-            if (IsSpeaking) return false;
+            if (IsAnyoneSpeaking) return false;
             m_LastVariant.TryGetValue(group, out var last);
             var pick = ids[Random.Range(0, ids.Length)];
             if (ids.Length > 1 && pick == last) pick = ids[(System.Array.IndexOf(ids, pick) + 1) % ids.Length];
             m_LastVariant[group] = pick;
-            return Play(pick);
+            return Request(pick, false);
         }
 
         /// <summary>Say a line after a short delay (e.g. once a model has appeared). A newer request replaces an older one.</summary>
         public void SayAfter(string id, float delay)
         {
-            m_Delayed = id;
-            m_DelayedAt = Time.time + Mathf.Max(0f, delay);
+            StartCoroutine(Delayed(id, delay));
         }
 
         /// <summary>D6 for the world you are in.</summary>
@@ -167,9 +167,19 @@ namespace Moodium.Characters
 
         public void Stop()
         {
-            m_Pending = null;
-            m_Delayed = null;
-            if (m_Source != null) m_Source.Stop();
+            RemoveQueued(this);
+            if (s_Current == this && s_Emitter != null) { s_Emitter.Stop(); s_Current = null; s_BusyUntil = Time.unscaledTime + GlobalGap; m_Current = null; }
+        }
+
+        System.Collections.IEnumerator Delayed(string id, float delay) { yield return new WaitForSecondsRealtime(Mathf.Max(0f, delay)); Say(id); }
+        static bool HasQueued(MoodiVoice v) { foreach (var q in s_Queue) if (q.Voice == v) return true; return false; }
+        static void RemoveQueued(MoodiVoice v) { var keep = new Queue<QueuedLine>(); while (s_Queue.Count > 0) { var q=s_Queue.Dequeue(); if(q.Voice!=v) keep.Enqueue(q); } while(keep.Count>0)s_Queue.Enqueue(keep.Dequeue()); }
+        bool Request(string id, bool reserved)
+        {
+            if (!reserved && IsAnyoneSpeaking) return false;
+            if (!reserved && s_Queue.Count >= QueueLimit) return false;
+            if (IsAnyoneSpeaking || Time.unscaledTime < s_BusyUntil) { if (s_Queue.Count >= QueueLimit) return false; s_Queue.Enqueue(new QueuedLine { Voice=this, Id=id, Expires=Time.unscaledTime+QueueTimeout, Reserved=reserved }); return true; }
+            return Play(id);
         }
 
         bool Play(string id)
@@ -177,13 +187,12 @@ namespace Moodium.Characters
             var clip = Load(id);
             if (clip == null) return false;
             EnsureSource();
-            m_Source.Stop();
-            m_Source.clip = clip;
-            m_Source.volume = m_Volume;
-            m_Source.Play();
+            EnsureEmitter();
+            if (IsAnyoneSpeaking || Time.unscaledTime < s_BusyUntil) return Request(id, TeachingIds.Contains(id));
+            s_Emitter.clip = clip; s_Emitter.volume = m_Volume; s_Emitter.Play(); s_Current = this;
             m_Current = id;
-            m_SpeechEndsAt = Time.time + clip.length;
             if (Cooldowns.TryGetValue(id, out var cooldown)) m_NextAllowed[id] = Time.time + cooldown;
+            s_BusyUntil = Time.unscaledTime + clip.length + GlobalGap;
             return true;
         }
 
@@ -199,15 +208,16 @@ namespace Moodium.Characters
 
         void EnsureSource()
         {
-            if (m_Source != null) return;
-            m_Source = gameObject.AddComponent<AudioSource>();
-            m_Source.playOnAwake = false;
-            m_Source.loop = false;
-            m_Source.spatialBlend = 1f;
-            m_Source.rolloffMode = AudioRolloffMode.Logarithmic;
-            m_Source.minDistance = .4f;
-            m_Source.maxDistance = 6f;
-            m_Source.dopplerLevel = 0f;
+            EnsureEmitter();
         }
+
+        void EnsureEmitter()
+        {
+            if (s_Emitter != null) return;
+            var go = GameObject.Find("Moodi Voice Emitter") ?? new GameObject("Moodi Voice Emitter");
+            s_Emitter = go.GetComponent<AudioSource>() ?? go.AddComponent<AudioSource>();
+            s_Emitter.playOnAwake = false; s_Emitter.loop = false; s_Emitter.spatialBlend = 1f; s_Emitter.rolloffMode = AudioRolloffMode.Logarithmic; s_Emitter.minDistance=.4f; s_Emitter.maxDistance=6f; s_Emitter.dopplerLevel=0f;
+        }
+        void LateUpdate() { if (s_Current == this && s_Emitter != null) s_Emitter.transform.position = transform.position; }
     }
 }

@@ -143,6 +143,16 @@ namespace Moodium.PointClouds
             var by = block / perRow;
             return new Vector2((bx * 4 + (cx == 0 ? .5f : 3.5f)) / atlasSize, (by * 4 + (cy == 0 ? .5f : 3.5f)) / atlasSize);
         }
+        public static Vector2 BlockUV(int index, bool glow, int atlasSize, int cx, int cy, bool sharedGlow)
+        {
+            var block = sharedGlow ? index + (glow ? 1 : 0) : index * 2 + (glow ? 1 : 0);
+            var perRow = atlasSize / 4; var bx = block % perRow; var by = block / perRow;
+            return new Vector2((bx * 4 + (cx == 0 ? .5f : 3.5f)) / atlasSize, (by * 4 + (cy == 0 ? .5f : 3.5f)) / atlasSize);
+        }
+        public static Vector2 BlockUV(int index, bool glow, int atlasSize, int cx, int cy, bool sharedGlow, int pointCount)
+        {
+            return BlockUV(glow && sharedGlow ? pointCount : index, false, atlasSize, cx, cy, false);
+        }
 
         /// <summary>Corner order matches the quad: 0 = (−a, −b), 1 = (+a, −b), 2 = (+a, +b), 3 = (−a, +b).</summary>
         public static void WriteBlockUVs(Vector2[] uvs, int offset, int index, bool glow, int atlasSize)
@@ -152,12 +162,33 @@ namespace Moodium.PointClouds
             uvs[offset + 2] = BlockUV(index, glow, atlasSize, 1, 1);
             uvs[offset + 3] = BlockUV(index, glow, atlasSize, 0, 1);
         }
+        public static void WriteBlockUVs(Vector2[] uvs, int offset, int index, bool glow, int atlasSize, bool sharedGlow)
+        {
+            uvs[offset] = BlockUV(index, glow, atlasSize, 0, 0, sharedGlow);
+            uvs[offset + 1] = BlockUV(index, glow, atlasSize, 1, 0, sharedGlow);
+            uvs[offset + 2] = BlockUV(index, glow, atlasSize, 1, 1, sharedGlow);
+            uvs[offset + 3] = BlockUV(index, glow, atlasSize, 0, 1, sharedGlow);
+        }
+        public static void WriteBlockUVs(Vector2[] uvs, int offset, int index, bool glow, int atlasSize, bool sharedGlow, int pointCount)
+        {
+            uvs[offset] = BlockUV(index, glow, atlasSize, 0, 0, sharedGlow, pointCount);
+            uvs[offset + 1] = BlockUV(index, glow, atlasSize, 1, 0, sharedGlow, pointCount);
+            uvs[offset + 2] = BlockUV(index, glow, atlasSize, 1, 1, sharedGlow, pointCount);
+            uvs[offset + 3] = BlockUV(index, glow, atlasSize, 0, 1, sharedGlow, pointCount);
+        }
 
         /// <summary>Smallest power-of-two atlas with two 4×4 blocks per point (80 000 points → 2048²).</summary>
         public static int AtlasSizeFor(int pointCount)
         {
             var size = 4;
             while ((long)(size / 4) * (size / 4) < (long)pointCount * 2) size *= 2;
+            return size;
+        }
+        public static int AtlasSizeFor(int pointCount, bool sharedGlow)
+        {
+            if (!sharedGlow) return AtlasSizeFor(pointCount);
+            var size = 4;
+            while ((long)(size / 4) * (size / 4) < pointCount + 1L) size *= 2;
             return size;
         }
 

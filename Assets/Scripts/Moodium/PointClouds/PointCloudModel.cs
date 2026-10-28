@@ -263,7 +263,7 @@ namespace Moodium.PointClouds
                     if (energy > .002f || m_Velocity[i].sqrMagnitude > 1e-6f) anyMoving = true;
                     m_Work[i] = rest + m_Offset[i];
                     m_Size[i] = PointCloudFx.TouchSize(energy * 1.6f);
-                    PointCloudFx.WriteBlockUVs(chunk.Uvs, (i - start) * 4, i, energy * 1.6f > PointCloudFx.GlowAt, atlas);
+                    PointCloudFx.WriteBlockUVs(chunk.Uvs, (i - start) * 4, i, energy * 1.6f > PointCloudFx.GlowAt, atlas, true, m_Asset.Count);
                 }
                 chunk.Moving = anyMoving || chunk.Touching;
                 if (!chunk.Moving)

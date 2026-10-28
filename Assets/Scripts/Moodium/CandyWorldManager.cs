@@ -7,6 +7,7 @@ using Moodium.Opening;
 using Moodium.Squeeze;
 using Moodium.MoodCheck;
 using Moodium.Rewards;
+using Moodium.Characters;
 using TMPro;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
@@ -738,6 +739,19 @@ namespace Moodium.CandyWorld
                     r.transform.name.Contains("Garden") || r.GetComponentInParent<Moodium.Rewards.RewardGrowIn>() != null)) occupied.Add(r.bounds.center);
             m_Rings?.SetOccupiedPositions(occupied);
             m_Rings?.OnGardenDiscovered(headSnapshot);
+            StartCoroutine(SummonBubbleAfterJourneyDelay(headSnapshot));
+        }
+
+        System.Collections.IEnumerator SummonBubbleAfterJourneyDelay(Vector3 headSnapshot)
+        {
+            yield return new WaitForSecondsRealtime(1.5f);
+            if (!m_Running || m_BubbleWorld == null || m_Journey == null || m_Journey.Stage != WorldJourneyStage.Explore || MoodiVoice.IsAnyoneSpeaking) yield break;
+            var viewer = Camera.main != null ? Camera.main.transform : transform;
+            var bag = FindActiveCalibratedNatureCapsule();
+            var hover = bag != null ? bag.GetComponentInParent<CalibratedSensoryBagPresentation>().CenterWorldPosition + Vector3.up * .3f : viewer.position + viewer.forward * .6f - Vector3.up * .25f;
+            var from = hover - Vector3.up * .35f;
+            m_BubbleWorld.Summon(from, hover);
+            Debug.Log("[World Journey] Bubble summoned from squeeze-top fallback after garden discovery.");
         }
         void OnWalkInvited()
         {

@@ -66,7 +66,7 @@ namespace Moodium.PointClouds
             var atlas = Atlas != null ? Atlas.width : PointCloudFx.AtlasSizeFor(Count);
             for (var k = 0; k < n; k++)
             {
-                PointCloudFx.WriteBlockUVs(uvs, k * 4, start + k, false, atlas);
+                PointCloudFx.WriteBlockUVs(uvs, k * 4, start + k, false, atlas, true, Count);
                 var v = k * 4;
                 var q = k * 6;
                 indices[q] = v; indices[q + 1] = v + 1; indices[q + 2] = v + 2;

@@ -20,8 +20,8 @@ public static class PointCloudModelBaker
     const string OutputFolder = "Assets/Resources/" + PointCloudModelAsset.ResourceFolder;
     public const int ChunkSize = 4000;
     public const int DefaultPoints = 80000;
-    public const int FoliagePoints = 60000;
-    public const float PointSizeFactor = 2.0f;   // quad edge = spacing × factor; the round soft blob covers less than
+    public const int FoliagePoints = 140000;
+    public const float PointSizeFactor = 1.4f;   // quad edge = spacing × factor; the round soft blob covers less than
                                                  // the square, so the quads overlap more to keep the surface closed
     const int MaxTextureRead = 1024;
 
@@ -92,7 +92,7 @@ public static class PointCloudModelBaker
             var cumulative = new float[tris.Count];
             var total = 0f;
             for (var i = 0; i < tris.Count; i++) { total += tris[i].Area; cumulative[i] = total; }
-            var oversample = surfaces.Any(s => s.AlphaTest) ? 6 : 1;
+            var oversample = surfaces.Any(s => s.AlphaTest) ? 60 : 1;
             var rng = new System.Random(12345);
             var pos = new List<Vector3>(points);
             var nrm = new List<Vector3>(points);
@@ -155,7 +155,7 @@ public static class PointCloudModelBaker
             asset.PointSize = Mathf.Sqrt(visibleArea / n) * PointSizeFactor;
 
             // Atlas: two soft round 4×4 blocks per point (own colour, glow colour), bilinear, no mipmaps.
-            var size = PointCloudFx.AtlasSizeFor(n);
+            var size = PointCloudFx.AtlasSizeFor(n, foliage);
             var atlas = new Texture2D(size, size, TextureFormat.RGBA32, false, false)
             {
                 name = prefab.name + " Point Colours", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp
@@ -164,9 +164,9 @@ public static class PointCloudModelBaker
             var perRow = size / 4;
             for (var k = 0; k < n; k++)
             {
-                for (var glow = 0; glow < 2; glow++)
+                for (var glow = 0; glow < (foliage ? 1 : 2); glow++)
                 {
-                    var block = k * 2 + glow;
+                    var block = foliage ? k : k * 2 + glow;
                     var x0 = block % perRow * 4;
                     var y0 = block / perRow * 4;
                     var c = glow == 0 ? colors[k] : PointCloudFx.GlowColor(colors[k]);
@@ -177,6 +177,12 @@ public static class PointCloudModelBaker
                         texels[(y0 + y) * size + x0 + x] = c;
                     }
                 }
+            }
+            if (foliage)
+            {
+                var block = n; var x0 = block % perRow * 4; var y0 = block / perRow * 4;
+                for (var y = 0; y < 4; y++) for (var x = 0; x < 4; x++)
+                { var c = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(PointCloudFx.BlobAlpha(x, y) * 255f)); texels[(y0+y)*size+x0+x] = c; }
             }
             atlas.SetPixels32(texels);
             atlas.Apply(false, false);
@@ -222,7 +228,7 @@ public static class PointCloudModelBaker
             foreach (var mesh in asset.Chunks) AssetDatabase.AddObjectToAsset(mesh, asset);
             EditorUtility.SetDirty(asset);
             AssetDatabase.SaveAssets();
-            Debug.Log($"[Point Clouds] {prefab.name}: {n} points, {chunkCount} chunks, point size {asset.PointSize * 100f:0.0} cm (root-local), " +
+            Debug.Log($"[Point Clouds] acceptance {acceptance:P1}; {prefab.name}: {n} points (target {points}), trunk/leaf surfaces {(foliage ? "leaf" : "trunk")}, {chunkCount} chunks, world point size {asset.PointSize * 100f:0.0} cm (root-local), " +
                       $"{(foliage ? "foliage" : "solid")}, colour atlas {size}² → {path}");
             return asset;
         }

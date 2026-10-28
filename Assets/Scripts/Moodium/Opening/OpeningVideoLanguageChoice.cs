@@ -30,8 +30,8 @@ namespace Moodium.Opening
             var question = CreateText("Language Question", "你更希望 Moodi 用哪种语言陪你探索？\nWhich language would you like Moodi to use?", font, 36f);
             question.rectTransform.anchoredPosition = new Vector2(0f, 260f);
             question.rectTransform.sizeDelta = new Vector2(860f, 115f);
-            m_Chinese = CreateButton("Language Button - Chinese", "中文", new Vector2(-190f, -160f), font, roundedSprite, "中文");
-            m_English = CreateButton("Language Button - English", "English", new Vector2(190f, -160f), font, roundedSprite, "English");
+            m_Chinese = CreateButton("Language Button - Chinese", new Vector2(-165f, -160f), "中文", "lang_zh");
+            m_English = CreateButton("Language Button - English", new Vector2(165f, -160f), "English", "lang_en");
         }
 
         public void SelectChineseWhenTimedOut() => SelectAutomatically("中文");
@@ -52,34 +52,24 @@ namespace Moodium.Opening
             return text;
         }
 
-        GameObject CreateButton(string name, string label, Vector2 position, TMP_FontAsset font, Sprite roundedSprite, string value)
+        GameObject CreateButton(string name, Vector2 position, string value, string assetId)
         {
             var item = new GameObject(name, typeof(RectTransform));
             item.transform.SetParent(transform, false);
             var rect = item.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(285f, 94f);
+            rect.sizeDelta = new Vector2(330f, 114f);
             rect.anchoredPosition = position;
             var image = item.AddComponent<Image>();
-            image.sprite = roundedSprite;
-            image.type = roundedSprite == null ? Image.Type.Simple : Image.Type.Sliced;
-            image.color = new Color(.055f, .08f, .16f, .9f);
-            var outline = item.AddComponent<Outline>();
-            outline.effectColor = new Color(.42f, .58f, .95f, .65f);
-            outline.effectDistance = new Vector2(1f, -1f);
+            image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_idle");
+            image.type = Image.Type.Simple;
             var spatialButton = item.AddComponent<OpeningVideoSpatialButton>();
-            spatialButton.Configure(touchId => SelectFromPress(value, touchId));
+            spatialButton.Configure(touchId => { image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_pressed"); SelectFromPress(value, touchId); });
             var button = item.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(() => spatialButton.OnPointerClick(null));
             var collider = item.AddComponent<BoxCollider>();
             collider.isTrigger = false;
-            collider.size = new Vector3(285f, 94f, 2f);
-            var text = CreateText("Label", label, font, 36f);
-            text.transform.SetParent(item.transform, false);
-            text.rectTransform.anchorMin = Vector2.zero;
-            text.rectTransform.anchorMax = Vector2.one;
-            text.rectTransform.offsetMin = Vector2.zero;
-            text.rectTransform.offsetMax = Vector2.zero;
+            collider.size = new Vector3(330f, 114f, 2f);
             return item;
         }
 

@@ -594,6 +594,7 @@ namespace Moodium.NatureWorld
 
         void Sparkle(Vector3 position)
         {
+            m_GrowthGlowSprite = Resources.Load<Sprite>("MoodiumWalkTrail/walk_growth_glow");
             if (m_GrowthGlowSprite == null)
             {
                 const int size = 128;
@@ -619,7 +620,8 @@ namespace Moodium.NatureWorld
             var burst = root.AddComponent<SpriteRenderer>();
             burst.sprite = m_GrowthGlowSprite;
             burst.color = Color.white;
-            burst.transform.position = position + Vector3.up * .018f;
+            burst.transform.position = position + Vector3.up * .025f;
+            burst.sortingOrder = 1;
             StartCoroutine(FadeBurst(burst));
         }
         System.Collections.IEnumerator FadeBurst(SpriteRenderer burst)
@@ -669,7 +671,7 @@ namespace Moodium.NatureWorld
             renderer.sprite = Resources.Load<Sprite>("MoodiumWalkTrail/" + resource);
             if (renderer.sprite != null) go.transform.localScale = Vector3.one * width / renderer.sprite.bounds.size.x;
             renderer.color = tint ? m_Tint : Color.white;
-            if (floor) go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            if (floor) { go.transform.rotation = Quaternion.Euler(90f, 0f, 0f); renderer.sortingOrder = 1; }
             return renderer;
         }
         void Face(Transform visual, Vector3 position)

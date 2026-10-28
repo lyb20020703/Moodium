@@ -29,20 +29,11 @@ namespace Moodium.NatureWorld
         public void OnGardenDiscovered() { if (viewer != null) OnGardenDiscovered(viewer.position); }
         public void OnGardenDiscovered(Vector3 headSnapshot)
         {
-            if(viewer==null || rings.FindAll(r=>!r.Table).Count>=3)return;
-            var hits=new List<BubbleRingPlacement.GroundHit>();
-            var meshes = FindFirstObjectByType<UnityEngine.XR.ARFoundation.ARMeshManager>();
-            foreach(var hit in Physics.RaycastAll(headSnapshot,Vector3.down,10f,~0,QueryTriggerInteraction.Ignore))
-                if (meshes != null && NatureFootstepGrassController.IsGeneratedSpatialMeshCollider(hit.collider, meshes.meshes)) hits.Add(new(hit.point,hit.normal));
-            var blocked=new List<Vector3>(occupied); foreach(var ring in rings)blocked.Add(ring.Point);
-            if(BubbleRingPlacement.FloorRing(headSnapshot,hits,steps,blocked,out var p)) Add(p,false);
-            else Debug.Log("[Bubble Ring] No reachable clear floor point.");
+            Debug.Log("[World Journey] Bubble rings disabled; waiting for squeeze-bag entry.");
         }
         public void OnWalkInvited(Bounds? bagBounds,float tableHeight,IReadOnlyList<Bounds> obstacles)
         {
-            if(rings.Exists(r=>r.Table))return;
-            if(BubbleRingPlacement.TableRing(bagBounds,tableHeight,viewer!=null?viewer.forward:Vector3.forward,obstacles??Array.Empty<Bounds>(),out var p))Add(p,true);
-            else Debug.LogWarning("[Bubble Ring] No bag or clear table position.");
+            Debug.Log("[World Journey] Bubble rings disabled; waiting for squeeze-bag entry.");
         }
         void Add(Vector3 p,bool table)
         {
