@@ -80,6 +80,8 @@ namespace Moodium.Calibration
         public SensoryBagCalibrationData CurrentData => m_Rectangle != null ? m_Rectangle.Data : m_DefaultData;
         public bool FrameVisible => m_FrameVisible;
         public bool IsConfirmed => m_Confirmed;
+        public bool HasUserInteracted { get; private set; }
+        public void NotifyUserInteraction() => HasUserInteracted = true;
 
         public void ConfigureFonts(TMP_FontAsset chineseFont, TMP_FontAsset englishFont)
         {
@@ -102,6 +104,7 @@ namespace Moodium.Calibration
             SensoryBagCalibrationSettings settings)
         {
             m_Anchor = anchor;
+            HasUserInteracted = false;
             ClearDrags();
             m_Settings = settings;
             m_TrackingState = "Tracking";
@@ -140,6 +143,7 @@ namespace Moodium.Calibration
 
         public void MoveFrameToAnchorPlane(Vector2 centerOffset)
         {
+            NotifyUserInteraction();
             if (m_Rectangle == null)
                 return;
             m_Rectangle.MoveTo(centerOffset);
@@ -148,6 +152,7 @@ namespace Moodium.Calibration
 
         public void ResizeFromHandle(CalibrationHandleKind kind, Vector2 anchorLocalPoint)
         {
+            NotifyUserInteraction();
             if (m_Rectangle == null)
                 return;
             m_Rectangle.ResizeFromHandle(kind, anchorLocalPoint);
@@ -156,6 +161,7 @@ namespace Moodium.Calibration
 
         public void SetPlaneHeight(float offsetMeters)
         {
+            NotifyUserInteraction();
             if(m_Rectangle==null||!m_FrameVisible||m_Confirmed)return;
             m_Rectangle.SetPlaneHeight(offsetMeters);RefreshVisuals();
         }
@@ -170,6 +176,7 @@ namespace Moodium.Calibration
             if (!m_FrameVisible || m_Confirmed || m_Rectangle == null || m_Anchor == null || m_Drags.ContainsKey(pointerId))
                 return;
             var localPoint = SensoryBagCalibrationRectangle.ProjectWorldPointToAnchorPlane(m_Anchor, worldPosition);
+            NotifyUserInteraction();
             m_Drags[pointerId] = kind;
             m_DragStartPointer[pointerId] = localPoint;
             m_DragStartCenter[pointerId] = m_Rectangle.Data.CenterOffset;
@@ -211,6 +218,7 @@ namespace Moodium.Calibration
 
         public void ResetCalibration()
         {
+            NotifyUserInteraction();
             ClearDrags();
             if (m_Rectangle == null)
                 return;
@@ -225,6 +233,7 @@ namespace Moodium.Calibration
         {
             if (m_Rectangle == null || m_Confirmed)
                 return;
+            NotifyUserInteraction();
             m_Confirmed = true;
             ClearDrags();
             SetFrameVisible(false);
@@ -756,7 +765,10 @@ namespace Moodium.Calibration
         void OnDestroy()
         {
             if (m_FrameRoot != null)
-                Destroy(m_FrameRoot.gameObject);
+            {
+                if (Application.isPlaying) Destroy(m_FrameRoot.gameObject);
+                else DestroyImmediate(m_FrameRoot.gameObject);
+            }
         }
     }
 }

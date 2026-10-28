@@ -35,6 +35,7 @@ namespace Moodium.MoodCheck
         public MoodCheckSample PendingSample { get; private set; }
         public Transform PanelTransform => m_PanelInstance != null ? m_PanelInstance.transform : null;
         public bool IsVisible => m_PanelInstance != null && m_PanelInstance.activeSelf;
+        public bool ShowRecommendCard { get; set; } = true;
 
         public void Configure(GameObject panelPrefab, Camera camera)
         {
@@ -90,10 +91,17 @@ namespace Moodium.MoodCheck
                 State = MoodCheckState.Comparing;
                 ShowComparison();
             }
-            else
+            else if (ShowRecommendCard)
             {
                 State = MoodCheckState.Recommending;
                 ShowRecommendation(false);
+            }
+            else
+            {
+                State = MoodCheckState.Done;
+                DismissPanel();
+                SendCompleted();
+                Debug.Log("[Sensory Bag Branch] mode=none step=mood-confirmed-without-sticker-card");
             }
         }
 

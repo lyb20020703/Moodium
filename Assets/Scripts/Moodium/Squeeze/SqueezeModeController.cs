@@ -36,6 +36,8 @@ namespace Moodium.Squeeze
         public RhythmScorer Rhythm=>scorer as RhythmScorer;
         public BreathScorer Breath=>scorer as BreathScorer;
         public bool IsHeld=>tracker.IsHeld;
+        /// <summary>The tabletop UI (mode buttons, ? button). Null outside a session.</summary>
+        public SqueezeTableView View=>view;
         public double HeldSeconds=>IsHeld?Math.Max(0,Time.unscaledTimeAsDouble-tracker.StartedAt):0;
         public double SinceRelease {get;private set;}=double.PositiveInfinity;
         public double Elapsed=>Math.Max(0,Time.unscaledTimeAsDouble-began);

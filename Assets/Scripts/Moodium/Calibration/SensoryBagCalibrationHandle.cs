@@ -37,6 +37,7 @@ namespace Moodium.Calibration
         {
             if (!CanInteract||m_ActivePointerId!=-1)
                 return;
+            m_Calibrator.NotifyUserInteraction();
 
             if (m_Action == CalibrationAction.Confirm)
             {

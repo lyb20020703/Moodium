@@ -188,6 +188,13 @@ namespace Moodium.UI
             m_PastThreshold = false;
         }
 
+        public void CancelPointer(int pointerId)
+        {
+            if (pointerId != m_ActivePointer) return;
+            m_ActivePointer = -1; m_Dragging = false; m_Returning = true;
+            m_Velocity = 0; m_PastThreshold = false;
+        }
+
         // ---------- Pure helpers (EditMode-testable) ----------
 
         public static float KnobDiameter(float height) => height * KnobScale;

@@ -19,6 +19,11 @@ namespace Moodium.Guide
     /// a MoodiumSpatialButton and the visionOS hover highlight.
     ///
     /// The panel is world-locked in front of the viewer and re-centres lazily if the viewer turns away.
+    ///
+    /// Docked (on demand): <see cref="ShowDocked"/> stands a smaller (30 cm) card on the table behind the "?" button
+    /// next to the mode buttons. It does not follow the gaze, has a close × instead of Skip and "Got it" on the last page,
+    /// and can start with the "explore freely" page once energy reached 100%. Nothing opens by itself any more; see
+    /// GuideHelpController.
     /// Card switching: the Next button, or a horizontal pinch-drag on the card (needs the small
     /// MoodiumSpatialInteractionController patch described in the README).
     /// </summary>
@@ -37,6 +42,12 @@ namespace Moodium.Guide
         const float CardButtonRight = 488f, CardSkipCenterY = 43f, CardNextCenterY = 605f;
         const float ExploreButtonRight = 610f, ExploreButtonCenterY = 505f;
         const float ButtonLift = .003f; // buttons sit 3 mm in front of the card face
+
+        // Docked card on the table (design: "玩法教学 · 规格").
+        public const float DockedWidth = .30f;
+        public static float DockedScale => DockedWidth / (CardSize.x * MetersPerDesignPixel);
+        public const float DockedTiltDegrees = 12f;
+        public const float DockedLift = .02f;
 
         static readonly GuideCard[] Cards = { GuideCard.Press, GuideCard.Free, GuideCard.Rhythm, GuideCard.Breath };
 
@@ -59,8 +70,18 @@ namespace Moodium.Guide
         public event Action<bool> TutorialFinished;
         /// <summary>Raised when the explore card closes.</summary>
         public event Action ExploreClosed;
+        /// <summary>Raised when the docked help card closes (×, Got it, or CloseDocked).</summary>
+        public event Action DockedClosed;
 
-        enum Mode { None, Tutorial, Explore }
+        enum Mode { None, Tutorial, Explore, Docked }
+
+        struct Page
+        {
+            public bool Explore;
+            public GuideCard Card;
+        }
+        readonly List<Page> m_Pages = new();
+        bool m_Docked;
 
         readonly Dictionary<string, Sprite> m_Loaded = new();
         sealed class SharedSprite
@@ -90,12 +111,14 @@ namespace Moodium.Guide
         float m_Alpha = 1f;
         bool m_Closing;
 
-        internal bool CanInteract => m_Mode==Mode.Tutorial && m_Root!=null && !m_Closing &&
+        internal bool CanInteract => (m_Mode==Mode.Tutorial || m_Mode==Mode.Docked) && m_Root!=null && !m_Closing &&
             !m_Swiping && m_Transition==null && m_Alpha>.6f;
 
         public bool IsShowing => m_Root != null;
         public bool IsTutorialShowing => m_Mode == Mode.Tutorial && m_Root != null;
+        public bool IsDockedOpen => m_Mode == Mode.Docked && m_Root != null && !m_Closing;
         public int CardIndex => m_Index;
+        public int PageCount => m_Pages.Count;
 
         // ------------------------------------------------------------------ public API
 
@@ -116,10 +139,52 @@ namespace Moodium.Guide
                 natureWorld ? GuideWorld.Nature : GuideWorld.Candy, english, viewer));
         }
 
+        /// <summary>
+        /// Opens the help card standing on the table at <paramref name="dock"/> (the dock's +Z faces the viewer).
+        /// With <paramref name="includeExplore"/> the "explore freely" page comes first.
+        /// </summary>
+        public void ShowDocked(Transform dock, bool natureWorld, bool english, bool includeExplore, int startPage = 0)
+        {
+            if (dock == null) return;
+            CancelPendingExplore();
+            Open(Mode.Docked, natureWorld ? GuideWorld.Nature : GuideWorld.Candy, english, null, dock, includeExplore, startPage);
+        }
+
+        public void CloseDocked()
+        {
+            if (m_Mode != Mode.Docked || m_Root == null) return;
+            BeginClose();
+            DockedClosed?.Invoke();
+        }
+
+        /// <summary>Turns the open docked card to <paramref name="card"/>'s page (used when a mode button is pressed).</summary>
+        public void JumpTo(GuideCard card)
+        {
+            if (!IsDockedOpen || m_Swiping) return;
+            var index = m_Pages.FindIndex(p => !p.Explore && p.Card == card);
+            if (index < 0 || index == m_Index) return;
+            GoTo(index, index > m_Index ? 1 : -1);
+        }
+
+        public static int DockedPageCount(bool includeExplore) => Cards.Length + (includeExplore ? 1 : 0);
+        public static int DockedPageIndex(GuideCard card, bool includeExplore) =>
+            Array.IndexOf(Cards, card) + (includeExplore ? 1 : 0);
+
+        /// <summary>Card centre in dock space: bottom edge <see cref="DockedLift"/> above the table, leaning back.</summary>
+        public static Vector3 DockedLocalPosition()
+        {
+            var half = CardSize.y * MetersPerDesignPixel * DockedScale * .5f;
+            var tilt = DockedTiltDegrees * Mathf.Deg2Rad;
+            return new Vector3(0f, DockedLift + half * Mathf.Cos(tilt), -half * Mathf.Sin(tilt));
+        }
+
+        /// <summary>The card's +Z points away from the viewer (project convention); +X tilt leans its top away.</summary>
+        public static Quaternion DockedLocalRotation() => Quaternion.Euler(DockedTiltDegrees, 180f, 0f);
+
         public void Next()
         {
             if (!CanInteract) return;
-            if (m_Index >= Cards.Length - 1) { Finish(false); return; }
+            if (m_Index >= m_Pages.Count - 1) { Finish(false); return; }
             GoTo(m_Index + 1, 1);
         }
 
@@ -165,6 +230,8 @@ namespace Moodium.Guide
 
         public static string SkipSpriteName(bool english) => $"guide_btn_skip_{L(english)}";
 
+        public const string CloseSpriteName = "guide_btn_close";
+
         /// <summary>+1 = next card (dragged left), -1 = previous card (dragged right), 0 = snap back.</summary>
         public static int SwipeStep(float dragMeters, float threshold) =>
             dragMeters <= -threshold ? 1 : dragMeters >= threshold ? -1 : 0;
@@ -186,25 +253,37 @@ namespace Moodium.Guide
             Open(Mode.Explore, world, english, viewer);
         }
 
-        void Open(Mode mode, GuideWorld world, bool english, Transform viewer)
+        void Open(Mode mode, GuideWorld world, bool english, Transform viewer, Transform dock = null,
+            bool includeExplore = false, int startPage = 0)
         {
             if (m_Root != null) DestroyPanel();
             m_Mode = mode;
             m_Closing=false;
             m_World = world;
             m_English = english;
-            m_Index = 0;
+            m_Docked = mode == Mode.Docked;
             m_Viewer = viewer != null ? viewer : Camera.main != null ? Camera.main.transform : null;
+            m_Pages.Clear();
+            if (mode == Mode.Explore || (mode == Mode.Docked && includeExplore)) m_Pages.Add(new Page { Explore = true });
+            if (mode != Mode.Explore) foreach (var card in Cards) m_Pages.Add(new Page { Card = card });
+            m_Index = Mathf.Clamp(startPage, 0, m_Pages.Count - 1);
 
-            m_Root = new GameObject(mode == Mode.Tutorial ? "World Guide · Tutorial" : "World Guide · Explore").transform;
+            m_Root = new GameObject(mode == Mode.Tutorial ? "World Guide · Tutorial" : mode == Mode.Docked ? "World Guide · Help (docked)" : "World Guide · Explore").transform;
+            if (m_Docked)
+            {
+                m_Root.SetParent(dock, false);
+                m_Root.localPosition = DockedLocalPosition();
+                m_Root.localRotation = DockedLocalRotation();
+                m_Root.localScale = Vector3.one * DockedScale;
+            }
             m_Sorting = m_Root.gameObject.AddComponent<VisionOSSortingGroup>();
             m_Pivot = new GameObject("Card").transform;
             m_Pivot.SetParent(m_Root, false);
 
             m_Face = CreateSprite("Face", m_Pivot, m_SortingOrder);
-            if (mode == Mode.Tutorial)
+            if (mode == Mode.Tutorial || mode == Mode.Docked)
             {
-                m_SkipButton = CreateButton("Skip", SkipSpriteName(english), Skip);
+                m_SkipButton = CreateButton(m_Docked ? "Close" : "Skip", m_Docked ? CloseSpriteName : SkipSpriteName(english), Skip);
                 m_ActionButton = CreateButton("Next", null, Next);
                 var swipe = new GameObject("Swipe Surface", typeof(BoxCollider), typeof(WorldGuideSwipeHandle));
                 swipe.transform.SetParent(m_Pivot, false);
@@ -218,7 +297,7 @@ namespace Moodium.Guide
                 m_ActionButton = CreateButton("Explore", ActionButtonSpriteName("explore", world, english), CloseExplore);
             }
             ApplyPage();
-            PlaceInFront(true);
+            if (!m_Docked) PlaceInFront(true);
             Animate(FadeIn());
         }
 
@@ -249,13 +328,18 @@ namespace Moodium.Guide
         /// <summary>Puts the right sprites on the face and buttons for the current mode and page.</summary>
         void ApplyPage()
         {
-            if (m_Mode == Mode.Tutorial)
+            if (m_Mode == Mode.Tutorial || m_Mode == Mode.Docked)
             {
-                m_Face.sprite = Load(CardSpriteName(m_World, Cards[m_Index], m_English));
-                var last = m_Index == Cards.Length - 1;
-                SetButtonSprite(m_ActionButton, ActionButtonSpriteName(last ? "start" : "next", m_World, m_English));
-                LayoutButton(m_SkipButton, CardSize, CardButtonRight, CardSkipCenterY);
-                LayoutButton(m_ActionButton, CardSize, CardButtonRight, CardNextCenterY);
+                var page = m_Pages[m_Index];
+                var last = m_Index == m_Pages.Count - 1;
+                var size = page.Explore ? ExploreSize : CardSize;
+                m_Face.sprite = Load(page.Explore ? ExploreSpriteName(m_World, m_English) : CardSpriteName(m_World, page.Card, m_English));
+                SetButtonSprite(m_ActionButton, ActionButtonSpriteName(last ? (m_Docked ? "gotit" : "start") : "next", m_World, m_English));
+                LayoutButton(m_SkipButton, size, page.Explore ? ExploreButtonRight : CardButtonRight, CardSkipCenterY);
+                if (page.Explore) LayoutButton(m_ActionButton, ExploreSize, ExploreButtonRight, ExploreButtonCenterY);
+                else LayoutButton(m_ActionButton, CardSize, CardButtonRight, CardNextCenterY);
+                if (m_SwipeCollider != null)
+                    m_SwipeCollider.size = new Vector3(size.x * MetersPerDesignPixel, size.y * MetersPerDesignPixel, .002f);
             }
             else
             {
@@ -295,13 +379,14 @@ namespace Moodium.Guide
 
         void GoTo(int index, int direction)
         {
-            index = Mathf.Clamp(index, 0, Cards.Length - 1);
+            index = Mathf.Clamp(index, 0, m_Pages.Count - 1);
             if (index == m_Index) { Animate(SnapBack()); return; }
             Animate(TurnPage(index, direction));
         }
 
         void Finish(bool skipped)
         {
+            if (m_Mode == Mode.Docked) { CloseDocked(); return; }
             if (m_Mode != Mode.Tutorial) return;
             BeginClose();
             TutorialFinished?.Invoke(skipped);
@@ -328,7 +413,7 @@ namespace Moodium.Guide
             if (!m_Swiping || m_Root == null) return;
             var drag = Vector3.Dot(worldPosition - m_SwipeStart, m_Root.right);
             // Rubber-band at the first and last card.
-            if ((m_Index == 0 && drag > 0f) || (m_Index == Cards.Length - 1 && drag < 0f)) drag *= .35f;
+            if ((m_Index == 0 && drag > 0f) || (m_Index == m_Pages.Count - 1 && drag < 0f)) drag *= .35f;
             m_SwipeOffset = Mathf.Clamp(drag, -.14f, .14f);
             m_Pivot.localPosition = new Vector3(m_SwipeOffset, 0f, 0f);
             SetAlpha(1f - Mathf.Abs(m_SwipeOffset) / .3f);
@@ -340,7 +425,7 @@ namespace Moodium.Guide
             m_Swiping = false;
             var step = SwipeStep(m_SwipeOffset, m_SwipeThreshold);
             var target = m_Index + step;
-            if (step == 0 || target < 0 || target >= Cards.Length) Animate(SnapBack());
+            if (step == 0 || target < 0 || target >= m_Pages.Count) Animate(SnapBack());
             else GoTo(target, step);
         }
 
@@ -458,7 +543,7 @@ namespace Moodium.Guide
 
         void LateUpdate()
         {
-            if (m_Root == null || m_Viewer == null || m_Swiping) return;
+            if (m_Root == null || m_Viewer == null || m_Swiping || m_Docked) return;   // the docked card stays on the table
             var toCard = m_Root.position - m_Viewer.position;
             var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up);
             var flat = Vector3.ProjectOnPlane(toCard, Vector3.up);
@@ -502,6 +587,7 @@ namespace Moodium.Guide
                 if(Application.isPlaying)Destroy(m_Root.gameObject);else DestroyImmediate(m_Root.gameObject);
             }
             m_Root = null;
+            m_Docked = false;
             m_Pivot = null;
             m_Face = m_SkipButton = m_ActionButton = null;
             m_SwipeCollider = null;

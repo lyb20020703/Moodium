@@ -15,6 +15,8 @@ namespace Moodium.Squeeze
         readonly bool[] touching=new bool[3];readonly float[] pressed={-100,-100,-100};
         readonly float born;
         XROrigin xrOrigin;
+        /// <summary>A mode button was pressed (the help card turns to that mode's page).</summary>
+        public event System.Action<SqueezeMode> Pressed;
         public ModeButtonBar(TableVisuals visuals,Transform parent,SqueezeModeController controller)
         {
             v=visuals;mode=controller;born=Time.unscaledTime;
@@ -40,7 +42,7 @@ namespace Moodium.Squeeze
         public void Press(int i)
         {
             if(mode.Complete||Time.unscaledTime-born<1||Time.unscaledTime-pressed[i]<.2f)return;
-            pressed[i]=Time.unscaledTime;mode.RequestMode((SqueezeMode)i);
+            pressed[i]=Time.unscaledTime;mode.RequestMode((SqueezeMode)i);Pressed?.Invoke((SqueezeMode)i);
         }
         public void Tick(float completionAlpha)
         {

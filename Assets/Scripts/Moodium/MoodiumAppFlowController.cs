@@ -129,6 +129,11 @@ namespace Moodium.Flow
         RealitySpatialTableManager m_RealitySpatialTableManager;
         RealityEnhancementFlowController m_RealityEnhancementFlow;
         StickerWorldSelectionController m_StickerWorldSelection;
+        WorldCarouselSelectionController m_BranchCarousel;
+        TableAnchorFinder m_TableAnchorFinder;
+        GameObject m_BagSwitch;
+        GameObject m_FallbackSelectionDisplay;
+        bool m_SelectionHasBag = true;
         SensoryBagCalibrationCoordinator m_CalibrationCoordinator;
         bool m_UseCalibratedImageBag;
         OpeningVideoSession m_OpeningVideoSession;
@@ -153,6 +158,7 @@ namespace Moodium.Flow
         public bool MoodCheckInProgress => m_MoodCheckController != null &&
             m_MoodCheckController.State is not (MoodCheckState.Hidden or MoodCheckState.Done);
         public MoodCheckContext MoodContext => m_MoodCheckContext;
+        public bool UsesStickerSelection => m_SelectionHasBag;
 
         public void ConfigureMoodCheckForTests(MoodCheckController controller, MoodCheckContext context)
         {
@@ -181,8 +187,11 @@ namespace Moodium.Flow
             EnsureMoodCheck();
             StopStickerTrackingWarmup();
             m_StickerWorldSelection?.SetMoodCheckSuspended(true);
+            m_BranchCarousel?.SetMoodCheckSuspended(true);
+            if (m_BagSwitch != null) m_BagSwitch.SetActive(false);
             if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = false;
             m_MoodCheckLaunchSource = MoodCheckLaunchSource.StickerSelection;
+            m_MoodCheckController.ShowRecommendCard = m_SelectionHasBag;
             m_MoodCheckController?.BeginPreCheck(CurrentMoodAvailability(), IsEnglish());
         }
 
@@ -195,9 +204,16 @@ namespace Moodium.Flow
 
         void ResumeStickerTrackingAfterMoodCheck()
         {
+            if (m_MoodCheckLaunchSource == MoodCheckLaunchSource.StickerSelection && !m_SelectionHasBag)
+            {
+                m_BranchCarousel?.SetMoodCheckSuspended(false);
+                Debug.Log("[Sensory Bag Branch] mode=none step=resume-carousel image-tracking=false");
+                return;
+            }
             if (m_MoodCheckLaunchSource != MoodCheckLaunchSource.StickerSelection ||
                 m_StickerWorldSelection == null || !m_StickerWorldSelection.IsSelectionActive) return;
             m_StickerWorldSelection.SetMoodCheckSuspended(false);
+            if (m_BagSwitch != null) m_BagSwitch.SetActive(true);
             if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = true;
             StartStickerTrackingWarmup();
         }
@@ -255,8 +271,27 @@ namespace Moodium.Flow
 
         public void BeginStickerWorldSelection(OpeningVideoSession session)
         {
-            if (session == null)
-                return;
+            if (session == null || session.IsDisposed)
+            {
+                if (m_FallbackSelectionDisplay == null)
+                {
+                    m_FallbackSelectionDisplay = new GameObject("Selection Surface Without Opening Video");
+                    var camera = m_MainCamera != null ? m_MainCamera : Camera.main;
+                    if (camera != null)
+                        m_FallbackSelectionDisplay.transform.SetPositionAndRotation(camera.transform.position + camera.transform.forward * .9f,
+                            Quaternion.LookRotation(camera.transform.forward, Vector3.up));
+                }
+                session = new OpeningVideoSession(null, m_FallbackSelectionDisplay.transform, null, IsEnglish(), () => { });
+            }
+            StopStickerTrackingWarmup();
+            m_StickerWorldSelection?.End();
+            m_BranchCarousel?.End();
+            SensoryBagBranchUI.Dispose(m_BagSwitch); m_BagSwitch = null;
+            m_CalibrationCoordinator?.EndCalibrationMode();
+            m_CalibrationCoordinator?.ClearPresentations();
+            m_TableAnchorFinder?.Clear();
+            m_SelectedStickerEntry = null;
+            m_SelectionHasBag = SensoryBagOwnership.HasBag;
             m_UseCalibratedImageBag = false;
             ExitCreativeSpaceIfNeeded();
             StopCandyWorldExperience();
@@ -287,6 +322,27 @@ namespace Moodium.Flow
             m_StickerWorldSelection.ConfigureEntryGlassMaterial(GetPickerGlassMaterial());
             m_StickerWorldSelection.SetMoodCheckSummary(m_MoodCheckContext.PreSample);
             m_StickerWorldSelection.End();
+            if (!m_SelectionHasBag)
+            {
+                if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = false;
+                if (imageSpawner != null) imageSpawner.Configure(null, null);
+                if (m_BranchCarousel == null)
+                    m_BranchCarousel = GetComponent<WorldCarouselSelectionController>() ?? gameObject.AddComponent<WorldCarouselSelectionController>();
+                m_BranchCarousel.Configure(m_RealityCandyWorldModelPrefab, m_RealityNatureWorldModelPrefab, candy, nature,
+                    m_MainCamera != null ? m_MainCamera : Camera.main);
+                m_BranchCarousel.ConfigureFonts(m_ChineseFontAsset, m_FontAsset);
+                m_BranchCarousel.ConfigureEntryGlassMaterial(GetPickerGlassMaterial());
+                m_BranchCarousel.WorldEntrySelected -= OnStickerWorldEntrySelected;
+                m_BranchCarousel.WorldEntrySelected += OnStickerWorldEntrySelected;
+                m_BranchCarousel.MoodCheckRequested -= RequestStickerMoodCheck;
+                m_BranchCarousel.MoodCheckRequested += RequestStickerMoodCheck;
+                m_BranchCarousel.OwnershipSwitchRequested -= SwitchSensoryBagOwnership;
+                m_BranchCarousel.OwnershipSwitchRequested += SwitchSensoryBagOwnership;
+                m_BranchCarousel.SetMoodCheckSummary(m_MoodCheckContext.PreSample);
+                m_BranchCarousel.Begin(session);
+                Debug.Log("[Sensory Bag Branch] mode=none step=selection-begin image-tracking=false");
+                return;
+            }
             // Subscribe before enabling the manager. This mirrors the previously working
             // world flow and prevents visionOS's first image-anchor event being missed.
             m_StickerWorldSelection.Begin(session);
@@ -295,7 +351,26 @@ namespace Moodium.Flow
                 m_TrackedImageManager.enabled = true;
             StartStickerTrackingWarmup();
             session.SetVisible(true);
+            var switchPosition = m_StickerWorldSelection.MoodCheckButton != null
+                ? session.DisplayRoot.InverseTransformPoint(m_StickerWorldSelection.MoodCheckButton.transform.position - Vector3.up * .065f)
+                : new Vector3(0, -.48f, -.04f);
+            m_BagSwitch = SensoryBagBranchUI.Button(session.DisplayRoot, "Sensory Bag Switch",
+                MoodCheckCopy.Get("bag.switch.toNone", session.English), switchPosition,
+                session.English ? m_FontAsset : m_ChineseFontAsset, SwitchSensoryBagOwnership).gameObject;
+            if (m_BagSwitch.GetComponent<SensoryBagDirectTouchInput>() == null) m_BagSwitch.AddComponent<SensoryBagDirectTouchInput>();
+            if (m_StickerWorldSelection.MoodCheckButton != null &&
+                m_StickerWorldSelection.MoodCheckButton.GetComponent<SensoryBagDirectTouchInput>() == null)
+                m_StickerWorldSelection.MoodCheckButton.gameObject.AddComponent<SensoryBagDirectTouchInput>();
+            Debug.Log("[Sensory Bag Branch] mode=has step=selection-begin image-tracking=true");
             Debug.Log($"[Moodium Flow] Video-backed sticker world selection started. Image manager enabled={m_TrackedImageManager != null && m_TrackedImageManager.enabled}; candy prefab={m_RealityCandyWorldModelPrefab != null}; nature prefab={m_RealityNatureWorldModelPrefab != null}; candy world={candy != null}; nature world={nature != null}.");
+        }
+
+        public void SwitchSensoryBagOwnership()
+        {
+            if (m_SelectedStickerEntry != null || MoodCheckInProgress) return;
+            SensoryBagOwnership.SetHasBag(!m_SelectionHasBag);
+            Debug.Log("[Sensory Bag Branch] step=selection-switch");
+            BeginStickerWorldSelection(m_OpeningVideoSession);
         }
 
         void Awake()
@@ -696,7 +771,7 @@ namespace Moodium.Flow
                 return;
             if (m_OpeningVideoSession == null || m_OpeningVideoSession.IsDisposed)
             {
-                ShowObjectWorldSelection();
+                BeginStickerWorldSelection(null);
                 return;
             }
             BeginStickerWorldSelection(m_OpeningVideoSession);
@@ -759,13 +834,15 @@ namespace Moodium.Flow
             m_SelectedStickerEntry = entry;
             StopStickerTrackingWarmup();
             m_StickerWorldSelection?.End();
+            m_BranchCarousel?.End();
+            SensoryBagBranchUI.Dispose(m_BagSwitch); m_BagSwitch = null;
             m_OpeningVideoSession?.SetVisible(false);
             m_OpeningVideoSession?.Player?.Pause();
             var imageSpawner = FindFirstObjectByType<ImageTrackingCapsuleSpawner>(FindObjectsInactive.Include);
             imageSpawner?.ClearRuntimeInstances();
-            imageSpawner?.Configure(m_TrackedImageManager, null);
+            imageSpawner?.Configure(m_SelectionHasBag ? m_TrackedImageManager : null, null);
             if (imageSpawner != null)
-                imageSpawner.enabled = true;
+                imageSpawner.enabled = m_SelectionHasBag;
             var softPrefab = entry.World != null && entry.World.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase)
                 ? m_RealityNatureSoftPrefab
                 : m_RealityCandySoftPrefab;
@@ -781,14 +858,35 @@ namespace Moodium.Flow
             m_CalibrationCoordinator?.ConfigureButtonStyle(m_WristHudRoundedSprite);
             m_CalibrationCoordinator?.ConfigureFrameAdjustingTutorial(m_OpeningVideoSession);
             m_UseCalibratedImageBag = true;
-            m_CalibrationCoordinator?.BeginCalibration(entry);
-            Debug.Log($"[Moodium Flow] Selected sticker world: {entry.World.DisplayName}; calibration started.");
+            if (m_SelectionHasBag)
+            {
+                m_CalibrationCoordinator?.ConfirmDefault(entry);
+            }
+            else
+            {
+                if (m_TrackedImageManager != null) m_TrackedImageManager.enabled = false;
+                m_TableAnchorFinder = GetComponent<TableAnchorFinder>() ?? gameObject.AddComponent<TableAnchorFinder>();
+                m_TableAnchorFinder.AnchorReady -= OnTableAnchorReady;
+                m_TableAnchorFinder.AnchorReady += OnTableAnchorReady;
+                m_TableAnchorFinder.Begin(m_MainCamera != null ? m_MainCamera : Camera.main,
+                    IsEnglish() ? m_FontAsset : m_ChineseFontAsset, IsEnglish(),
+                    () => m_CalibrationCoordinator.GetActiveCalibrator(UnityEngine.XR.ARSubsystems.TrackableId.invalidId)?.HasUserInteracted == true);
+            }
+        }
+
+        void OnTableAnchorReady(Transform anchor)
+        {
+            if (m_SelectionHasBag || m_SelectedStickerEntry == null || anchor == null) return;
+            m_SelectedStickerEntry = new StickerWorldEntry(UnityEngine.XR.ARSubsystems.TrackableId.invalidId,
+                string.Empty, m_SelectedStickerEntry.World, anchor, null);
+            m_CalibrationCoordinator.BeginAnchoredCalibration(m_SelectedStickerEntry, anchor);
         }
 
         void OnCalibrationCompleted(StickerWorldEntry entry, SensoryBagCalibrationData data)
         {
             if (entry == null || entry != m_SelectedStickerEntry)
                 return;
+            m_TableAnchorFinder?.StopDetection();
             m_CalibrationCoordinator?.EndCalibrationMode();
             m_SelectedStickerEntry = null;
             SelectObjectWorld(entry.World);
@@ -826,8 +924,11 @@ namespace Moodium.Flow
             ConfigureTrackedSoftPrefab(world);
             EnsureCandyWorldManager();
             m_CandyWorldManager.StartExperience(world);
-            EnsureRealityEnhancementFlow();
-            m_RealityEnhancementFlow.StartFlow();
+            if (m_SelectionHasBag)
+            {
+                EnsureRealityEnhancementFlow();
+                m_RealityEnhancementFlow.StartFlow();
+            }
             SetMode(MoodiumMode.ObjectTracking);
             SetExistingModules(true, false);
             HideAllPanels();
@@ -850,7 +951,8 @@ namespace Moodium.Flow
             objectSpawner?.ClearRuntimeInstances();
             imageSpawner?.ClearRuntimeInstances();
             objectSpawner?.Configure(m_TrackedObjectManager, prefab);
-            imageSpawner?.Configure(m_TrackedImageManager, m_UseCalibratedImageBag ? null : prefab);
+            imageSpawner?.Configure(m_SelectionHasBag ? m_TrackedImageManager : null, m_UseCalibratedImageBag ? null : prefab);
+            if (!m_SelectionHasBag && imageSpawner != null) imageSpawner.enabled = false;
         }
 
         void SetCreativeSpacePhysicsEnabled(bool enabled)
@@ -984,6 +1086,7 @@ namespace Moodium.Flow
             {
                 m_MoodCheckContext.SetPreSample(sample);
                 m_StickerWorldSelection?.SetMoodCheckSummary(sample);
+                m_BranchCarousel?.SetMoodCheckSummary(sample);
                 ResumeStickerTrackingAfterMoodCheck();
             }
             else
@@ -1027,6 +1130,8 @@ namespace Moodium.Flow
         void OnDestroy()
         {
             UnsubscribeMoodCheck();
+            m_TableAnchorFinder?.StopDetection();
+            if (m_FallbackSelectionDisplay != null) SensoryBagBranchUI.Dispose(m_FallbackSelectionDisplay);
         }
 
         void ShowCandyTransformationPreview()
@@ -1072,9 +1177,9 @@ namespace Moodium.Flow
             // visualization renderer is hidden for the finished Moodium experience.
             HideSpatialMeshVisualization();
             if (m_TrackedObjectManager != null)
-                m_TrackedObjectManager.enabled = objectTracking;
+                m_TrackedObjectManager.enabled = objectTracking && m_SelectionHasBag;
             if (m_TrackedImageManager != null)
-                m_TrackedImageManager.enabled = objectTracking;
+                m_TrackedImageManager.enabled = objectTracking && m_SelectionHasBag;
             if (m_SpatialPhysicsDriver != null)
             {
                 if (spatialPhysics)

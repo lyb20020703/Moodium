@@ -93,6 +93,7 @@ namespace Moodium.Opening
             if (HasSelection)
                 return;
             HasHardware = hasHardware;
+            Moodium.Flow.SensoryBagOwnership.SetHasBag(hasHardware);
             if (touchId >= 0)
                 m_TransitionGate.SelectFromSpatialTouch(Time.frameCount, touchId);
             else

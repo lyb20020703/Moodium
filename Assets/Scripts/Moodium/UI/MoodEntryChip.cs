@@ -18,6 +18,7 @@ namespace Moodium.UI
         float m_Opacity;
         bool m_Hinted;
         float m_HintStarted = -100f;
+        public bool AllowIdleHint { get; set; } = true;
 
         public MoodiumSpatialButton Initialize(StickerWorldSelectionController owner, TMP_FontAsset font,
             System.Action pressed)
@@ -58,7 +59,7 @@ namespace Moodium.UI
         {
             var elapsed = Time.unscaledTime - m_Started;
             var tracked = m_Owner != null && m_Owner.HasVisibleEntry;
-            if (elapsed >= 12f && !m_Hinted)
+            if (AllowIdleHint && elapsed >= 12f && !m_Hinted)
             {
                 m_Hinted = true;
                 if (!tracked) m_HintStarted = Time.unscaledTime;

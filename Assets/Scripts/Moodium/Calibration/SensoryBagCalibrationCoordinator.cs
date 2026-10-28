@@ -43,6 +43,9 @@ namespace Moodium.Calibration
         StickerWorldEntry m_SelectedEntry;
         OpeningVideoSession m_OpeningVideoSession;
         FrameAdjustingTutorialPlayback m_FrameAdjustingTutorial;
+        StickerWorldEntry m_CompletedEntry;
+        bool m_UsesImageTracking;
+        bool m_LoggedMissingTutorial;
 
         public event Action<StickerWorldEntry, SensoryBagCalibrationData> CalibrationCompleted;
 
@@ -87,12 +90,13 @@ namespace Moodium.Calibration
             StopFrameAdjustingTutorial();
             foreach (var guide in m_PushHandGuides)
                 if (guide != null)
-                    Destroy(guide.gameObject);
+                    DisposeObject(guide.gameObject);
             m_PushHandGuides.Clear();
             foreach (var presentation in m_Presentations.Values)
                 if (presentation != null)
-                    Destroy(presentation.gameObject);
+                    DisposeObject(presentation.gameObject);
             m_Presentations.Clear();
+            m_CompletedEntry = null;
         }
 
         void Awake()
@@ -106,7 +110,7 @@ namespace Moodium.Calibration
         {
             foreach (var session in m_Sessions.Values)
                 if (session != null)
-                    Destroy(session.gameObject);
+                    DisposeObject(session.gameObject);
             m_Sessions.Clear();
             ClearPresentations();
         }
@@ -126,7 +130,7 @@ namespace Moodium.Calibration
             Transform anchor,
             TrackingState trackingState)
         {
-            if (m_SelectedEntry == null ||
+            if (!m_UsesImageTracking || m_SelectedEntry == null ||
                 trackableId != m_SelectedEntry.TrackableId ||
                 !TryGetWorldKind(referenceImageName, out var worldKind))
                 return false;
@@ -154,11 +158,10 @@ namespace Moodium.Calibration
                 calibrator.ConfigureButtonStyle(m_RoundedButtonSprite);
                 var initial = SensoryBagCalibrationData.CreateDefault(referenceImageName, worldKind, CreateSettings());
                 calibrator.Begin(anchor, initial, CreateSettings());
+                sessionRoot.AddComponent<SensoryBagDirectTouchInput>();
                 calibrator.CalibrationConfirmed += data =>
                 {
-                    m_ConfirmedData[trackableId] = data;
-                    CreatePresentation(trackableId, anchor, data);
-                    CalibrationCompleted?.Invoke(m_SelectedEntry, data);
+                    CompleteCalibration(m_SelectedEntry, anchor, data);
                 };
                 m_Sessions[trackableId] = calibrator;
                 StartFrameAdjustingTutorial();
@@ -178,11 +181,60 @@ namespace Moodium.Calibration
                 return;
             EndCalibrationMode();
             m_SelectedEntry = entry;
+            m_CompletedEntry = null;
+            m_UsesImageTracking = true;
             HandleImageAnchorUpdate(
                 entry.TrackableId,
                 entry.ReferenceImageName,
                 entry.Anchor,
                 TrackingState.Tracking);
+        }
+
+        public SensoryBagCalibrationData CreateInitialData(StickerWorldEntry entry)
+        {
+            var kind = entry.World != null && string.Equals(entry.World.WorldId, "nature", StringComparison.OrdinalIgnoreCase)
+                ? SensoryBagWorldKind.Nature : SensoryBagWorldKind.Candy;
+            if (TryGetWorldKind(entry.ReferenceImageName, out var imageKind)) kind = imageKind;
+            return SensoryBagCalibrationData.CreateDefault(entry.ReferenceImageName ?? string.Empty, kind, CreateSettings());
+        }
+
+        public void ConfirmDefault(StickerWorldEntry entry)
+        {
+            if (entry == null || entry.Anchor == null || ReferenceEquals(m_CompletedEntry, entry)) return;
+            EndCalibrationMode();
+            m_SelectedEntry = entry;
+            m_UsesImageTracking = true;
+            Debug.Log("[Sensory Bag Branch] mode=has step=confirm-default skip-frame=true skip-video=true");
+            CompleteCalibration(entry, entry.Anchor, CreateInitialData(entry));
+        }
+
+        public void BeginAnchoredCalibration(StickerWorldEntry entry, Transform anchor)
+        {
+            if (entry == null || entry.World == null || anchor == null) return;
+            EndCalibrationMode();
+            m_SelectedEntry = entry;
+            m_CompletedEntry = null;
+            m_UsesImageTracking = false;
+            var root = new GameObject("Sensory Bag Calibration - Table");
+            root.transform.SetParent(transform, false);
+            var calibrator = root.AddComponent<SensoryBagCalibrator>();
+            calibrator.ConfigureFonts(m_ChineseFont, m_EnglishFont);
+            calibrator.ConfigureButtonStyle(m_RoundedButtonSprite);
+            calibrator.Begin(anchor, CreateInitialData(entry), CreateSettings());
+            root.AddComponent<SensoryBagDirectTouchInput>();
+            calibrator.CalibrationConfirmed += data => CompleteCalibration(entry, anchor, data);
+            m_Sessions[entry.TrackableId] = calibrator;
+            StartFrameAdjustingTutorial();
+            Debug.Log("[Sensory Bag Branch] mode=none step=calibration-started anchor=table");
+        }
+
+        void CompleteCalibration(StickerWorldEntry entry, Transform anchor, SensoryBagCalibrationData data)
+        {
+            if (entry == null || anchor == null || ReferenceEquals(m_CompletedEntry, entry)) return;
+            m_CompletedEntry = entry;
+            m_ConfirmedData[entry.TrackableId] = data;
+            CreatePresentation(entry.TrackableId, anchor, data);
+            CalibrationCompleted?.Invoke(entry, data);
         }
 
         public void EndCalibrationMode()
@@ -191,7 +243,7 @@ namespace Moodium.Calibration
             if (m_SelectedEntry != null &&
                 m_Sessions.Remove(m_SelectedEntry.TrackableId, out var calibrator) &&
                 calibrator != null)
-                Destroy(calibrator.gameObject);
+                DisposeObject(calibrator.gameObject);
             m_SelectedEntry = null;
         }
 
@@ -199,7 +251,12 @@ namespace Moodium.Calibration
         {
             StopFrameAdjustingTutorial();
             if (m_OpeningVideoSession == null || m_OpeningVideoSession.IsDisposed)
+            {
+                if (!m_LoggedMissingTutorial)
+                    Debug.LogWarning("[Sensory Bag Branch] step=calibration-video-unavailable reason=no-opening-surface");
+                m_LoggedMissingTutorial = true;
                 return;
+            }
 
             var config = Resources.Load<OpeningVideoSequenceConfig>("MoodiumOpening/OpeningVideoSequenceConfig");
             if (config == null)
@@ -255,7 +312,7 @@ namespace Moodium.Calibration
         void CreatePresentation(TrackableId trackableId, Transform anchor, SensoryBagCalibrationData data)
         {
             if (m_Presentations.Remove(trackableId, out var existing) && existing != null)
-                Destroy(existing.gameObject);
+                DisposeObject(existing.gameObject);
             m_VisualPrefabs.TryGetValue(data.WorldKind, out var prefab);
             var root = new GameObject($"Calibrated Bag Root - {data.ReferenceImageName}");
             root.transform.SetParent(transform, false);
@@ -290,6 +347,13 @@ namespace Moodium.Calibration
             }
             worldKind = default;
             return false;
+        }
+
+        static void DisposeObject(GameObject target)
+        {
+            if (target == null) return;
+            target.SetActive(false);
+            if (Application.isPlaying) Destroy(target); else DestroyImmediate(target);
         }
     }
 }

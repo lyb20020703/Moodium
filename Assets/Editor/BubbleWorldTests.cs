@@ -280,17 +280,25 @@ public sealed class BubbleWorldTests
     [TestCase(BubbleWorldData.CandyFolder)]
     public void DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(string folder)
     {
+        const int expectedCount = 500000;
+        var points = Resources.Load<TextAsset>(BubbleWorldData.PointsResource(folder));
+        Assert.That(points, Is.Not.Null);
+        Assert.That(BubbleWorldData.TryReadSummary(points.bytes, BubbleWorldData.LayerCount,
+            out var count, out _, out _), Is.True);
+        Assert.That(count, Is.EqualTo(expectedCount));
         for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)
         {
             var mesh = Resources.Load<Mesh>(BubbleWorldData.MeshResource(folder, BubbleWorldData.LayerMeshName(layer)));
             Assert.That(mesh, Is.Not.Null, $"{folder} layer {layer}: run Bake Meshes before device builds.");
-            Assert.That(mesh.vertexCount, Is.EqualTo(40000));
+            Assert.That(mesh.vertexCount, Is.EqualTo(expectedCount / BubbleWorldData.LayerCount * 4));
+            if (mesh.vertexCount > 65535)
+                Assert.That(mesh.indexFormat, Is.EqualTo(UnityEngine.Rendering.IndexFormat.UInt32));
         }
         Assert.That(Resources.Load<Mesh>(BubbleWorldData.MeshResource(folder, BubbleWorldData.PanoramaMeshName)), Is.Not.Null);
         var texture = Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder));
         Assert.That(texture, Is.Not.Null);
         Assert.That(texture.filterMode, Is.EqualTo(FilterMode.Bilinear));
-        Assert.That(texture.width, Is.EqualTo(2048));
+        Assert.That(texture.width, Is.EqualTo(BubbleWorldData.RoundAtlasSizeFor(expectedCount)));
         Assert.That(texture.mipmapCount, Is.EqualTo(1));
     }
 

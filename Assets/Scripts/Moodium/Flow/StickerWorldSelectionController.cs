@@ -192,14 +192,14 @@ namespace Moodium.Flow
             m_MoodCheckSuspended = false;
             m_Session = null;
             if (m_Instruction != null)
-                Destroy(m_Instruction.gameObject);
+                SensoryBagBranchUI.Dispose(m_Instruction.gameObject);
             m_Instruction = null;
             if (m_MoodCheckButton != null)
-                Destroy(m_MoodCheckButton.gameObject);
+                SensoryBagBranchUI.Dispose(m_MoodCheckButton.gameObject);
             m_MoodCheckButton = null;
             foreach (var entry in m_Entries.Values)
                 if (entry.Root != null)
-                    Destroy(entry.Root);
+                    SensoryBagBranchUI.Dispose(entry.Root);
             m_Entries.Clear();
         }
 

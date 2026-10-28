@@ -13,6 +13,32 @@ public static class BubbleWorldBaker
 {
     static readonly string[] Folders = { BubbleWorldData.NatureFolder, BubbleWorldData.CandyFolder };
 
+    [MenuItem("Moodium/Bubble World/Bake Candy Meshes")]
+    public static void BakeCandy()
+    {
+        try
+        {
+            if (!BakeFolder("Assets/Resources/" + BubbleWorldData.CandyFolder))
+                throw new System.InvalidOperationException("Candy point cloud could not be baked.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+        finally { EditorUtility.ClearProgressBar(); }
+    }
+
+    [MenuItem("Moodium/Bubble World/Bake Nature Meshes")]
+    public static void BakeNature()
+    {
+        try
+        {
+            if (!BakeFolder("Assets/Resources/" + BubbleWorldData.NatureFolder))
+                throw new System.InvalidOperationException("Nature point cloud could not be baked.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+        finally { EditorUtility.ClearProgressBar(); }
+    }
+
     [MenuItem("Moodium/Bubble World/Bake Meshes")]
     public static void Bake()
     {

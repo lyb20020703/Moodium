@@ -13,6 +13,10 @@ namespace Moodium.MoodCheck
 
         static readonly Dictionary<string, Pair> s_Copy = new()
         {
+            ["calib.searching"] = new("正在找你的桌面…", "Looking for your table…"),
+            ["bag.switch.toNone"] = new("我没有感官袋", "I don't have a sensory bag"),
+            ["bag.switch.toHas"] = new("我有感官袋", "I have a sensory bag"),
+            ["settings.bag.title"] = new("感官袋", "Sensory bag"),
             ["prompt.entry"] = new("不知道选哪个？测测心情", "Not sure? Check your mood"),
             ["plate.kicker"] = new("Moodi 想知道", "Moodi wants to know"),
             ["plate.title.pre"] = new("你现在的心情怎么样？", "How are you feeling right now?"),

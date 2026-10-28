@@ -40,7 +40,9 @@ namespace Moodium.CandyWorld
         MoodiRescueDirector m_Rescue;
         Coroutine m_BindVideoRoutine;
         bool m_TutorialShown;
-        const float RescueExploreDelay = 14f; // leave room for the thank-you and the palm teaching
+        // After 100%: the "?" dot + hint wait for Moodi's thank-you and palm teaching (no more explore card at eye level).
+        const float RescueExploreDelay = Moodium.Guide.GuideHelpController.ExploreHintDelay;
+        Moodium.Guide.GuideHelpController m_Help;
         SqueezeModeController m_SqueezeModes;
         RewardSequenceController m_SqueezeStageRewards;
         MoodCheckContext m_SqueezeContext;
@@ -337,7 +339,10 @@ namespace Moodium.CandyWorld
                 return;
             m_ExploreGuideShown=false;
             m_WorldGuide=GetComponent<Moodium.Guide.WorldGuideCards>()??gameObject.AddComponent<Moodium.Guide.WorldGuideCards>();
-            // The tutorial card now follows Moodi's request to be squeezed out (MoodiRescueDirector.IntroFinished).
+            // The tutorial no longer pops up: it opens from the "?" beside the mode buttons. Moodi's request to be
+            // squeezed out (MoodiRescueDirector.IntroFinished) only cues the "?" once, on the first visit.
+            m_Help=GetComponent<Moodium.Guide.GuideHelpController>()??gameObject.AddComponent<Moodium.Guide.GuideHelpController>();
+            m_Help.Begin(m_SqueezeModes,m_WorldGuide,m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish());
             if (m_Rescue == null || m_Rescue.IntroDone) ShowWorldTutorial();
             m_Running = true;
             ChocolateCapsuleInteraction.AnyCapsulePinched += OnCapsulePinched;
@@ -348,6 +353,7 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
+            m_Help?.Stop();
             m_WorldGuide?.Hide(true);
             m_SqueezeModes?.StopSession();
             m_SqueezeStageRewards?.StopAndClear();
@@ -436,10 +442,7 @@ namespace Moodium.CandyWorld
         {
             if (m_TutorialShown || this == null || !isActiveAndEnabled) return;
             m_TutorialShown = true;
-            if (m_WorldGuide == null && !TryGetComponent(out m_WorldGuide))
-                m_WorldGuide = gameObject.AddComponent<Moodium.Guide.WorldGuideCards>();
-            m_WorldGuide.ShowTutorial(m_NatureWorldActive, Moodium.Guide.WorldGuideCards.IsEnglish(),
-                Camera.main != null ? Camera.main.transform : null);
+            m_Help?.OnIntroFinished();   // first visit: the "?" pulses twice; no card
         }
 
         void OnEnergyStageReached(int stage)
@@ -633,11 +636,11 @@ namespace Moodium.CandyWorld
 
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
-            if(!m_ExploreGuideShown&&normalizedProgress>=1f&&m_WorldGuide!=null)
+            if(!m_ExploreGuideShown&&normalizedProgress>=1f&&m_Help!=null)
             {
                 m_ExploreGuideShown=true;
-                m_WorldGuide.ShowExplore(m_NatureWorldActive,Moodium.Guide.WorldGuideCards.IsEnglish(),
-                    Camera.main!=null?Camera.main.transform:null, m_Rescue != null ? RescueExploreDelay : -1f);
+                // Quiet 100% hint: dot on the "?" + one line for 6 s, after Moodi's thank-you (or 2.5 s without it).
+                m_Help.OnEnergyFull(m_Rescue != null ? RescueExploreDelay : 2.5f);
             }
             m_WalkTrailGuide?.SetProgress(normalizedProgress);
             if (m_Rescue != null) m_Rescue.NotifyProgress(normalizedProgress);
