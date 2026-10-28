@@ -9,6 +9,8 @@ namespace Moodium.Rewards
     [DisallowMultipleComponent]
     public sealed class RewardSequenceController : MonoBehaviour
     {
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { foreach (var reward in m_SpawnedRewards) if (reward != null) visibility.Register(reward); }
+
         readonly HashSet<int> m_AwardedStages = new();
         readonly List<GameObject> m_SpawnedRewards = new();
         CandyEnergyController m_Energy;

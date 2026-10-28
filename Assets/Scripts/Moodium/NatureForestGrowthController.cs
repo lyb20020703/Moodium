@@ -11,6 +11,8 @@ namespace Moodium.NatureWorld
     [DisallowMultipleComponent]
     public sealed class NatureForestGrowthController : MonoBehaviour
     {
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_ForestRoot != null) foreach (Transform child in m_ForestRoot) visibility.Register(child.gameObject); }
+
         static readonly float[] SpawnThresholds = { 0.35f, 0.55f, 0.75f, 0.9f, 1f };
         // Local X is viewer-right and local Y is viewer-forward. Fill the user's
         // forward field first in a shallow arc, then widen to the sides/rear.

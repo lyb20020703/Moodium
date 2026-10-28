@@ -69,6 +69,10 @@ namespace Moodium.Guide
         }
 
         /// <summary>Energy reached 100%.</summary>
+        bool m_Suspended;
+        public void SetSuspended(bool value) { m_Suspended = value; if (value && IsOpen) m_Cards.CloseDocked(); }
+        public void OnFirstRingShown() { if (m_Running) { HasNewContent = true; m_PulsePending = true; } }
+
         public void OnEnergyFull(float delay = ExploreHintDelay)
         {
             if (!m_Running) return;
@@ -90,6 +94,7 @@ namespace Moodium.Guide
         /// <summary>The ? was pressed: open or close the docked card.</summary>
         public void Toggle()
         {
+            if (m_Suspended) return;
             if (!m_Running || m_Cards == null) return;
             if (IsOpen) { m_Cards.CloseDocked(); return; }
             if (m_View == null || m_View.HelpDock == null) return;
@@ -104,7 +109,7 @@ namespace Moodium.Guide
 
         void Update()
         {
-            if (!m_Running) return;
+            if (!m_Running || m_Suspended) return;
             var view = m_Modes != null ? m_Modes.View : null;
             if (view != m_View)
             {

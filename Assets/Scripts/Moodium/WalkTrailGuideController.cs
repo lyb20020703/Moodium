@@ -7,6 +7,8 @@ namespace Moodium.NatureWorld
     /// <summary>Optional post-reward walking journey. Only reconstructed, level ground can become a target.</summary>
     public sealed class WalkTrailGuideController : MonoBehaviour
     {
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_Root != null) foreach (Transform child in m_Root) if (child != m_Guide && !child.name.StartsWith("Walk Trail Voice")) visibility.Register(child.gameObject); }
+
         enum Phase { Waiting, Inviting, Walking, Sleeping, Complete }
         sealed class FloatingCard
         {
@@ -61,9 +63,37 @@ namespace Moodium.NatureWorld
         string m_LastWaitReason;
         string World => m_Candy ? "candy" : "nature";
         string Language => m_English ? "en" : "cn";
+        public event System.Action WalkInvited;
+        public event System.Action<Vector3> GardenDiscovered;
+        public IEnumerable<Vector3> OccupiedGardenPositions => m_Gardens;
+        public event System.Action<Vector3> StepRecorded;
+        public bool HandHasMoodi => HandHasGuide;
+        public void Say(string id) => m_GuideVoice?.Say(id);
+        Vector3 m_RingPoint;
+        float m_RingPresentationUntil;
+        bool m_RingOrbit;
+        public void PresentRing(string id, Vector3 point)
+        {
+            Say(id);
+            if (id != "F1" && id != "F1t") return;
+            m_RingPoint = point; m_RingOrbit = id == "F1"; m_RingPresentationUntil = Time.time + 3f;
+        }
+        bool m_Suspended, m_Landed, m_InvitationNotified;
+        float m_PausedAt;
+        float m_ReleasedAt = -1f;
+        public void SetSuspended(bool value)
+        {
+            if (m_Suspended == value) return;
+            if (value) m_PausedAt = Time.time;
+            else { var pause = Time.time - m_PausedAt; m_FullAt += pause; m_InvitedAt += pause; if (m_ReleasedAt >= 0f) m_ReleasedAt += pause; m_NextSearch += pause; m_NextSafety += pause; }
+            m_Suspended = value;
+            if (m_HandCompanion != null) m_HandCompanion.enabled = !value;
+        }
         public int DiscoveredGardenCount => m_Gardens.Count;
         public static bool ShouldOfferWalk(bool rainSeen, bool rainPlaying, float secondsSinceFull) =>
-            secondsSinceFull >= 3f;
+            ShouldOfferWalk(false, false, -1f, secondsSinceFull);
+        public static bool ShouldOfferWalk(bool handHasGuide, bool landedThenFree, float secondsSinceFree, float secondsSinceFull) =>
+            !handHasGuide && ((landedThenFree && secondsSinceFree >= 2f) || secondsSinceFull >= 20f);
         public static int NextNoteIndex(int current) => current < 7 ? current + 1 : 3;
         public static float AdvanceGuideDistance(float current, float length, float distanceFromViewer, float deltaTime) =>
             distanceFromViewer > 1.2f ? current : Mathf.MoveTowards(current, length, Mathf.Max(0f, deltaTime) * .45f);
@@ -115,7 +145,7 @@ namespace Moodium.NatureWorld
             m_WaitSince = m_StillSince = -1f;
             m_LookBacks = 0;
             m_ToldGrowth = m_SaidStill = false;
-            m_RescueShown = false;
+            m_InvitationNotified = false; m_RescueShown = false; m_Suspended = m_Landed = false; m_ReleasedAt = -1f;
             Moodium.Characters.MoodiVoice.ResetSession();
             m_Trail.SetGuidedMode(true);
             m_Trail.StepGrown += OnStep;
@@ -152,6 +182,7 @@ namespace Moodium.NatureWorld
                     m_GuideVoice = visual.AddComponent<Moodium.Characters.MoodiVoice>();
                 m_HandCompanion = m_Guide.gameObject.AddComponent<Moodium.Characters.MoodiHandCompanion>();
                 m_HandCompanion.Initialize(m_Guide, visual.transform, m_GuideMoodi, m_GuideVoice, viewer, m_Tint);
+                m_HandCompanion.Landed += () => m_Landed = true;
             }
             m_Ring.gameObject.SetActive(false); m_Invite.gameObject.SetActive(false);
             m_Guide.gameObject.SetActive(false); m_Glow.gameObject.SetActive(false);
@@ -190,7 +221,15 @@ namespace Moodium.NatureWorld
 
         void Update()
         {
+            if (m_Suspended) { if (m_Viewer != null && m_Guide != null) MoveGuideSmoothly(CompanionFollowPoint(m_Viewer.position, m_Viewer.forward)); return; }
+            if (m_Landed && !HandHasGuide && m_ReleasedAt < 0f) m_ReleasedAt = Time.time;
             if (m_Root == null || m_Trail == null || m_Viewer == null) return;
+            if (Time.time < m_RingPresentationUntil && !HandHasGuide && m_Guide != null)
+            {
+                var angle = (3f - (m_RingPresentationUntil - Time.time)) / 3f * Mathf.PI * 2f;
+                var offset = m_RingOrbit ? new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * .22f : Vector3.zero;
+                m_Guide.gameObject.SetActive(true); MoveGuideSmoothly(m_RingPoint + offset + Vector3.up * .35f); return;
+            }
             UpdateCards();
             foreach (var ring in m_GardenRings)
                 if (ring != null) ring.color = new Color(m_Tint.r, m_Tint.g, m_Tint.b,
@@ -199,12 +238,13 @@ namespace Moodium.NatureWorld
             if (m_Rain != null && m_Rain.IsPlaying) m_RainSeen = true;
             if (m_Phase == Phase.Waiting)
             {
-                if (!ShouldOfferWalk(m_RainSeen, m_Rain != null && m_Rain.IsPlaying, Time.time - m_FullAt))
+                if (!ShouldOfferWalk(HandHasGuide, m_ReleasedAt >= 0f, Time.time - m_ReleasedAt, Time.time - m_FullAt))
                 {
                     // A rescued Moodi is already out: let it come over to the user instead of waiting hidden.
                     if (m_RescueShown) UpdateCompanionFollow();
                     return;
                 }
+                if (!m_InvitationNotified) { m_InvitationNotified = true; WalkInvited?.Invoke(); }
                 // Basic planting must not depend on finding a large, completely
                 // reconstructed garden target. Each plant still validates its floor.
                 m_Trail.SetWalkingEnabled(true);
@@ -361,6 +401,7 @@ namespace Moodium.NatureWorld
             for (var i = 0; i < 3; i++)
             {
                 var p = target + new Vector3(Mathf.Cos(i * 2.1f), 0f, Mathf.Sin(i * 2.1f)) * .16f;
+                if (m_Suspended) yield break;
                 if (m_Trail.TryFindSafeGround(p, m_Start.y, out var ground))
                 { m_Trail.SpawnGrass(ground); Sparkle(ground); }
             }
@@ -368,6 +409,8 @@ namespace Moodium.NatureWorld
 
         void OnStep(Vector3 position)
         {
+            if (m_Suspended) return;
+            StepRecorded?.Invoke(position);
             if (Time.time - m_LastStep > 1.2f) m_Note = 0;
             Play(m_Notes[m_Note], position, .35f);
             m_Note = NextNoteIndex(m_Note);
@@ -377,6 +420,8 @@ namespace Moodium.NatureWorld
 
         void DiscoverGarden()
         {
+            if (m_Suspended) return;
+            GardenDiscovered?.Invoke(m_Viewer.position);
             m_Gardens.Add(m_Target);
             var garden = new GameObject("Secret Garden " + m_Gardens.Count).transform;
             garden.SetParent(m_Root, false);

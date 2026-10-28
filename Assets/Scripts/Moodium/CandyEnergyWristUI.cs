@@ -87,6 +87,8 @@ namespace Moodium.CandyWorld
         Material m_BandMaterial;
         Material m_ThreadMaterial;
         SpriteRenderer m_ThreadHead;
+        bool m_RoomInteractionEnabled = true;
+        public void SetRoomInteractionEnabled(bool enabled) { m_RoomInteractionEnabled = enabled; if (!enabled && m_BandGlow != null) m_BandGlow.color = Color.clear; }
         SpriteRenderer m_BandGlow;
         readonly Transform[] m_Sockets = new Transform[4];
         readonly SpriteRenderer[] m_SocketRings = new SpriteRenderer[4];
@@ -454,6 +456,7 @@ namespace Moodium.CandyWorld
 
         void PressRelease()
         {
+            if (!m_RoomInteractionEnabled) return;
             if (!m_ReleaseAvailable || !HandTracked||!m_InputReady||m_Glance < .5f) return;
             ReleasePressed?.Invoke();
         }
@@ -474,7 +477,7 @@ namespace Moodium.CandyWorld
 
             var glow = accent;
             glow.a = a * (m_Completed ? .6f : .12f + .25f * m_Glance);
-            m_BandGlow.color = glow;
+            m_BandGlow.color = m_RoomInteractionEnabled ? glow : Color.clear;
 
             for (var i = 0; i < m_SocketRings.Length; i++)
             {

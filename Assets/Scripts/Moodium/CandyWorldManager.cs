@@ -31,6 +31,14 @@ namespace Moodium.CandyWorld
         NatureCompletionPanoramaController m_NatureCompletionPanorama;
         // Completion reward in both worlds: a bubble holding a tiny scanned world that grows around the viewer.
         BubbleWorldController m_BubbleWorld;
+        WorldJourneyDirector m_Journey;
+        RoomContentVisibility m_RoomVisibility;
+        BubbleRingController m_Rings;
+        [SerializeField] bool m_SqueezeBreath = true;
+        bool m_FirstReveal, m_BreathTaught;
+        float m_RevealedAt = -1f;
+        bool m_StayReminder;
+        public WorldJourneyDirector Journey => m_Journey;
         CandyCompletionHouseController m_CandyCompletionHouse;
         NatureIvySpatialGrowthController m_NatureIvyGrowth;
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
@@ -90,6 +98,21 @@ namespace Moodium.CandyWorld
 
         void Update()
         {
+            if (m_Running && m_Journey != null)
+            {
+                m_Rings?.SetInteractionState(m_Journey.Stage == WorldJourneyStage.Explore,
+                    m_WalkTrailGuide != null && m_WalkTrailGuide.HandHasMoodi, m_Help != null && m_Help.IsOpen,
+                    m_BubbleWorld != null && m_BubbleWorld.CurrentPhase != BubbleWorldController.Phase.Armed && m_BubbleWorld.CurrentPhase != BubbleWorldController.Phase.Idle);
+                if (m_Journey.Stage == WorldJourneyStage.Bubble && m_RevealedAt >= 0f)
+                {
+                    if (!m_StayReminder && Time.time - m_RevealedAt >= 90f) { m_StayReminder = true; m_WalkTrailGuide?.Say("F6"); }
+                    var held = false;
+                    foreach (var heldCapsule in FindObjectsByType<ChocolateCapsuleInteraction>(FindObjectsSortMode.None)) held |= heldCapsule.IsPinched;
+                    m_BubbleWorld.SetBreath(m_SqueezeBreath && held ? 1f : 0f);
+                    if (m_SqueezeBreath && held && !m_BreathTaught) { m_BreathTaught = true; m_WalkTrailGuide?.Say("F4"); }
+                }
+            }
+            if (m_Journey != null && !m_Journey.CanGrowInRoom) return;
             if (!m_ForceNatureBurst)
                 return;
             if (!m_NatureWorldActive || !m_Running)
@@ -222,7 +245,7 @@ namespace Moodium.CandyWorld
         public void StartExperience(MoodiumWorldDefinition world)
         {
             m_NatureWorldActive = world != null &&
-                                  world.WorldId.Equals("nature", System.StringComparison.OrdinalIgnoreCase);
+                                  string.Equals(world.WorldId, "nature", System.StringComparison.OrdinalIgnoreCase);
             var useCandyPoolInNature = m_NatureWorldActive && m_UseCandyBurstPrefabsInNatureForDebug &&
                                         m_CandyBurstPrefabs != null && m_CandyBurstPrefabs.Length > 0;
             if (m_NatureWorldActive && m_UseCandyBurstPrefabsInNatureForDebug && !useCandyPoolInNature)
@@ -321,6 +344,23 @@ namespace Moodium.CandyWorld
                 Camera.main != null ? Camera.main.transform : null,
                 m_EnergyUI != null ? m_EnergyUI.transform : null, !m_NatureWorldActive,
                 world != null ? world.Prefabs : null, m_WalkTrailGuidePrefab);
+            m_Journey = GetComponent<WorldJourneyDirector>() ?? gameObject.AddComponent<WorldJourneyDirector>();
+            m_Journey.Begin();
+            if (m_WorldGuide != null) m_WorldGuide.RingCaptionFont = Moodium.Guide.WorldGuideCards.IsEnglish() ? m_EnglishFont : m_ChineseFont;
+            m_RoomVisibility = GetComponent<RoomContentVisibility>() ?? gameObject.AddComponent<RoomContentVisibility>();
+            m_RoomVisibility.Clear();
+            m_Rings = GetComponent<BubbleRingController>() ?? gameObject.AddComponent<BubbleRingController>();
+            m_Rings.Configure(Camera.main != null ? Camera.main.transform : null, m_BubbleWorld, !m_NatureWorldActive);
+            m_Rings.FirstRingShown += OnFirstRing;
+            m_Rings.HintRequested += OnRingHint;
+            m_WalkTrailGuide.WalkInvited += OnWalkInvited;
+            m_WalkTrailGuide.GardenDiscovered += OnGardenDiscovered;
+            m_WalkTrailGuide.StepRecorded += m_Rings.RecordStep;
+            m_BubbleWorld.Touched += OnBubbleTouched;
+            m_BubbleWorld.Left += OnBubbleLeft;
+            m_BubbleWorld.Revealed += OnBubbleRevealed;
+            m_BubbleWorld.Wandered += OnBubbleWandered;
+            m_FirstReveal = m_BreathTaught = m_StayReminder = false; m_RevealedAt = -1f;
             m_Energy.ResetEnergy();
             m_SqueezeModes=GetComponent<SqueezeModeController>()??gameObject.AddComponent<SqueezeModeController>();
             m_SqueezeModes.BeginSession(m_Energy,m_SqueezeContext,m_NatureWorldActive,IsValidSqueezeSource);
@@ -353,6 +393,15 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
+            if (m_BubbleWorld != null) { m_BubbleWorld.Touched -= OnBubbleTouched; m_BubbleWorld.Left -= OnBubbleLeft; m_BubbleWorld.Revealed -= OnBubbleRevealed; m_BubbleWorld.Wandered -= OnBubbleWandered; }
+            if (m_WalkTrailGuide != null) { m_WalkTrailGuide.WalkInvited -= OnWalkInvited; m_WalkTrailGuide.GardenDiscovered -= OnGardenDiscovered; if (m_Rings != null) m_WalkTrailGuide.StepRecorded -= m_Rings.RecordStep; }
+            if (m_Rings != null) { m_Rings.FirstRingShown -= OnFirstRing; m_Rings.HintRequested -= OnRingHint; m_Rings.StopAndClear(); }
+            m_RoomVisibility?.Clear(); m_Journey?.End();
+            m_EnergyUI?.SetRoomInteractionEnabled(true);
+            foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(true);
+            m_Frost?.SetSuspended(false); m_NatureLeaves?.SetSuspended(false);
+            m_NatureIvyGrowth?.SetSuspended(false); m_NatureFootstepGrass?.SetSuspended(false);
+            m_WalkTrailGuide?.SetSuspended(false); m_SqueezeModes?.SetSuspended(false); m_Help?.SetSuspended(false);
             m_Help?.Stop();
             m_WorldGuide?.Hide(true);
             m_SqueezeModes?.StopSession();
@@ -452,17 +501,21 @@ namespace Moodium.CandyWorld
 
         void OnMoodiRescued(Vector3 position)
         {
+            m_Journey?.Rescued();
             m_WalkTrailGuide?.AppearFromRescue(position);
         }
 
         void RequestExit()
         {
-            m_ExitAction?.Invoke();
+            if (m_Journey == null) { m_ExitAction?.Invoke(); return; }
+            if (!m_Journey.RequestExit()) return;
+            if (m_Journey.Stage == WorldJourneyStage.Bubble) m_BubbleWorld.Leave(LeaveTarget.Exit);
+            else m_ExitAction?.Invoke();
         }
 
         void OnCapsulePinched(ChocolateCapsuleInteraction capsule, Vector3 position)
         {
-            if (!m_Running || capsule == null || !capsule.gameObject.activeInHierarchy)
+            if ((m_Journey != null && !m_Journey.CanGrowInRoom) || !m_Running || capsule == null || !capsule.gameObject.activeInHierarchy)
                 return;
             var trackedSource = capsule.GetComponentInParent<ARTrackedObject>() != null ||
                                 capsule.GetComponentInParent<ARTrackedImage>() != null;
@@ -636,6 +689,8 @@ namespace Moodium.CandyWorld
 
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
+            if (m_Journey != null && !m_Journey.CanGrowInRoom) return;
+            if (normalizedProgress >= 1f) m_Journey?.EnergyFull(m_Rescue != null);
             if(!m_ExploreGuideShown&&normalizedProgress>=1f&&m_Help!=null)
             {
                 m_ExploreGuideShown=true;
@@ -672,9 +727,99 @@ namespace Moodium.CandyWorld
             }
         }
 
+        void OnFirstRing() => m_Help?.OnFirstRingShown();
+        void OnRingHint(string id, Vector3 point) => m_WalkTrailGuide?.PresentRing(id, point);
+        void OnGardenDiscovered(Vector3 headSnapshot)
+        {
+            var occupied = new System.Collections.Generic.List<Vector3>();
+            if (m_WalkTrailGuide != null) occupied.AddRange(m_WalkTrailGuide.OccupiedGardenPositions);
+            foreach (var r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+                if (r.gameObject.activeInHierarchy && (r.GetComponentInParent<Moodium.Rewards.RewardOrb>() != null ||
+                    r.transform.name.Contains("Garden") || r.GetComponentInParent<Moodium.Rewards.RewardGrowIn>() != null)) occupied.Add(r.bounds.center);
+            m_Rings?.SetOccupiedPositions(occupied);
+            m_Rings?.OnGardenDiscovered(headSnapshot);
+        }
+        void OnWalkInvited()
+        {
+            var bag = FindActiveCalibratedNatureCapsule();
+            var calibrated = bag != null ? bag.GetComponentInParent<CalibratedSensoryBagPresentation>() : null;
+            Bounds? bounds = null;
+            if (calibrated != null)
+            {
+                var data = calibrated.CurrentCalibration;
+                var center = calibrated.CenterWorldPosition;
+                // Confirmed calibration transform is the supporting table plane, not the model's renderer bottom.
+                bounds = new Bounds(center, new Vector3(data.Width, data.Depth, data.Height));
+            }
+            var obstacles = new System.Collections.Generic.List<Bounds>();
+            foreach (var r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (!r.enabled || !r.gameObject.activeInHierarchy || (calibrated != null && r.transform.IsChildOf(calibrated.transform))) continue;
+                if (r.GetComponentInParent<SqueezeTableView>() != null || r.GetComponentInParent<Moodium.Guide.WorldGuideCards>() != null ||
+                    r.GetComponentInParent<Moodium.Rewards.RewardGrowIn>() != null || r.GetComponentInParent<Moodium.Rewards.RewardOrb>() != null)
+                    obstacles.Add(r.bounds);
+            }
+            m_Rings?.OnWalkInvited(bounds, calibrated != null ? calibrated.CenterWorldPosition.y : 0f, obstacles);
+        }
+        void OnBubbleTouched()
+        {
+            if (m_Journey == null || !m_Journey.EnterBubble()) return;
+            m_RevealedAt = -1f;
+            m_Rings?.NotifyBubbleEntered();
+            m_WalkTrailGuide?.SetSuspended(true);
+            m_NatureFootstepGrass?.SetSuspended(true); m_NatureIvyGrowth?.SetSuspended(true);
+            m_RainReward?.StopAndClear(); m_RewardReleased = false;
+            m_EnergyUI?.SetRoomInteractionEnabled(false);
+            foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(false);
+            m_EnergyUI?.SetReleaseAvailable(false); m_EnergyUI?.SetReleaseToggleState(false);
+            m_SpatialTouchFeedback?.SetInteractionEnabled(false); m_HandOpenBurstGesture?.SetGestureEnabled(false);
+            m_ProgressController?.SetSpatialTransformationEnabled(false);
+            m_Frost?.SetSuspended(true); m_NatureLeaves?.SetSuspended(true);
+            m_Help?.SetSuspended(true); m_SqueezeModes?.SetSuspended(true);
+            m_RoomVisibility.Clear();
+            m_NatureFootstepGrass?.RegisterRoomVisibility(m_RoomVisibility);
+            m_NatureForestGrowth?.RegisterRoomVisibility(m_RoomVisibility);
+            m_CandyCompletionHouse?.RegisterRoomVisibility(m_RoomVisibility);
+            m_NatureIvyGrowth?.RegisterRoomVisibility(m_RoomVisibility);
+            m_WalkTrailGuide?.RegisterRoomVisibility(m_RoomVisibility);
+            m_SqueezeStageRewards?.RegisterRoomVisibility(m_RoomVisibility);
+            if (m_SqueezeModes?.View?.TableRoot != null) m_RoomVisibility.Register(m_SqueezeModes.View.TableRoot.gameObject);
+            m_RoomVisibility.SetHidden(true);
+        }
+        void OnBubbleRevealed()
+        {
+            m_RevealedAt = Time.time;
+            if (!m_FirstReveal) { m_FirstReveal = true; StartCoroutine(BubbleWelcome()); }
+        }
+        System.Collections.IEnumerator BubbleWelcome() { yield return new WaitForSeconds(1.5f); if (m_Running && m_Journey.Stage == WorldJourneyStage.Bubble) m_WalkTrailGuide?.Say("F3"); }
+        void OnBubbleWandered() => m_WalkTrailGuide?.Say("F5");
+        void OnBubbleLeft(LeaveTarget target)
+        {
+            if (!m_Running) return;
+            if (target == LeaveTarget.Exit) { m_Journey.End(); m_ExitAction?.Invoke(); return; }
+            m_Journey.Returned();
+            if (m_Journey.Stage == WorldJourneyStage.Ending) { m_ExitAction?.Invoke(); return; }
+            m_RoomVisibility.SetHidden(false);
+            StartCoroutine(CompleteRoomRestore());
+        }
+        System.Collections.IEnumerator CompleteRoomRestore()
+        {
+            while (m_RoomVisibility != null && m_RoomVisibility.IsTransitioning) yield return null;
+            if (!m_Running || m_Journey == null || m_Journey.Stage != WorldJourneyStage.Explore) yield break;
+            m_NatureFootstepGrass?.SetSuspended(false); m_NatureIvyGrowth?.SetSuspended(false); m_WalkTrailGuide?.SetSuspended(false);
+            m_Help?.SetSuspended(false); m_SqueezeModes?.SetSuspended(false);
+            m_SpatialTouchFeedback?.SetInteractionEnabled(true); m_HandOpenBurstGesture?.SetGestureEnabled(true);
+            m_ProgressController?.SetSpatialTransformationEnabled(!m_NatureWorldActive);
+            m_NatureLeaves?.SetSuspended(false); m_Frost?.SetSuspended(false);
+            m_EnergyUI?.SetRoomInteractionEnabled(true);
+            foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(true);
+            m_EnergyUI?.SetReleaseAvailable(true); m_Rings?.NotifyBubbleReturned();
+            m_WalkTrailGuide?.Say("F7");
+        }
+
         void ReleaseAccumulatedEnergy()
         {
-            if (!m_Running || m_Energy == null ||
+            if ((m_Journey != null && !m_Journey.CanGrowInRoom) || !m_Running || m_Energy == null ||
                 !EnergyReleasePolicy.ShouldShowToggle(m_Energy.NormalizedEnergy))
                 return;
 

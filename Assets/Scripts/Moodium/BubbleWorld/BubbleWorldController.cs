@@ -7,6 +7,9 @@ using Unity.PolySpatial;
 using Unity.XR.CoreUtils;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 using UnityEngine.XR.Hands;
 using UnityEngine.XR.Management;
 
@@ -14,7 +17,7 @@ namespace Moodium.NatureWorld
 {
     /// <summary>
     /// Completion reward for Nature World and Candy World: a small bubble holding a tiny copy of that world's scan
-    /// appears after the energy reaches 100%. Touching it (fingertip, or look + pinch) makes it fly to the viewer, swell around them
+    /// is summoned by a ring. Touching it (fingertip, or look + pinch) makes it fly to the viewer, swell around them
     /// and then spread the world's points out from near to far until the whole scan surrounds them.
     ///
     /// Rendering stays on the stock URP/Unlit shader: every point is a small quad whose colour comes from one texel
@@ -22,10 +25,12 @@ namespace Moodium.NatureWorld
     /// folder (Resources/MoodiumBubbleWorld/ for Nature, Resources/MoodiumBubbleWorld/Candy/ for Candy) with a baked
     /// Meshes/ subfolder (Moodium ▸ Bubble World ▸ Bake Meshes); missing meshes are built at runtime from points.bytes.
     /// </summary>
+    public enum LeaveTarget { Room, Exit }
+
     [DisallowMultipleComponent]
     public sealed class BubbleWorldController : MonoBehaviour
     {
-        public enum Phase { Idle, Armed, Waiting, Floating, Approach, Envelop, Reveal, Done }
+        public enum Phase { Idle, Armed, Waiting, Floating, Approach, Envelop, Reveal, Done, Rising, Sinking, Inside, Leaving }
 
         const float CompletedProgress = .999f;
         /// <summary>Points within this radius (metres, scan scale) live inside the small bubble (4 of 20 layers for the shipped scan).</summary>
@@ -34,7 +39,7 @@ namespace Moodium.NatureWorld
         public const int BackgroundRenderQueue = 1000;
 
         [Header("Appear")]
-        [SerializeField, Min(0f)] float m_AppearDelay = 10f;
+        [SerializeField] bool m_SqueezeBreath = true;
         [Tooltip("Relative to the head when the bubble appears: x = right, y = up, z = forward (yaw only).")]
         [SerializeField] Vector3 m_AppearOffset = new(-.35f, -.15f, .9f);
         [SerializeField, Min(.05f)] float m_BubbleRadius = .15f;
@@ -80,6 +85,7 @@ namespace Moodium.NatureWorld
         Transform m_Sky;
         readonly List<GameObject> m_Layers = new();
         readonly List<Mesh> m_RuntimeMeshes = new();
+        Material m_HomeMaterial;
         Material m_PointMaterial, m_SkyMaterial, m_SkyFadeMaterial, m_MembraneMaterial;
         MeshRenderer m_SkyRenderer;
         AudioSource m_Audio;
@@ -206,9 +212,7 @@ namespace Moodium.NatureWorld
 
         public void SetProgress(float normalizedProgress)
         {
-            if (m_Phase != Phase.Armed || !ShouldAppear(normalizedProgress)) return;
-            m_Phase = Phase.Waiting;
-            m_Routine = StartCoroutine(Run());
+            // Progress alone never summons a bubble. Rings own the invitation.
         }
 
         /// <summary>Same as touching the bubble (look + pinch, or debug).</summary>
@@ -223,11 +227,19 @@ namespace Moodium.NatureWorld
             m_Routine = null;
             m_TouchRequested = false;
             m_Phase = Phase.Idle;
+            m_Breath = 0f; m_BreathScale = 1f; m_WanderFade = 1f; m_WanderTarget = 1f;
+            m_Wandering = false; m_InsideAt = 0f; m_BobPhase = 0f; m_Radius = 0f;
+            m_From = m_Hover = m_Entry = m_HomeTarget = Vector3.zero;
+            if (m_Root != null) m_Root.SetActive(false);
+            if (m_Home != null) m_Home.SetActive(false);
+            if (m_Home != null) Destroy(m_Home);
+            m_Home = null;
             m_Layers.Clear();
             if (m_Root != null) Destroy(m_Root);
             m_Root = null; m_WorldRoot = null; m_Membrane = null; m_MembraneCollider = null; m_Sky = null; m_SkyRenderer = null; m_Audio = null;
             foreach (var mesh in m_RuntimeMeshes) if (mesh != null) Destroy(mesh);
             m_RuntimeMeshes.Clear();
+            DestroyMaterial(ref m_HomeMaterial);
             DestroyMaterial(ref m_PointMaterial);
             DestroyMaterial(ref m_SkyMaterial);
             DestroyMaterial(ref m_SkyFadeMaterial);
@@ -236,13 +248,191 @@ namespace Moodium.NatureWorld
 
         void OnDisable() => StopAndClear();
 
+        public event Action<LeaveTarget> Left;
+        public event Action HomeRequested;
+        public event Action Wandered;
+        Vector3 m_From, m_Hover, m_Entry, m_HomeTarget;
+        float m_InsideAt, m_Breath, m_BreathScale = 1f, m_WanderFade = 1f;
+        float m_WanderTarget = 1f;
+        bool m_Wandering;
+        GameObject m_Home;
+
+        public static Vector3 SummonPosition(Vector3 from, Vector3 hover, float t) =>
+            Vector3.Lerp(from, hover, Ease(t)) + Vector3.up * (Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * .12f);
+        public static float LeaveRadius(float t) => EnvelopRadius(t, MiniWorldRadius, .15f);
+        public static float LayerCollapseTime(int index, int count) => count <= 1 ? 0f : (count - 1 - index) / (float)(count - 1);
+        public static bool WanderState(bool away, float distance) => away ? distance > .6f : distance > .8f;
+
+        public void Summon(Vector3 from, Vector3 hover)
+        {
+            if (m_Phase != Phase.Armed) return;
+            m_From = from; m_Hover = hover;
+            m_Phase = Phase.Rising;
+            m_Routine = StartCoroutine(Run());
+        }
+        public void Dismiss()
+        {
+            if (m_Phase != Phase.Floating && m_Phase != Phase.Rising) return;
+            if (m_Routine != null) StopCoroutine(m_Routine);
+            m_Routine = StartCoroutine(Sink());
+        }
+        IEnumerator Sink()
+        {
+            m_Phase = Phase.Sinking;
+            if (m_Root != null)
+            {
+                var start = m_Root.transform.position;
+                var radius = m_Radius;
+                for (float t = 0; t < .6f; t += Time.deltaTime)
+                {
+                    m_Root.transform.position = Vector3.Lerp(start, m_From, Ease(t / .6f));
+                    SetRadius(Mathf.Lerp(radius, .001f, Ease(t / .6f)));
+                    yield return null;
+                }
+                m_Root.SetActive(false);
+            }
+            m_TouchRequested = false; m_Phase = Phase.Armed; m_Routine = null;
+        }
+        public void SetBreath(float amount) => m_Breath = float.IsFinite(amount) ? Mathf.Clamp01(amount) : 0f;
+        public void SetWanderFade(float alpha) => m_WanderTarget = float.IsFinite(alpha) ? Mathf.Clamp(alpha, .25f, 1f) : 1f;
+        public void Leave(LeaveTarget target)
+        {
+            if (m_Phase != Phase.Inside && m_Phase != Phase.Approach && m_Phase != Phase.Envelop && m_Phase != Phase.Reveal) return;
+            if (m_Routine != null) StopCoroutine(m_Routine);
+            m_Phase = Phase.Leaving;
+            m_Routine = StartCoroutine(Return(target));
+        }
+        IEnumerator Return(LeaveTarget target)
+        {
+            if (m_Home != null) m_Home.SetActive(false);
+            m_Breath = 0f; m_BreathScale = 1f;
+            m_WorldRoot.localScale = Vector3.one * (m_Radius / MiniWorldRadius);
+            m_Sky.localScale = Vector3.one * SkyMaxRadius;
+            m_SkyRenderer.sharedMaterial = m_SkyFadeMaterial;
+            for (float t = 0; t < 1f; t += Time.deltaTime)
+            { BubbleWorldData.SetAlpha(m_SkyFadeMaterial, (1f - Ease(t)) * m_WanderFade); yield return null; }
+            m_Sky.gameObject.SetActive(false);
+            for (float t = 0; t < 2f; t += Time.deltaTime)
+            {
+                for (int i = m_MiniLayerCount; i < m_Layers.Count; i++)
+                    if (t / 2f >= LayerCollapseTime(i - m_MiniLayerCount, m_Layers.Count - m_MiniLayerCount)) m_Layers[i].SetActive(false);
+                yield return null;
+            }
+            for (int i = m_MiniLayerCount; i < m_Layers.Count; i++) m_Layers[i].SetActive(false);
+            var start = m_Root.transform.position;
+            var viewer = ResolveViewer();
+            var destination = m_From + Vector3.up * .3f;
+            if (!float.IsFinite(destination.x) || !float.IsFinite(destination.y) || !float.IsFinite(destination.z))
+                destination = viewer != null ? viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .5f : start;
+            m_Membrane.gameObject.SetActive(true);
+            for (float t = 0; t < 1.2f; t += Time.deltaTime)
+            {
+                m_Root.transform.position = Vector3.Lerp(start, destination, Ease(t / 1.2f));
+                SetRadius(LeaveRadius(t / 1.2f)); yield return null;
+            }
+            if (m_TouchSound != null && m_Audio != null) m_Audio.PlayOneShot(m_TouchSound);
+            for (float t = 0; t < .12f; t += Time.deltaTime)
+            {
+                SetRadius(.15f * Mathf.Lerp(1f, 1.25f, t / .12f));
+                BubbleWorldData.SetAlpha(m_MembraneMaterial, m_MembraneAlpha * (1f - t / .12f));
+                yield return null;
+            }
+            m_Root.SetActive(false); m_TouchRequested = false;
+            m_Phase = Phase.Armed; m_Routine = null;
+            Left?.Invoke(target);
+        }
+        void ResetCached()
+        {
+            m_Root.SetActive(true); m_Membrane.gameObject.SetActive(true); m_MembraneCollider.enabled = true;
+            m_Sky.gameObject.SetActive(true); m_Sky.localScale = Vector3.one * MiniWorldRadius;
+            m_SkyRenderer.sharedMaterial = m_SkyMaterial;
+            m_BreathScale = 1f; m_Breath = 0; m_WanderFade = 1f; m_WanderTarget = 1f; m_Wandering = false;
+            m_TouchRequested = false; m_BobPhase = 0f;
+            if (m_Home != null) m_Home.SetActive(false);
+            BubbleWorldData.SetAlpha(m_PointMaterial, 1f);
+            foreach (var layer in m_Layers) { layer.SetActive(m_Layers.IndexOf(layer) < m_MiniLayerCount); layer.transform.localScale = Vector3.one; }
+        }
+        void Update()
+        {
+            CheckEditorMouse();
+            if (m_Phase != Phase.Inside) return;
+            var viewer = ResolveViewer(); if (viewer == null) return;
+            var offset = viewer.transform.position - m_Entry; offset.y = 0;
+            var away = WanderState(m_Wandering, offset.magnitude);
+            if (away && !m_Wandering) Wandered?.Invoke();
+            m_Wandering = away;
+            m_WanderFade = Mathf.MoveTowards(m_WanderFade, Mathf.Min(m_WanderTarget, away ? .25f : 1f), Time.deltaTime * .75f / (away ? .4f : .6f));
+            BubbleWorldData.SetAlpha(m_PointMaterial, m_WanderFade);
+            m_SkyRenderer.sharedMaterial = m_SkyFadeMaterial;
+            BubbleWorldData.SetAlpha(m_SkyFadeMaterial, m_WanderFade);
+            var breath = m_SqueezeBreath ? Mathf.Lerp(1f, 1.015f, m_Breath) : 1f;
+            m_BreathScale = Mathf.MoveTowards(m_BreathScale, breath, Time.deltaTime * .015f / (breath > m_BreathScale ? .4f : 1.2f));
+            m_WorldRoot.localScale = Vector3.one * m_BreathScale;
+            m_Sky.localScale = Vector3.one * SkyScaleForBreath(m_BreathScale);
+            if (Time.time - m_InsideAt < 10f) return;
+            if (m_Home == null)
+            {
+                m_Home = GameObject.CreatePrimitive(PrimitiveType.Sphere); m_Home.name = "Home Bubble";
+                m_Home.transform.SetParent(transform, true); m_Home.transform.localScale = Vector3.one * .16f;
+                if (m_HomeMaterial == null) m_HomeMaterial = new Material(m_MembraneMaterial);
+                BubbleWorldData.SetAlpha(m_HomeMaterial, m_MembraneAlpha);
+                m_Home.GetComponent<Renderer>().sharedMaterial = m_HomeMaterial;
+                m_Home.AddComponent<MoodiumSpatialButton>().Configure(null, null, RequestHome);
+                m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
+                m_Home.transform.position = m_HomeTarget;
+            }
+            m_Home.SetActive(true);
+            if (Vector3.Angle(viewer.transform.forward, m_HomeTarget - viewer.transform.position) > 60f)
+                m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
+            m_Home.transform.position = Vector3.Lerp(m_Home.transform.position, m_HomeTarget, 1f - Mathf.Exp(-Time.deltaTime * 5f));
+            if (FingertipTouching(m_Home.transform.position, .08f)) RequestHome();
+        }
+        public static float SkyScaleForBreath(float breathScale) => SkyMaxRadius / Mathf.Max(.001f, breathScale);
+
+        public static void ConfigureTransparentPoints(Material material)
+        {
+            if (material == null) return;
+            Moodium.Opening.OpeningVideoSurfaceSettings.TransparentAlpha.ApplyTo(material);
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.renderQueue = (int)RenderQueue.Transparent;
+        }
+
+        void CheckEditorMouse()
+        {
+#if UNITY_EDITOR
+            Vector2 position;
+#if ENABLE_INPUT_SYSTEM
+            var mouse = Mouse.current;
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame) return;
+            position = mouse.position.ReadValue();
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            if (!Input.GetMouseButtonDown(0)) return;
+            position = Input.mousePosition;
+#else
+            return;
+#endif
+#if ENABLE_INPUT_SYSTEM || ENABLE_LEGACY_INPUT_MANAGER
+            var viewer = ResolveViewer();
+            if (viewer == null) return;
+            var ray = viewer.ScreenPointToRay(position);
+            var collider = m_Phase == Phase.Floating ? m_MembraneCollider :
+                m_Phase == Phase.Inside && m_Home != null && m_Home.activeInHierarchy ? m_Home.GetComponent<Collider>() : null;
+            if (collider == null || !collider.enabled || !collider.Raycast(ray, out _, 100f)) return;
+            if (m_Phase == Phase.Floating) Touch(); else RequestHome();
+#endif
+#endif
+        }
+        void RequestHome() { if (m_Phase != Phase.Inside) return; HomeRequested?.Invoke(); Leave(LeaveTarget.Room); }
+
         // ---------- Sequence ----------
 
         bool m_TouchRequested;
 
         IEnumerator Run()
         {
-            yield return new WaitForSeconds(m_AppearDelay);
+            m_Phase = Phase.Rising;
             var viewer = ResolveViewer();
             if (viewer == null)
             {
@@ -251,7 +441,8 @@ namespace Moodium.NatureWorld
                 yield break;
             }
 
-            yield return Build();
+            if (m_Root == null) yield return Build();
+            if (m_Root != null) ResetCached();
             if (m_Root == null)
             {
                 m_Phase = Phase.Idle;
@@ -261,17 +452,20 @@ namespace Moodium.NatureWorld
             // Appear: pop in at the lower left of the gaze.
             var head = viewer.transform.position;
             var yaw = Quaternion.Euler(0f, GazeYaw(viewer.transform.forward), 0f);
-            var home = head + yaw * m_AppearOffset;
+            var home = m_Hover;
             m_Root.transform.SetPositionAndRotation(home, Quaternion.identity);
             m_WorldRoot.localRotation = yaw;
-            m_Phase = Phase.Floating;
-            Appeared?.Invoke();
-            for (var t = 0f; t < .45f; t += Time.deltaTime)
+            for (var t = 0f; t < .8f; t += Time.deltaTime)
             {
-                SetRadius(m_BubbleRadius * LayerGrowScale(t / .45f) * Ease(t / .3f));
+                m_Root.transform.position = SummonPosition(m_From, home, t / .8f);
+                SetRadius(m_BubbleRadius * Ease(t / .8f));
                 yield return null;
             }
             SetRadius(m_BubbleRadius);
+
+            m_Root.transform.position = home;
+            m_Phase = Phase.Floating;
+            Appeared?.Invoke();
 
             // Float until touched.
             var spin = 0f;
@@ -284,7 +478,7 @@ namespace Moodium.NatureWorld
                 yield return null;
             }
 
-            // Touch: wobble, sparkle, chime. There is no way back from here.
+            // Touch: wobble, sparkle, chime.
             m_Phase = Phase.Approach;
             if (m_MembraneCollider != null) m_MembraneCollider.enabled = false; // never swallow other pinches while it grows
             Touched?.Invoke();
@@ -313,6 +507,7 @@ namespace Moodium.NatureWorld
             // Envelop: swell past the viewer to the size of the mini world. Lock the final pose now so walking or
             // turning does not drag the world along afterwards.
             m_Phase = Phase.Envelop;
+            m_Entry = viewer.transform.position;
             var final = Target(viewer);
             m_Root.transform.position = final.center;
             m_WorldRoot.localRotation = final.yaw;
@@ -368,7 +563,9 @@ namespace Moodium.NatureWorld
                 yield return null;
             }
             m_SkyRenderer.sharedMaterial = m_SkyMaterial;
-            m_Phase = Phase.Done;
+            m_Phase = Phase.Inside;
+            m_InsideAt = Time.time;
+            if (m_Home != null) { Destroy(m_Home); m_Home = null; }
             m_Routine = null;
             Revealed?.Invoke();
         }
@@ -426,14 +623,17 @@ namespace Moodium.NatureWorld
             }
             m_MiniLayerCount = MiniLayerCount(m_LayerRadii, MiniWorldRadius);
 
-            m_PointMaterial = BubbleWorldData.CreateUnlit("Bubble World Points", colors, false, CullMode.Off, Color.white);
+            m_PointMaterial = BubbleWorldData.CreateUnlit("Bubble World Points", colors, true, CullMode.Off, Color.white);
             BubbleWorldData.ConfigureRoundPoints(m_PointMaterial);
+            ConfigureTransparentPoints(m_PointMaterial);
             m_SkyMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky", panorama, false, CullMode.Back, Color.white);
             m_SkyMaterial.renderQueue = BackgroundRenderQueue;
             m_SkyFadeMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky Fade", panorama, true, CullMode.Back, Color.white);
+            m_SkyFadeMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             var tint = m_Folder == BubbleWorldData.CandyFolder ? m_CandyFilmTint : m_NatureFilmTint;
             tint.a = m_MembraneAlpha;
             m_MembraneMaterial = BubbleWorldData.CreateUnlit("Bubble World Film", film, true, CullMode.Off, tint);
+            m_MembraneMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
 
             m_Root = new GameObject(m_Folder == BubbleWorldData.CandyFolder ? "Bubble World (Candy)" : "Bubble World (Nature)");
             m_Root.SetActive(false);

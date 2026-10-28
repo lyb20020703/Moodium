@@ -6,6 +6,93 @@ using UnityEngine;
 public sealed class BubbleWorldTests
 {
     [Test]
+    public void BreathingKeepsSkyAtFixedWorldRadius()
+    {
+        foreach (var scale in new[] { 1f, 1.0075f, 1.015f })
+            Assert.That(BubbleWorldController.SkyScaleForBreath(scale) * scale,
+                Is.EqualTo(BubbleWorldController.SkyMaxRadius).Within(.0001f));
+    }
+
+    [Test]
+    public void RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion()
+    {
+        var material = BubbleWorldData.CreateUnlit("fade test", null, true,
+            UnityEngine.Rendering.CullMode.Off, Color.white);
+        try
+        {
+            BubbleWorldData.ConfigureRoundPoints(material);
+            BubbleWorldController.ConfigureTransparentPoints(material);
+            BubbleWorldData.SetAlpha(material, .25f);
+            Assert.That(material.GetFloat("_Surface"), Is.EqualTo(1));
+            Assert.That(material.GetFloat("_SrcBlend"), Is.EqualTo((float)UnityEngine.Rendering.BlendMode.SrcAlpha));
+            Assert.That(material.GetFloat("_DstBlend"), Is.EqualTo((float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha));
+            Assert.That(material.GetFloat("_ZWrite"), Is.Zero);
+            Assert.That(material.renderQueue, Is.EqualTo((int)UnityEngine.Rendering.RenderQueue.Transparent));
+            Assert.That(material.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"), Is.True);
+            Assert.That(material.GetColor("_BaseColor").a, Is.EqualTo(.25f));
+        }
+        finally { Object.DestroyImmediate(material); }
+    }
+
+    [Test]
+    public void StopClearsBreathAndWanderAndIsIdempotent()
+    {
+        var go = new GameObject("cleanup test");
+        try
+        {
+            var controller = go.AddComponent<BubbleWorldController>();
+            controller.SetBreath(1); controller.SetWanderFade(.25f);
+            controller.StopAndClear(); controller.StopAndClear();
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            Assert.That(typeof(BubbleWorldController).GetField("m_Breath", flags).GetValue(controller), Is.EqualTo(0f));
+            Assert.That(typeof(BubbleWorldController).GetField("m_WanderTarget", flags).GetValue(controller), Is.EqualTo(1f));
+            Assert.That(controller.CurrentPhase, Is.EqualTo(BubbleWorldController.Phase.Idle));
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
+    public void SummonArcAndReturnRadiusHaveExactEndpoints()
+    {
+        var from = new Vector3(1, 0, 2); var hover = new Vector3(1, 1, 2);
+        Assert.That(Vector3.Distance(BubbleWorldController.SummonPosition(from, hover, 0), from), Is.LessThan(.00001f));
+        Assert.That(Vector3.Distance(BubbleWorldController.SummonPosition(from, hover, 1), hover), Is.LessThan(.00001f));
+        Assert.That(BubbleWorldController.SummonPosition(from, hover, .5f).y, Is.GreaterThan(.5f));
+        Assert.That(BubbleWorldController.LeaveRadius(0), Is.EqualTo(10.5f).Within(.0001f));
+        Assert.That(BubbleWorldController.LeaveRadius(1), Is.EqualTo(.15f).Within(.0001f));
+    }
+
+    [Test]
+    public void LayersCollapseFromFarToNearAndWanderUsesHysteresis()
+    {
+        Assert.That(BubbleWorldController.LayerCollapseTime(4, 5), Is.Zero);
+        Assert.That(BubbleWorldController.LayerCollapseTime(0, 5), Is.EqualTo(1));
+        Assert.That(BubbleWorldController.WanderState(false, .8f), Is.False);
+        Assert.That(BubbleWorldController.WanderState(false, .81f), Is.True);
+        Assert.That(BubbleWorldController.WanderState(true, .7f), Is.True);
+        Assert.That(BubbleWorldController.WanderState(true, .6f), Is.False);
+    }
+
+    [Test]
+    public void FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit()
+    {
+        var go = new GameObject("bubble lifecycle test");
+        try
+        {
+            var controller = go.AddComponent<BubbleWorldController>();
+            typeof(BubbleWorldController).GetField("m_Phase", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(controller, BubbleWorldController.Phase.Armed);
+            var left = 0; controller.Left += _ => left++;
+            controller.SetProgress(1f);
+            controller.Leave(LeaveTarget.Exit);
+            controller.Dismiss();
+            Assert.That(controller.CurrentPhase, Is.EqualTo(BubbleWorldController.Phase.Armed));
+            Assert.That(left, Is.Zero);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [Test]
     public void RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed()
     {
         BubbleWorldData.TryParse(MakeCloud(Spiral(8, 3f)), out var cloud);

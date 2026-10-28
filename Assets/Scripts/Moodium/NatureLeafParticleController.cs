@@ -69,6 +69,19 @@ namespace Moodium.NatureWorld
             return totalCount / variantCount + (variantIndex < totalCount % variantCount ? 1 : 0);
         }
 
+        bool m_Suspended;
+        readonly System.Collections.Generic.List<ParticleSystem> m_ResumeParticles = new();
+        public void SetSuspended(bool value)
+        {
+            if (m_Suspended == value) return;
+            m_Suspended = value;
+            if (value)
+            {
+                m_ResumeParticles.Clear();
+                foreach (var ps in m_LeafVariants) if (ps != null) { if (ps.isPlaying) m_ResumeParticles.Add(ps); ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); }
+            }
+            else { foreach (var ps in m_ResumeParticles) if (ps != null) ps.Play(true); m_ResumeParticles.Clear(); }
+        }
         public void Configure(ParticleSystem leaves)
         {
             m_Leaves = leaves;
@@ -209,6 +222,7 @@ namespace Moodium.NatureWorld
 
         void Update()
         {
+            if (m_Suspended) return;
             if (!m_Emitting || m_LeafVariants.Count == 0)
                 return;
             for (var variant = 0; variant < m_LeafVariants.Count; variant++)

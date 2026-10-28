@@ -6,6 +6,8 @@ namespace Moodium.Rewards
     [DisallowMultipleComponent]
     public sealed class RewardBracelet : MonoBehaviour
     {
+        bool m_InteractionEnabled = true;
+        public void SetInteractionEnabled(bool value) { m_InteractionEnabled = value; if (!value) SelectedSlot = -1; }
         const int Slots = 4;
         readonly List<RewardEntry> m_Entries = new();
         readonly List<RewardOrb> m_Orbs = new();
@@ -43,7 +45,7 @@ namespace Moodium.Rewards
 
         public string InspectSlot(int index, string language)
         {
-            if (index < 0 || index >= m_Entries.Count)
+            if (!m_InteractionEnabled || index < 0 || index >= m_Entries.Count)
                 return string.Empty;
             SelectedSlot = index;
             return RewardTextTable.Get("gem.label", language, index + 1, m_Entries[index].displayName);

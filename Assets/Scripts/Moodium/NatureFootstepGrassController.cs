@@ -11,6 +11,8 @@ namespace Moodium.NatureWorld
     [DisallowMultipleComponent]
     public sealed class NatureFootstepGrassController : MonoBehaviour
     {
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_GrassRoot != null) foreach (Transform child in m_GrassRoot) visibility.Register(child.gameObject); }
+
         const float CompletedProgress = .999f;
         static readonly Vector2[] GroundProbeOffsets =
         {
@@ -167,8 +169,11 @@ namespace Moodium.NatureWorld
             m_GrassRoot = null;
         }
 
+        bool m_Suspended;
+        public void SetSuspended(bool value) => m_Suspended = value;
         void Update()
         {
+            if (m_Suspended) return;
             if ((!ShouldBeActive(m_NatureWorldActive, m_Progress) &&
                  !ShouldBeActiveForCandy(m_CandyWorldActive, m_Progress)) ||
                 m_Viewer == null || (m_GrassPrefab == null && m_AlternateGrassPrefab == null) ||
@@ -265,6 +270,7 @@ namespace Moodium.NatureWorld
 
         public GameObject SpawnGrass(Vector3 position, bool garden = false, GameObject overridePrefab = null)
         {
+            if (m_Suspended) return null;
             if (m_GrassRoot == null)
                 m_GrassRoot = new GameObject(m_CandyWorldActive ? "Candy Footstep Beans" : "Nature Footstep Grass").transform;
 

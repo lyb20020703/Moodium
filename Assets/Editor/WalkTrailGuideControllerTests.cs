@@ -35,17 +35,11 @@ public sealed class WalkTrailGuideControllerTests
         Assert.That(WalkTrailGuideController.AdvanceGuideDistance(1.2f, 1.3f, .3f, 1f), Is.EqualTo(1.3f));
     }
     [Test]
-    public void WalkingInvitationAppearsThreeSecondsAfterFullEnergyRegardlessOfRain()
+    public void WalkingInvitationWaitsTwentySecondsWithoutPalmCycle()
     {
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(false, false, 0f), Is.False);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(false, false, 2.99f), Is.False);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(false, false, 3f), Is.True);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, true, 2.99f), Is.False);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, true, 3f), Is.True);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, false, 2.99f), Is.False);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, false, 3f), Is.True);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, true, 30f), Is.True);
-        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, false, 12f), Is.True);
+        Assert.That(WalkTrailGuideController.ShouldOfferWalk(false, false, -1f, 19.99f), Is.False);
+        Assert.That(WalkTrailGuideController.ShouldOfferWalk(false, false, -1f, 20f), Is.True);
+        Assert.That(WalkTrailGuideController.ShouldOfferWalk(true, true, 3f, 30f), Is.False);
     }
 
     [Test]

@@ -8,6 +8,8 @@ namespace Moodium.CandyWorld
     [DisallowMultipleComponent]
     public sealed class CandyCompletionHouseController : MonoBehaviour
     {
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_HouseInstance != null) visibility.Register(m_HouseInstance); if (m_LittleHouseInstance != null) visibility.Register(m_LittleHouseInstance); if (m_HoneyJarInstance != null) visibility.Register(m_HoneyJarInstance); }
+
         const float MainHouseProgress = .8f;
         const float LittleHouseProgress = .999f;
         const float HouseScaleMultiplier = 3f;

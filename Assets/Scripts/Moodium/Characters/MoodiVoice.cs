@@ -30,13 +30,14 @@ namespace Moodium.Characters
             "C1", "C2a", "C2b", "C2c", "C3", "C4", "C5", "C6",
             "D1", "D2", "D3", "D4a", "D4b", "D5", "D6n", "D6c", "D7",
             "E1", "E2",
+            "F1", "F1t", "F2", "F3", "F4", "F5", "F6", "F7",
             "S1c", "S1n", "S2",
             "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8a", "K8b", "K8c", "K9", "K10"
         };
 
-        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2", "K3" };
+        static readonly HashSet<string> TeachingIds = new() { "A2", "A3", "C1", "C6", "D3", "E2", "K3", "F1", "F1t", "F2", "F4" };
 
-        static readonly Dictionary<string, float> Cooldowns = new() { { "C5", 20f }, { "D5", 15f }, { "E1", 60f }, { "K9", 30f } };
+        static readonly Dictionary<string, float> Cooldowns = new() { { "C5", 20f }, { "D5", 15f }, { "E1", 60f }, { "K9", 30f }, { "F5", 20f } };
 
         static readonly Dictionary<string, string[]> Variants = new()
         {

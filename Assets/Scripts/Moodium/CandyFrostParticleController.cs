@@ -17,6 +17,19 @@ namespace Moodium.CandyWorld
         public float Intensity => m_DisplayedIntensity;
         public bool HasOrigin => m_HasOrigin;
 
+        bool m_Suspended;
+        readonly System.Collections.Generic.List<ParticleSystem> m_ResumeParticles = new();
+        public void SetSuspended(bool value)
+        {
+            if (m_Suspended == value) return;
+            m_Suspended = value;
+            if (value)
+            {
+                m_ResumeParticles.Clear();
+                foreach (var ps in new ParticleSystem[] { m_SugarDust, m_Sparkles }) if (ps != null) { if (ps.isPlaying) m_ResumeParticles.Add(ps); ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear); }
+            }
+            else { foreach (var ps in m_ResumeParticles) if (ps != null) ps.Play(true); m_ResumeParticles.Clear(); }
+        }
         public void Configure(ParticleSystem sugarDust, ParticleSystem sparkles)
         {
             m_SugarDust = sugarDust;
@@ -85,6 +98,7 @@ namespace Moodium.CandyWorld
 
         void Update()
         {
+            if (m_Suspended) return;
             if (!m_HasOrigin)
                 return;
 

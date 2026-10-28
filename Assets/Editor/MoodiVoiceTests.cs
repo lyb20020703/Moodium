@@ -26,16 +26,29 @@ public sealed class MoodiVoiceTests
     [Test]
     public void EveryLineHasAChineseAndAnEnglishClip()
     {
-        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(40));
+        Assert.That(MoodiVoice.AllIds.Length, Is.EqualTo(48));
         foreach (var language in new[] { "zh", "en" })
         foreach (var id in MoodiVoice.AllIds)
         {
             var path = MoodiVoice.ClipResourcePath(id, language);
             var clip = Resources.Load<AudioClip>(path);
             Assert.That(clip, Is.Not.Null, path);
-            Assert.That(clip.length, Is.InRange(.4f, 5f), path);
+            Assert.That(clip.length, Is.InRange(.4f, 6f), path);
             Assert.That(clip.channels, Is.EqualTo(1), path + ": reimport the folder");
         }
+    }
+
+    [Test]
+    public void FinaleTeachingAndCooldownMatchTheJourney()
+    {
+        foreach (var id in new[] { "F1", "F1t", "F2", "F3", "F4", "F5", "F6", "F7" })
+        {
+            Assert.That(System.Array.IndexOf(MoodiVoice.AllIds, id), Is.GreaterThanOrEqualTo(0));
+            Assert.That(MoodiVoice.IsTeaching(id), Is.EqualTo(id == "F1" || id == "F1t" || id == "F2" || id == "F4"));
+        }
+        var cooldowns = (System.Collections.Generic.Dictionary<string, float>)typeof(MoodiVoice)
+            .GetField("Cooldowns", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+        Assert.That(cooldowns["F5"], Is.EqualTo(20f));
     }
 
     [Test]

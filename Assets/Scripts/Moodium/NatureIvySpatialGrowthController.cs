@@ -12,6 +12,10 @@ namespace Moodium.NatureWorld
     [DisallowMultipleComponent]
     public sealed class NatureIvySpatialGrowthController : MonoBehaviour
     {
+        bool m_Suspended;
+        public void SetSuspended(bool value) { m_Suspended = value; }
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_Generator != null) visibility.Register(m_Generator.gameObject); }
+
         readonly HashSet<Collider> m_SpatialColliders = new();
         readonly HashSet<int> m_LeafVisualizedMeshIds = new();
         Camera m_Camera;
@@ -275,6 +279,7 @@ namespace Moodium.NatureWorld
 
         void Update()
         {
+            if (m_Suspended) return;
             if (!m_ForceTestVineGrowth)
                 return;
             m_ForceTestVineGrowth = false;
@@ -305,6 +310,7 @@ namespace Moodium.NatureWorld
         System.Collections.IEnumerator InspectGeneratedIvy(string source, int previousBranches, Vector3 surfaceNormal)
         {
             yield return null;
+            while (m_Suspended) yield return null;
             var renderers = m_Generator != null ? m_Generator.GetComponentsInChildren<MeshRenderer>(true) : null;
             var created = m_Generator != null && m_Generator.transform.childCount > previousBranches;
             if (renderers == null || renderers.Length == 0)
@@ -369,6 +375,7 @@ namespace Moodium.NatureWorld
             m_Generator.maxBranchPositions = Mathf.Max(2, Mathf.CeilToInt(m_CompletionRadius / Mathf.Max(.01f, m_Generator.branchPartLength)));
             for (var i = 0; i < m_CompletionBranchCount; i++)
             {
+                while (m_Suspended) yield return null;
                 var angle = (360f * i / m_CompletionBranchCount) + Random.Range(-m_DirectionRandomness, m_DirectionRandomness);
                 var baseDirection = Vector3.ProjectOnPlane(Vector3.right, primaryHit.normal);
                 if (baseDirection.sqrMagnitude < .0001f)

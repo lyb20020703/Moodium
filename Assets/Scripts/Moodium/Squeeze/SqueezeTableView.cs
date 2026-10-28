@@ -37,6 +37,8 @@ namespace Moodium.Squeeze
         AudioClip note,air,rhythmHit;
         float rhythmHitVolume=.22f;
         bool ownsAir;
+        bool suspended;
+        public void SetSuspended(bool value) { suspended = value; if (value && ambient != null) ambient.volume = 0; }
         public bool IsBound=>capsule!=null&&capsule.gameObject.activeInHierarchy&&root!=null;
         public string[] HintsShown=>hints.Shown;
         public Transform TableRoot=>root;
@@ -61,8 +63,8 @@ namespace Moodium.Squeeze
             uiOffset=BuildAlignedUIRotation(root.rotation,viewerDirection);uiRoot.localRotation=uiOffset;
             visuals=new TableVisuals(root,half,nature);motes=new TabletopMotePool(visuals);
             buttons=new ModeButtonBar(visuals,uiRoot,mode);text=new TableTextSlot(visuals,uiRoot);
-            buttons.Pressed+=m=>ModePressed?.Invoke(m);
-            help=new HelpPuck(visuals,uiRoot);help.Pressed+=()=>HelpPressed?.Invoke();
+            buttons.Pressed+=m=>{if(!suspended)ModePressed?.Invoke(m);};
+            help=new HelpPuck(visuals,uiRoot);help.Pressed+=()=>{if(!suspended)HelpPressed?.Invoke();};
             helpDock=visuals.Node(uiRoot,"Help Card Dock",HelpPuck.CardDockPosition(half)).transform;hint=null;
             rhythm=new RhythmGuideView(visuals,mode,motes);breath=new BreathGuideView(visuals,mode,motes);
             var sound=new GameObject("Tabletop Squeeze Audio");sound.transform.SetParent(root,false);
@@ -96,7 +98,7 @@ namespace Moodium.Squeeze
         }
         void Update()
         {
-            if(root==null)return;
+            if(suspended||root==null)return;
             root.gameObject.SetActive(capsule!=null&&capsule.gameObject.activeInHierarchy);
             if(!root.gameObject.activeSelf)return;
             UpdatePose();
@@ -186,7 +188,7 @@ namespace Moodium.Squeeze
         }
         void OnModeChanged()
         {
-            if(root==null)return;
+            if(suspended||root==null)return;
             hints.Reset();cycles=0;lastPhase=0;overrideHint=null;overrideUntil=0;wasHeld=false;
             text.Clear();text.Toast(mode.Mode);rhythm.Reset();breath.Reset();motes.Clear();
             StopAllCoroutines();Play(.04f,1);

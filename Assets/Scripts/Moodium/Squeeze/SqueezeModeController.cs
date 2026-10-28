@@ -29,6 +29,8 @@ namespace Moodium.Squeeze
         int squeezeCount,rhythmCount,totalBreaths;
         bool adaptiveUsed;
         SqueezeSample contact;
+        bool suspended;
+        public void SetSuspended(bool value) { suspended = value; if (view != null) view.SetSuspended(value); }
         public SqueezeMode Mode=>state?.Current??SqueezeMode.Free;
         public SqueezeMode Recommended=>state?.Recommended??SqueezeMode.Free;
         public SqueezeMode? Pending=>state?.Pending;
@@ -83,7 +85,7 @@ namespace Moodium.Squeeze
         }
         public void AcceptPinch(ChocolateCapsuleInteraction capsule)
         {
-            if(!running||Complete||capsule==null||validSource?.Invoke(capsule)!=true)return;
+            if(suspended||!running||Complete||capsule==null||validSource?.Invoke(capsule)!=true)return;
             accepted[capsule.GetInstanceID()]=capsule;view.Bind(capsule);
             tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
             context?.RegisterPinch();
@@ -91,7 +93,7 @@ namespace Moodium.Squeeze
         }
         void OnContactHeld(ChocolateCapsuleInteraction capsule,Vector3 position)
         {
-            if(!running||(Complete&&!tracker.IsHeld)||capsule==null||!accepted.ContainsKey(capsule.GetInstanceID()))return;
+            if(suspended||!running||(Complete&&!tracker.IsHeld)||capsule==null||!accepted.ContainsKey(capsule.GetInstanceID()))return;
             tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
         }
         void OnContactReleased(ChocolateCapsuleInteraction capsule)
@@ -135,6 +137,7 @@ namespace Moodium.Squeeze
         }
         void Update()
         {
+            if (suspended) return;
             if(!running)return;
             var now=Time.unscaledTimeAsDouble;
             if(!nature&&MoodiumAudioManager.TryGetBackgroundMusicTime(out var seconds))

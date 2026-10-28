@@ -13,6 +13,7 @@ namespace Moodium.MoodCheck
 
         static readonly Dictionary<string, Pair> s_Copy = new()
         {
+            ["explore.ring"] = new("找到地上的光环站进去，或把手伸进袋子旁的小光环，会有惊喜", "Step into a ring of light on the floor, or put your hand in the little ring by the bag — something special awaits"),
             ["calib.searching"] = new("正在找你的桌面…", "Looking for your table…"),
             ["bag.switch.toNone"] = new("我没有感官袋", "I don't have a sensory bag"),
             ["bag.switch.toHas"] = new("我有感官袋", "I have a sensory bag"),
