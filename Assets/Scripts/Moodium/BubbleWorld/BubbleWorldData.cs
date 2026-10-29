@@ -36,32 +36,12 @@ namespace Moodium.NatureWorld
         public const int RecordSize = 18;
 
         /// <summary>
-        /// Converts each scan's authoring frame into the canonical Bubble World
-        /// frame. The first-layer assets were already exported in that frame;
-        /// the two nested Gaussian sources retain their own capture rotations.
-        /// Values are recovered by registering source splat colours against the
-        /// supplied panorama, so all contents (points and panorama) stay aligned.
+        /// All exports are canonical. Nested frame.json records the offline
+        /// rotation AND handedness conversion, which cannot be represented by a quaternion.
         /// </summary>
         public static Quaternion SourceFrameRotation(string folder)
         {
-            if (folder == NestedNatureFolder)
-                return Quaternion.FromToRotation(new Vector3(-.905f, .420f, .063f).normalized, Vector3.up);
-            if (folder == NestedCandyFolder)
-                return Quaternion.FromToRotation(new Vector3(-.430f, .859f, .277f).normalized, Vector3.up);
             return Quaternion.identity;
-        }
-
-        // Source positions use row vectors (p × M); Unity uses column vectors,
-        // so the Transform rotation is Mᵀ. Matrix columns below are M's rows.
-        static Quaternion RotationFromRowTransform(float m00, float m01, float m02,
-            float m10, float m11, float m12, float m20, float m21, float m22)
-        {
-            var matrix = new Matrix4x4(
-                new Vector4(m00, m01, m02, 0f),
-                new Vector4(m10, m11, m12, 0f),
-                new Vector4(m20, m21, m22, 0f),
-                new Vector4(0f, 0f, 0f, 1f));
-            return matrix.rotation;
         }
 
         public sealed class Cloud

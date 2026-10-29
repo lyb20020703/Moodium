@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="63" result="Failed(Child)" total="63" passed="56" failed="7" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 15:13:58Z" end-time="2026-10-29 15:14:01Z" duration="2.49238">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="602" result="Failed" site="Child" start-time="2026-10-29 15:13:58Z" end-time="2026-10-29 15:14:01Z" duration="2.492380" total="63" passed="56" failed="7" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1734" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="593" result="Failed" site="Child" start-time="2026-10-29 15:13:58Z" end-time="2026-10-29 15:14:01Z" duration="2.397053" total="63" passed="56" failed="7" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="37672" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestFixture" id="1052" name="CalibrationHeightTests" fullname="CalibrationHeightTests" classname="CalibrationHeightTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-29 15:13:58Z" end-time="2026-10-29 15:13:59Z" duration="0.310374" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1054" name="DefaultBasePlaneIsFiveCentimetresBelowTopSticker" fullname="CalibrationHeightTests.DefaultBasePlaneIsFiveCentimetresBelowTopSticker" methodname="DefaultBasePlaneIsFiveCentimetresBelowTopSticker" classname="CalibrationHeightTests" runstate="Runnable" seed="1498167646" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.084409" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1057" name="FineButtonsStepHalfACentimetreAndResetAndConfirmPreserveTheirContracts" fullname="CalibrationHeightTests.FineButtonsStepHalfACentimetreAndResetAndConfirmPreserveTheirContracts" methodname="FineButtonsStepHalfACentimetreAndResetAndConfirmPreserveTheirContracts" classname="CalibrationHeightTests" runstate="Runnable" seed="812429284" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.008725" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+[Sensory Bag Calibration] Reset CandyWorldPhoneTracking.
+[Sensory Bag Calibration] Confirmed CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00), depth=0.050m.
+]]></output>
+        </test-case>
+        <test-case id="1055" name="HeightChangePreservesFootprintAllowsZeroAndClampsUnsafeOffsets" fullname="CalibrationHeightTests.HeightChangePreservesFootprintAllowsZeroAndClampsUnsafeOffsets" methodname="HeightChangePreservesFootprintAllowsZeroAndClampsUnsafeOffsets" classname="CalibrationHeightTests" runstate="Runnable" seed="951444504" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.006493" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1053" name="NewCoordinatorAndCalibratorUseFortyByTwentyFiveCentimetres" fullname="CalibrationHeightTests.NewCoordinatorAndCalibratorUseFortyByTwentyFiveCentimetres" methodname="NewCoordinatorAndCalibratorUseFortyByTwentyFiveCentimetres" classname="CalibrationHeightTests" runstate="Runnable" seed="696887004" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000282" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1056" name="NormalDragChangesOnlyPlaneHeightAndTrackingLossEndsIt" fullname="CalibrationHeightTests.NormalDragChangesOnlyPlaneHeightAndTrackingLossEndsIt" methodname="NormalDragChangesOnlyPlaneHeightAndTrackingLossEndsIt" classname="CalibrationHeightTests" runstate="Runnable" seed="801402399" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.007973" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1058" name="PlanarResizeAndFrameMoveKeepTheAdjustedHeight" fullname="CalibrationHeightTests.PlanarResizeAndFrameMoveKeepTheAdjustedHeight" methodname="PlanarResizeAndFrameMoveKeepTheAdjustedHeight" classname="CalibrationHeightTests" runstate="Runnable" seed="1659289205" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.006207" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started CandyWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1063" name="RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase" fullname="CalibrationHeightTests.RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase" classname="CalibrationHeightTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.084216" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1061" name="RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase(&quot;Assets/prefab/CandySoft.prefab&quot;)" fullname="CalibrationHeightTests.RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase(&quot;Assets/prefab/CandySoft.prefab&quot;)" methodname="RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase" classname="CalibrationHeightTests" runstate="Runnable" seed="1579528934" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.006017" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1062" name="RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase(&quot;Assets/prefab/NatureSoft.prefab&quot;)" fullname="CalibrationHeightTests.RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase(&quot;Assets/prefab/NatureSoft.prefab&quot;)" methodname="RealSoftAssetsFitTheFortyByTwentyFiveFrameAndRestOnItsBase" classname="CalibrationHeightTests" runstate="Runnable" seed="279487075" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000323" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1060" name="TabletopModesDoNotSubtractBagThicknessAgainFromTheCalibratedBase" fullname="CalibrationHeightTests.TabletopModesDoNotSubtractBagThicknessAgainFromTheCalibratedBase" methodname="TabletopModesDoNotSubtractBagThicknessAgainFromTheCalibratedBase" classname="CalibrationHeightTests" runstate="Runnable" seed="572456764" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.001002" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1059" name="TiltedOffCenterHalfScaleModelBottomAndInteractionVolumeMatchBasePlane" fullname="CalibrationHeightTests.TiltedOffCenterHalfScaleModelBottomAndInteractionVolumeMatchBasePlane" methodname="TiltedOffCenterHalfScaleModelBottomAndInteractionVolumeMatchBasePlane" classname="CalibrationHeightTests" runstate="Runnable" seed="282089405" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.003538" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1064" name="CalibrationUIv2Tests" fullname="CalibrationUIv2Tests" classname="CalibrationUIv2Tests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.122381" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1066" name="FrameIsDrawnWithSpritesAndEdgesCanBeGrabbedAlongTheirWholeLength" fullname="CalibrationUIv2Tests.FrameIsDrawnWithSpritesAndEdgesCanBeGrabbedAlongTheirWholeLength" methodname="FrameIsDrawnWithSpritesAndEdgesCanBeGrabbedAlongTheirWholeLength" classname="CalibrationUIv2Tests" runstate="Runnable" seed="842650965" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.011642" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started Test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1067" name="HeightControlAndTipCardSitOutsideTheFrameAboveTheTable" fullname="CalibrationUIv2Tests.HeightControlAndTipCardSitOutsideTheFrameAboveTheTable" methodname="HeightControlAndTipCardSitOutsideTheFrameAboveTheTable" classname="CalibrationUIv2Tests" runstate="Runnable" seed="1574360711" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.008643" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started Test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1068" name="HeightControlShowsTheLiveTableHeight" fullname="CalibrationUIv2Tests.HeightControlShowsTheLiveTableHeight" methodname="HeightControlShowsTheLiveTableHeight" classname="CalibrationUIv2Tests" runstate="Runnable" seed="625160831" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.007397" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started Test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1065" name="SpritesAreImportedAtRealSize" fullname="CalibrationUIv2Tests.SpritesAreImportedAtRealSize" methodname="SpritesAreImportedAtRealSize" classname="CalibrationUIv2Tests" runstate="Runnable" seed="502325874" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.002698" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1069" name="TipCardUsesTheWorldPictogramAndLanguage" fullname="CalibrationUIv2Tests.TipCardUsesTheWorldPictogramAndLanguage" methodname="TipCardUsesTheWorldPictogramAndLanguage" classname="CalibrationUIv2Tests" runstate="Runnable" seed="1265940009" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.003329" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Sensory Bag Calibration] Started Test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1345" name="MoodiumOpeningPersistenceTests" fullname="MoodiumOpeningPersistenceTests" classname="MoodiumOpeningPersistenceTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.184254" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1346" name="OpeningPrefab_KeepsAllRuntimeIntroAssetsAssigned" fullname="MoodiumOpeningPersistenceTests.OpeningPrefab_KeepsAllRuntimeIntroAssetsAssigned" methodname="OpeningPrefab_KeepsAllRuntimeIntroAssetsAssigned" classname="MoodiumOpeningPersistenceTests" runstate="Runnable" seed="160625413" result="Failed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.017701" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: 32.266666666666666d +/- 0.0001d
+  But was:  32.2999992f
+]]></message>
+            <stack-trace><![CDATA[at MoodiumOpeningPersistenceTests.OpeningPrefab_KeepsAllRuntimeIntroAssetsAssigned () [0x00186] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/MoodiumOpeningPersistenceTests.cs:36
+]]></stack-trace>
+          </failure>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1453" name="OpeningSkipBehaviorTests" fullname="OpeningSkipBehaviorTests" classname="OpeningSkipBehaviorTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.088301" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1455" name="MoodCheckWait_StopsImmediatelyWhenTutorialSkipIsRequested" fullname="OpeningSkipBehaviorTests.MoodCheckWait_StopsImmediatelyWhenTutorialSkipIsRequested" methodname="MoodCheckWait_StopsImmediatelyWhenTutorialSkipIsRequested" classname="OpeningSkipBehaviorTests" runstate="Runnable" seed="1500469406" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.001372" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1456" name="OpeningVideo_CreatesItsWindowHandleBeforeTheTutorialBegins" fullname="OpeningSkipBehaviorTests.OpeningVideo_CreatesItsWindowHandleBeforeTheTutorialBegins" methodname="OpeningVideo_CreatesItsWindowHandleBeforeTheTutorialBegins" classname="OpeningSkipBehaviorTests" runstate="Runnable" seed="1176359807" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.002625" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1454" name="Skip_RemainsAvailableDuringTheHardwareTutorial" fullname="OpeningSkipBehaviorTests.Skip_RemainsAvailableDuringTheHardwareTutorial" methodname="Skip_RemainsAvailableDuringTheHardwareTutorial" classname="OpeningSkipBehaviorTests" runstate="Runnable" seed="294546227" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.002407" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1457" name="OpeningVideoSessionTests" fullname="OpeningVideoSessionTests" classname="OpeningVideoSessionTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.198298" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1459" name="DisposeOnce_InvokesTeardownOnlyOnce" fullname="OpeningVideoSessionTests.DisposeOnce_InvokesTeardownOnlyOnce" methodname="DisposeOnce_InvokesTeardownOnlyOnce" classname="OpeningVideoSessionTests" runstate="Runnable" seed="556705630" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.002822" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1458" name="SetVisible_HidesAndShowsDisplayWithoutDisposingSession" fullname="OpeningVideoSessionTests.SetVisible_HidesAndShowsDisplayWithoutDisposingSession" methodname="SetVisible_HidesAndShowsDisplayWithoutDisposingSession" classname="OpeningVideoSessionTests" runstate="Runnable" seed="4420055" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.001617" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1467" name="OpeningVideoTimelineTests" fullname="OpeningVideoTimelineTests" classname="OpeningVideoTimelineTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.099398" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1470" name="Timeline_ChineseContinuesAtLanguageLoopEnd" fullname="OpeningVideoTimelineTests.Timeline_ChineseContinuesAtLanguageLoopEnd" methodname="Timeline_ChineseContinuesAtLanguageLoopEnd" classname="OpeningVideoTimelineTests" runstate="Runnable" seed="1602206183" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.001484" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1468" name="Timeline_ConvertsThirtyFpsTimecodesToExactFrames" fullname="OpeningVideoTimelineTests.Timeline_ConvertsThirtyFpsTimecodesToExactFrames" methodname="Timeline_ConvertsThirtyFpsTimecodesToExactFrames" classname="OpeningVideoTimelineTests" runstate="Runnable" seed="1087678196" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000372" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1471" name="Timeline_DoesNotTreatUnknownRuntimeFrameCountAsTooShort" fullname="OpeningVideoTimelineTests.Timeline_DoesNotTreatUnknownRuntimeFrameCountAsTooShort" methodname="Timeline_DoesNotTreatUnknownRuntimeFrameCountAsTooShort" classname="OpeningVideoTimelineTests" runstate="Runnable" seed="1370426954" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000400" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1469" name="Timeline_UsesConfirmedLanguageAndHardwareSegments" fullname="OpeningVideoTimelineTests.Timeline_UsesConfirmedLanguageAndHardwareSegments" methodname="Timeline_UsesConfirmedLanguageAndHardwareSegments" classname="OpeningVideoTimelineTests" runstate="Runnable" seed="85667350" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000700" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1472" name="Timeline_UsesThirtySecondChineseFallbackWhileDebugging" fullname="OpeningVideoTimelineTests.Timeline_UsesThirtySecondChineseFallbackWhileDebugging" methodname="Timeline_UsesThirtySecondChineseFallbackWhileDebugging" classname="OpeningVideoTimelineTests" runstate="Runnable" seed="844568379" result="Passed" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:13:59Z" duration="0.000170" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1548" name="SensoryBagBranchTests" fullname="SensoryBagBranchTests" classname="SensoryBagBranchTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-10-29 15:13:59Z" end-time="2026-10-29 15:14:00Z" duration="0.299887" total="7" passed="5" failed="2" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1552" name="DefaultConfirmationBypassesFrameAndCompletesOnlyOnce" fullname="SensoryBagBranchTests.DefaultConfirmationBypassesFrameAndCompletesOnlyOnce" methodname="DefaultConfirmationBypassesFrameAndCompletesOnlyOnce" classname="SensoryBagBranchTests" runstate="Runnable" seed="502190508" result="Failed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.011397" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: (0.00, -0.05, 0.00)
+  But was:  (0.00, -0.08, 0.00)
+]]></message>
+            <stack-trace><![CDATA[at SensoryBagBranchTests.DefaultConfirmationBypassesFrameAndCompletesOnlyOnce () [0x00140] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/SensoryBagBranchTests.cs:84
+]]></stack-trace>
+          </failure>
+          <output><![CDATA[[Sensory Bag Branch] mode=has step=confirm-default skip-frame=true skip-video=true
+]]></output>
+        </test-case>
+        <test-case id="1551" name="HasBagHardBlocksManualCarouselEvenIfBeginIsCalled" fullname="SensoryBagBranchTests.HasBagHardBlocksManualCarouselEvenIfBeginIsCalled" methodname="HasBagHardBlocksManualCarouselEvenIfBeginIsCalled" classname="SensoryBagBranchTests" runstate="Runnable" seed="1231391701" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.009864" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Sensory Bag Branch] mode=has step=ownership-saved
+[Sensory Bag Branch] mode=has step=carousel-blocked image-tracking=true
+]]></output>
+        </test-case>
+        <test-case id="1553" name="NoBagMoodConfirmationSkipsRecommendationAndCompletesOnce" fullname="SensoryBagBranchTests.NoBagMoodConfirmationSkipsRecommendationAndCompletesOnce" methodname="NoBagMoodConfirmationSkipsRecommendationAndCompletesOnce" classname="SensoryBagBranchTests" runstate="Runnable" seed="2020451210" result="Failed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.040788" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[Unhandled log message: '[Error] Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.'. Use UnityEngine.TestTools.LogAssert.Expect]]></message>
+            <stack-trace><![CDATA[UnityEngine.Renderer:get_material ()
+TMPro.TextMeshPro:SetOutlineColor (UnityEngine.Color32) (at ./Library/PackageCache/com.unity.ugui/Runtime/TMP/TextMeshPro.cs:1335)
+TMPro.TMP_Text:set_outlineColor (UnityEngine.Color32) (at ./Library/PackageCache/com.unity.ugui/Runtime/TMP/TMP_Text.cs:428)
+Moodium.MoodCheck.MoodCheckController:ApplyLanguage () (at Assets/Scripts/Moodium/MoodCheck/MoodCheckController.cs:461)
+Moodium.MoodCheck.MoodCheckController:Begin (Moodium.MoodCheck.MoodCheckPhase,bool) (at Assets/Scripts/Moodium/MoodCheck/MoodCheckController.cs:190)
+Moodium.MoodCheck.MoodCheckController:BeginPreCheck (Moodium.MoodCheck.MoodCheckAvailability,bool) (at Assets/Scripts/Moodium/MoodCheck/MoodCheckController.cs:48)
+SensoryBagBranchTests:NoBagMoodConfirmationSkipsRecommendationAndCompletesOnce () (at Assets/Editor/SensoryBagBranchTests.cs:95)
+System.Reflection.MethodBase:Invoke (object,object[])
+NUnit.Framework.Internal.Reflect:InvokeMethod (System.Reflection.MethodInfo,object,object[])
+NUnit.Framework.Internal.MethodWrapper:Invoke (object,object[])
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunNonAsyncTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:RunTestMethod (NUnit.Framework.Internal.ITestExecutionContext)
+NUnit.Framework.Internal.Commands.TestMethodCommand:Execute (NUnit.Framework.Internal.ITestExecutionContext)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+]]></stack-trace>
+          </failure>
+          <output><![CDATA[Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+Instantiating material due to calling renderer.material during edit mode. This will leak materials into the scene. You most likely want to use renderer.sharedMaterial instead.
+[Sensory Bag Branch] mode=none step=mood-confirmed-without-sticker-card
+]]></output>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1556" name="NonTrackedSelectionHasPureLayoutAndTableRules" fullname="SensoryBagBranchTests.NonTrackedSelectionHasPureLayoutAndTableRules" classname="SensoryBagBranchTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.037651" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1554" name="NonTrackedSelectionHasPureLayoutAndTableRules(&quot;Moodium.Flow.WorldCarouselLayout&quot;)" fullname="SensoryBagBranchTests.NonTrackedSelectionHasPureLayoutAndTableRules(&quot;Moodium.Flow.WorldCarouselLayout&quot;)" methodname="NonTrackedSelectionHasPureLayoutAndTableRules" classname="SensoryBagBranchTests" runstate="Runnable" seed="1069113832" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000511" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1555" name="NonTrackedSelectionHasPureLayoutAndTableRules(&quot;Moodium.Calibration.TablePlaneSelector&quot;)" fullname="SensoryBagBranchTests.NonTrackedSelectionHasPureLayoutAndTableRules(&quot;Moodium.Calibration.TablePlaneSelector&quot;)" methodname="NonTrackedSelectionHasPureLayoutAndTableRules" classname="SensoryBagBranchTests" runstate="Runnable" seed="1338192904" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000104" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1550" name="OpeningAnswerIsSavedAtTheActualChoice" fullname="SensoryBagBranchTests.OpeningAnswerIsSavedAtTheActualChoice" methodname="OpeningAnswerIsSavedAtTheActualChoice" classname="SensoryBagBranchTests" runstate="Runnable" seed="1769312586" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.002528" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Sensory Bag Branch] mode=none step=ownership-saved
+[Moodium Opening] Hardware choice selected by UI click: not available.
+]]></output>
+        </test-case>
+        <test-case id="1549" name="OwnershipDefaultsToHasBagAndPersistsBothChoices" fullname="SensoryBagBranchTests.OwnershipDefaultsToHasBagAndPersistsBothChoices" methodname="OwnershipDefaultsToHasBagAndPersistsBothChoices" classname="SensoryBagBranchTests" runstate="Runnable" seed="1067316240" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.002002" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Sensory Bag Branch] mode=none step=ownership-saved
+[Sensory Bag Branch] mode=has step=ownership-saved
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1557" name="SensoryBagCalibrationCoordinatorTests" fullname="SensoryBagCalibrationCoordinatorTests" classname="SensoryBagCalibrationCoordinatorTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.232051" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1558" name="PassiveStickerTracking_DoesNotStartCalibration" fullname="SensoryBagCalibrationCoordinatorTests.PassiveStickerTracking_DoesNotStartCalibration" methodname="PassiveStickerTracking_DoesNotStartCalibration" classname="SensoryBagCalibrationCoordinatorTests" runstate="Runnable" seed="812137765" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.002191" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1559" name="TemporaryTrackingLoss_HidesFrameButPreservesCalibrationSession" fullname="SensoryBagCalibrationCoordinatorTests.TemporaryTrackingLoss_HidesFrameButPreservesCalibrationSession" methodname="TemporaryTrackingLoss_HidesFrameButPreservesCalibrationSession" classname="SensoryBagCalibrationCoordinatorTests" runstate="Runnable" seed="1807771083" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.022336" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started NatureWorldPhoneTracking: 0.400m × 0.250m, offset=(0.00, 0.00).
+[Sensory Bag Branch] step=calibration-video-unavailable reason=no-opening-surface
+]]></output>
+        </test-case>
+        <test-case id="1561" name="UnknownImage_RemainsAvailableToTheExistingSpawnerFlow" fullname="SensoryBagCalibrationCoordinatorTests.UnknownImage_RemainsAvailableToTheExistingSpawnerFlow" methodname="UnknownImage_RemainsAvailableToTheExistingSpawnerFlow" classname="SensoryBagCalibrationCoordinatorTests" runstate="Runnable" seed="568749037" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000376" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1560" name="VisionOSUuidSuffixedNatureReferenceImage_StartsSelectedCalibration" fullname="SensoryBagCalibrationCoordinatorTests.VisionOSUuidSuffixedNatureReferenceImage_StartsSelectedCalibration" methodname="VisionOSUuidSuffixedNatureReferenceImage_StartsSelectedCalibration" classname="SensoryBagCalibrationCoordinatorTests" runstate="Runnable" seed="1118880306" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.010722" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started NatureWorldPhoneTracking_8FEF101E-8126-4652-B006-F4793992AFA9: 0.400m × 0.250m, offset=(0.00, 0.00).
+[Sensory Bag Branch] step=calibration-video-unavailable reason=no-opening-surface
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1565" name="SensoryBagCalibrationRectangleTests" fullname="SensoryBagCalibrationRectangleTests" classname="SensoryBagCalibrationRectangleTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.168468" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1568" name="LeftEdgeResize_ClampsAtMinimumInsteadOfFlipping" fullname="SensoryBagCalibrationRectangleTests.LeftEdgeResize_ClampsAtMinimumInsteadOfFlipping" methodname="LeftEdgeResize_ClampsAtMinimumInsteadOfFlipping" classname="SensoryBagCalibrationRectangleTests" runstate="Runnable" seed="1288718882" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.001136" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1569" name="ProjectWorldPointToAnchorPlane_DiscardsLocalDepth" fullname="SensoryBagCalibrationRectangleTests.ProjectWorldPointToAnchorPlane_DiscardsLocalDepth" methodname="ProjectWorldPointToAnchorPlane_DiscardsLocalDepth" classname="SensoryBagCalibrationRectangleTests" runstate="Runnable" seed="614614569" result="Failed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.001424" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: -0.0299999993f +/- 9.99999975E-05f
+  But was:  3.0f
+]]></message>
+            <stack-trace><![CDATA[at SensoryBagCalibrationRectangleTests.ProjectWorldPointToAnchorPlane_DiscardsLocalDepth () [0x00091] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/SensoryBagCalibrationRectangleTests.cs:67
+]]></stack-trace>
+          </failure>
+        </test-case>
+        <test-case id="1566" name="RightEdgeResize_HoldsLeftEdgeFixed" fullname="SensoryBagCalibrationRectangleTests.RightEdgeResize_HoldsLeftEdgeFixed" methodname="RightEdgeResize_HoldsLeftEdgeFixed" classname="SensoryBagCalibrationRectangleTests" runstate="Runnable" seed="1661277456" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000378" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1567" name="TopRightCornerResize_HoldsBottomLeftFixed" fullname="SensoryBagCalibrationRectangleTests.TopRightCornerResize_HoldsBottomLeftFixed" methodname="TopRightCornerResize_HoldsBottomLeftFixed" classname="SensoryBagCalibrationRectangleTests" runstate="Runnable" seed="1704333" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000362" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1627" name="StickerWorldSelectionControllerTests" fullname="StickerWorldSelectionControllerTests" classname="StickerWorldSelectionControllerTests" runstate="Runnable" testcasecount="12" result="Failed" site="Child" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.284287" total="12" passed="9" failed="3" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-case id="1634" name="CompensatedTextScale_CancelsNonUniformParentScale" fullname="StickerWorldSelectionControllerTests.CompensatedTextScale_CancelsNonUniformParentScale" methodname="CompensatedTextScale_CancelsNonUniformParentScale" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="67378993" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.021719" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1635" name="DefaultEntryOffset_IsRaisedAndRecessedFromSticker" fullname="StickerWorldSelectionControllerTests.DefaultEntryOffset_IsRaisedAndRecessedFromSticker" methodname="DefaultEntryOffset_IsRaisedAndRecessedFromSticker" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="1451543719" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.001688" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1636" name="MoodEntry_ChangesSummaryAndRaisesRequest" fullname="StickerWorldSelectionControllerTests.MoodEntry_ChangesSummaryAndRaisesRequest" methodname="MoodEntry_ChangesSummaryAndRaisesRequest" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="581890112" result="Failed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.008609" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[  Expected: 1
+  But was:  0
+]]></message>
+            <stack-trace><![CDATA[at StickerWorldSelectionControllerTests.MoodEntry_ChangesSummaryAndRaisesRequest () [0x0009e] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/StickerWorldSelectionControllerTests.cs:180
+]]></stack-trace>
+          </failure>
+          <output><![CDATA[[Moodium Flow] Button pressed: 现在：烦躁 · 推荐自然世界
+]]></output>
+        </test-case>
+        <test-case id="1637" name="MoodEntry_UsesAuthoredGlassSpriteAndReadableHitArea" fullname="StickerWorldSelectionControllerTests.MoodEntry_UsesAuthoredGlassSpriteAndReadableHitArea" methodname="MoodEntry_UsesAuthoredGlassSpriteAndReadableHitArea" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="303881874" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.001424" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1628" name="MoodPanelSuspensionHidesEntriesAndBlocksTrackingAndSelection" fullname="StickerWorldSelectionControllerTests.MoodPanelSuspensionHidesEntriesAndBlocksTrackingAndSelection" methodname="MoodPanelSuspensionHidesEntriesAndBlocksTrackingAndSelection" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="861090164" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.021530" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7CD6 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u679C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '糖果世界' entry for 'CandyWorldPhoneTracking' (0000000000000001-0000000000000002).
+]]></output>
+        </test-case>
+        <test-case id="1638" name="RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons" fullname="StickerWorldSelectionControllerTests.RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons" methodname="RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="285927479" result="Failed" label="Error" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.011666" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object]]></message>
+            <stack-trace><![CDATA[  at StickerWorldSelectionControllerTests.RecommendationTag_AttachesOnlyToMatchingEntryWithoutDisablingButtons () [0x0010a] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/StickerWorldSelectionControllerTests.cs:209 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <3aacbe608a2f468eb6bb1c15e219490d>:0 ]]></stack-trace>
+          </failure>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7CD6 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u679C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '糖果世界' entry for 'CandyWorldPhoneTracking' (0000000000000001-0000000000000002).
+[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u81EA was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7136 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '自然世界' entry for 'NatureWorldPhoneTracking' (0000000000000003-0000000000000004).
+]]></output>
+        </test-case>
+        <test-case id="1629" name="TrackedCandyAndNatureImages_CreateIndependentMatchingEntries" fullname="StickerWorldSelectionControllerTests.TrackedCandyAndNatureImages_CreateIndependentMatchingEntries" methodname="TrackedCandyAndNatureImages_CreateIndependentMatchingEntries" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="1147234732" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.006883" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7CD6 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u679C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '糖果世界' entry for 'CandyWorldPhoneTracking' (0000000000000001-0000000000000002).
+[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u81EA was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7136 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '自然世界' entry for 'NatureWorldPhoneTracking' (0000000000000003-0000000000000004).
+]]></output>
+        </test-case>
+        <test-case id="1632" name="TrackingLoss_HidesOnlyAffectedEntry_AndRecoveryReusesIt" fullname="StickerWorldSelectionControllerTests.TrackingLoss_HidesOnlyAffectedEntry_AndRecoveryReusesIt" methodname="TrackingLoss_HidesOnlyAffectedEntry_AndRecoveryReusesIt" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="1724138960" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.006383" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7CD6 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u679C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '糖果世界' entry for 'CandyWorldPhoneTracking' (0000000000000001-0000000000000002).
+[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u81EA was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7136 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '自然世界' entry for 'NatureWorldPhoneTracking' (0000000000000003-0000000000000004).
+]]></output>
+        </test-case>
+        <test-case id="1633" name="UnsupportedReferenceImage_DoesNotCreateEntry" fullname="StickerWorldSelectionControllerTests.UnsupportedReferenceImage_DoesNotCreateEntry" methodname="UnsupportedReferenceImage_DoesNotCreateEntry" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="1813665992" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000930" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Sticker Selection] Ignored image 'NotMoodium'. No configured Moodium world prefab/definition was available.
+]]></output>
+        </test-case>
+        <test-case id="1639" name="UprightEntryRotation_KeepsWorldUp_WhenStickerIsVertical" fullname="StickerWorldSelectionControllerTests.UprightEntryRotation_KeepsWorldUp_WhenStickerIsVertical" methodname="UprightEntryRotation_KeepsWorldUp_WhenStickerIsVertical" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="905309432" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.000783" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1630" name="VisionOSUuidSuffixedReferenceImage_CreatesMatchingNatureEntry" fullname="StickerWorldSelectionControllerTests.VisionOSUuidSuffixedReferenceImage_CreatesMatchingNatureEntry" methodname="VisionOSUuidSuffixedReferenceImage_CreatesMatchingNatureEntry" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="2053894812" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.003317" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u81EA was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7136 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '自然世界' entry for 'NatureWorldPhoneTracking_8FEF101E-8126-4652-B006-F4793992AFA9' (0000000000000003-0000000000000004).
+]]></output>
+        </test-case>
+        <test-case id="1631" name="WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton" fullname="StickerWorldSelectionControllerTests.WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton" methodname="WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton" classname="StickerWorldSelectionControllerTests" runstate="Runnable" seed="1134245670" result="Failed" label="Error" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:00Z" duration="0.003314" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <failure>
+            <message><![CDATA[System.NullReferenceException : Object reference not set to an instance of an object]]></message>
+            <stack-trace><![CDATA[  at StickerWorldSelectionControllerTests.WorldEntry_UsesGlassSliderWithArrowInsteadOfTextOnlyButton () [0x0005c] in /Users/yibei/Desktop/appcontest2026/Moodium/Assets/Editor/StickerWorldSelectionControllerTests.cs:110 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <3aacbe608a2f468eb6bb1c15e219490d>:0 ]]></stack-trace>
+          </failure>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+The character with Unicode value \u8FDB was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u5165 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7CD6 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u679C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u4E16 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u754C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Moodium Sticker Selection] Spawned '糖果世界' entry for 'CandyWorldPhoneTracking' (0000000000000001-0000000000000002).
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1651" name="UIRefreshTests" fullname="UIRefreshTests" classname="UIRefreshTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-29 15:14:00Z" end-time="2026-10-29 15:14:01Z" duration="0.316011" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1652" name="All51SpritesLoadAtDesignScale" fullname="UIRefreshTests.All51SpritesLoadAtDesignScale" methodname="All51SpritesLoadAtDesignScale" classname="UIRefreshTests" runstate="Runnable" seed="1845180081" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.038040" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1653" name="EnergyBoundariesAndRenderedState" fullname="UIRefreshTests.EnergyBoundariesAndRenderedState" methodname="EnergyBoundariesAndRenderedState" classname="UIRefreshTests" runstate="Runnable" seed="876881467" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.005004" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1662" name="OpeningUsesSpritesAtPhysicalHitSize" fullname="UIRefreshTests.OpeningUsesSpritesAtPhysicalHitSize" methodname="OpeningUsesSpritesAtPhysicalHitSize" classname="UIRefreshTests" runstate="Runnable" seed="1760474074" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.002545" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1661" name="RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" fullname="UIRefreshTests.RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" methodname="RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" classname="UIRefreshTests" runstate="Runnable" seed="630501579" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.007080" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1660" name="RotationFormat" fullname="UIRefreshTests.RotationFormat" methodname="RotationFormat" classname="UIRefreshTests" runstate="Runnable" seed="674363004" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.000249" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1659" name="RotationSnap" fullname="UIRefreshTests.RotationSnap" classname="UIRefreshTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.147512" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1655" name="RotationSnap(2.9f,0.0f)" fullname="UIRefreshTests.RotationSnap(2.9f,0.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="1341553427" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.000687" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1656" name="RotationSnap(3.1f,3.1f)" fullname="UIRefreshTests.RotationSnap(3.1f,3.1f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="803834155" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.000152" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1657" name="RotationSnap(-2.0f,0.0f)" fullname="UIRefreshTests.RotationSnap(-2.0f,0.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="866457343" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.000134" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1658" name="RotationSnap(370.0f,10.0f)" fullname="UIRefreshTests.RotationSnap(370.0f,10.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="209173605" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.000126" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1654" name="SettingsSelectsSemanticValuesAndChangesSprites" fullname="UIRefreshTests.SettingsSelectsSemanticValuesAndChangesSprites" methodname="SettingsSelectsSemanticValuesAndChangesSprites" classname="UIRefreshTests" runstate="Runnable" seed="763061657" result="Passed" start-time="2026-10-29 15:14:01Z" end-time="2026-10-29 15:14:01Z" duration="0.005789" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

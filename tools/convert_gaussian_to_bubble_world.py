@@ -2,6 +2,11 @@
 import argparse
 import math
 import struct
+import json
+import hashlib
+import subprocess
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -56,14 +61,30 @@ def main():
     parser.add_argument("--count", type=int, default=500000)
     parser.add_argument("--max-radius", type=float, default=72.0)
     parser.add_argument("--eye-height", type=float, default=1.35)
+    parser.add_argument("--frame-json", type=Path, help="Registered source frame and measured eye height; writes provenance.")
+    parser.add_argument("--verify-panorama", type=Path, help="Run full canonical registration as the final export gate.")
     parser.add_argument("--row-transform", type=float, nargs=9, metavar=("M00", "M01", "M02", "M10", "M11", "M12", "M20", "M21", "M22"),
                         help="Optional 3×3 row-vector transform that aligns a source PLY to the Bubble World frame.")
     args = parser.parse_args()
+    frame = None
+    if args.frame_json:
+        if args.row_transform is not None:
+            parser.error("Use either --frame-json or --row-transform")
+        frame = json.loads(args.frame_json.read_text())
+        args.row_transform = frame["row_transform_for_converter"]
+        args.eye_height = float(frame["eye_height_above_ground_m"])
+    if not .2 <= args.eye_height <= 2:
+        raise ValueError("Eye height must be within 0.2–2m")
     data = read_gaussians(args.source)
     positions = data[:, :3]
     if args.row_transform is not None:
-        positions = positions @ np.asarray(args.row_transform, dtype=np.float32).reshape(3, 3)
-    radii = np.linalg.norm(positions, axis=1)
+        matrix = np.asarray(args.row_transform, dtype=np.float64).reshape(3, 3)
+        if not np.isfinite(matrix).all() or not np.allclose(matrix.T @ matrix, np.eye(3), atol=5e-6):
+            raise ValueError("Frame must be orthogonal (rotation or reflection), without scale/shear")
+        positions = positions @ matrix.astype(np.float32)
+    # Orthogonal transforms preserve distance. Use source radii to keep selection
+    # and ordering identical across refinements, including float32 tie cases.
+    radii = np.linalg.norm(data[:, :3], axis=1)
     opacity = 1 / (1 + np.exp(-np.clip(data[:, 6], -80, 80)))
     candidates = np.flatnonzero(np.isfinite(data).all(axis=1) & (opacity >= .08) & (radii <= args.max_radius))
     if len(candidates) < args.count:
@@ -76,12 +97,31 @@ def main():
     records = np.zeros(args.count, dtype=RECORD)
     records["position"], records["size"] = positions[chosen], sizes.astype(np.float16)
     records["color"][:, :3], records["color"][:, 3] = colour, 255
-    records = records[np.argsort(np.linalg.norm(records["position"], axis=1), kind="stable")]
+    order = np.argsort(radii[chosen], kind="stable")
+    records = records[order]
     args.output_folder.mkdir(parents=True, exist_ok=True)
     maximum = float(np.linalg.norm(records["position"], axis=1).max())
     (args.output_folder / "points.bytes").write_bytes(struct.pack("<4siiff", b"MSPC", 1, len(records), args.eye_height, maximum) + records.tobytes())
     round_atlas(records["color"], args.output_folder / "point_colors_round.png")
+    if frame is not None:
+        frame = dict(frame, exported_at=datetime.now(timezone.utc).isoformat(),
+                     source_sha256=hashlib.sha256(args.source.read_bytes()).hexdigest(),
+                     points_sha256=hashlib.sha256((args.output_folder / "points.bytes").read_bytes()).hexdigest(),
+                     count=len(records), runtime_source_rotation="identity")
+        (args.output_folder / "frame.json").write_text(json.dumps(frame, indent=2) + "\n")
     print(f"Exported {len(records)} points, max radius {maximum:.3f} m")
+    if args.verify_panorama:
+        # MSPC rendering alpha is intentionally opaque. Preserve the original Gaussian
+        # confidence separately so verification uses the reference tool's >.35 filter.
+        confidence = args.output_folder / "registration_opacity.npy"
+        np.save(confidence, opacity[chosen][order])
+        sampling_positions = args.output_folder / "registration_source_positions.npy"
+        np.save(sampling_positions, data[chosen][order, :3])
+        subprocess.run([sys.executable, str(Path(__file__).with_name("register_nested_world.py")),
+                        str(args.output_folder / "points.bytes"), str(args.verify_panorama),
+                        str(args.output_folder / "registration"), "--verify-canonical",
+                        "--source-opacity", str(confidence),
+                        "--sampling-positions", str(sampling_positions)], check=True)
 
 
 if __name__ == "__main__":

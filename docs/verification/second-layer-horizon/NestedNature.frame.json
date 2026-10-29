@@ -1,0 +1,53 @@
+{
+ "name": "NestedNature",
+ "source_ply": "01_SourceModels/Nature_Layer2/b792f7bb25e24fbe792219ac5b03b953.ply",
+ "panorama": "Assets/Resources/MoodiumBubbleWorld/NestedNature/panorama.png",
+ "convention": "Unity = T @ raw (column vectors); det(T) = -1 includes the right-handed -> left-handed flip; panorama unchanged, u = 0.5 + atan2(x, z)/2pi",
+ "T_rows": [
+  [
+   -0.076344,
+   -0.034474,
+   0.996485
+  ],
+  [
+   -0.934715,
+   0.350385,
+   -0.05949
+  ],
+  [
+   0.347103,
+   0.935971,
+   0.058973
+  ]
+ ],
+ "row_transform_for_converter": [
+  -0.076344,
+  -0.934715,
+  0.347103,
+  -0.034474,
+  0.350385,
+  0.935971,
+  0.996485,
+  -0.05949,
+  0.058973
+ ],
+ "up_in_raw_frame": [
+  -0.93471,
+  0.35039,
+  -0.05949
+ ],
+ "score": 0.5978,
+ "second_best_score": 0.3776,
+ "sector_correlation": [
+  0.648,
+  0.507,
+  0.177,
+  0.52,
+  0.46,
+  0.966,
+  0.734,
+  0.694
+ ],
+ "ground_tilt_deg": 3.76,
+ "eye_height_above_ground_m": 0.369
+}

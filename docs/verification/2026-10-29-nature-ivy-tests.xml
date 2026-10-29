@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="8" result="Passed" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.0494394">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="592" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.049439" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1722" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="583" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.041407" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="69888" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1417" name="NatureIvySpatialGrowthControllerTests" fullname="NatureIvySpatialGrowthControllerTests" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.031280" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1421" name="EnvironmentRequiresFullEnergyExploreAndRegisteredSurface" fullname="NatureIvySpatialGrowthControllerTests.EnvironmentRequiresFullEnergyExploreAndRegisteredSurface" methodname="EnvironmentRequiresFullEnergyExploreAndRegisteredSurface" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" seed="1653798488" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.011811" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[World Journey] Explore
+[World Journey] Bubble
+[World Journey] Explore
+]]></output>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1420" name="SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget" fullname="NatureIvySpatialGrowthControllerTests.SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.013140" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1418" name="SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget(1)" fullname="NatureIvySpatialGrowthControllerTests.SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget(1)" methodname="SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" seed="675922705" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.007863" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+            <output><![CDATA[[World Journey] Explore
+]]></output>
+          </test-case>
+          <test-case id="1419" name="SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget(5)" fullname="NatureIvySpatialGrowthControllerTests.SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget(5)" methodname="SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" seed="613534904" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.000782" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+            <output><![CDATA[[World Journey] Explore
+]]></output>
+          </test-case>
+        </test-suite>
+        <test-case id="1422" name="VisionOSIvyPreservesThePrefab3DGeometryAndDoesNotInjectTheGrowShader" fullname="NatureIvySpatialGrowthControllerTests.VisionOSIvyPreservesThePrefab3DGeometryAndDoesNotInjectTheGrowShader" methodname="VisionOSIvyPreservesThePrefab3DGeometryAndDoesNotInjectTheGrowShader" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" seed="1335204607" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.000137" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1423" name="VisionOSIvyUsesTheDedicatedLeafVisualLayerInsteadOfIvyStudiosLeafPrefabs" fullname="NatureIvySpatialGrowthControllerTests.VisionOSIvyUsesTheDedicatedLeafVisualLayerInsteadOfIvyStudiosLeafPrefabs" methodname="VisionOSIvyUsesTheDedicatedLeafVisualLayerInsteadOfIvyStudiosLeafPrefabs" classname="NatureIvySpatialGrowthControllerTests" runstate="Runnable" seed="1239230802" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.000096" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1424" name="NatureIvySurfaceResolverTests" fullname="NatureIvySurfaceResolverTests" classname="NatureIvySurfaceResolverTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.008130" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1425" name="FindsUpwardSpatialSurfaceAndIgnoresNearerVirtualCollider" fullname="NatureIvySurfaceResolverTests.FindsUpwardSpatialSurfaceAndIgnoresNearerVirtualCollider" methodname="FindsUpwardSpatialSurfaceAndIgnoresNearerVirtualCollider" classname="NatureIvySurfaceResolverTests" runstate="Runnable" seed="1374355027" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.002791" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1426" name="GazeRayFindsWallBehindVirtualSoftAndRejectsEmptySpace" fullname="NatureIvySurfaceResolverTests.GazeRayFindsWallBehindVirtualSoftAndRejectsEmptySpace" methodname="GazeRayFindsWallBehindVirtualSoftAndRejectsEmptySpace" classname="NatureIvySurfaceResolverTests" runstate="Runnable" seed="1329157995" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.000465" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1427" name="RejectsWallWhenNoUpwardSpatialSurfaceExists" fullname="NatureIvySurfaceResolverTests.RejectsWallWhenNoUpwardSpatialSurfaceExists" methodname="RejectsWallWhenNoUpwardSpatialSurfaceExists" classname="NatureIvySurfaceResolverTests" runstate="Runnable" seed="1231352227" result="Passed" start-time="2026-10-29 13:52:19Z" end-time="2026-10-29 13:52:19Z" duration="0.000207" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

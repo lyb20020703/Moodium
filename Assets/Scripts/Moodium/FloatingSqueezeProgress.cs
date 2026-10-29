@@ -1,64 +1,86 @@
+using TMPro;
+using Unity.PolySpatial;
 using UnityEngine;
-using UnityEngine.UI;
+using Moodium.UI;
 
 namespace Moodium.CandyWorld
 {
-    /// <summary>A passive, model-anchored companion to the wrist progress display.</summary>
+    /// <summary>Passive model-anchored energy ring; consumes the same progress as the wrist.</summary>
     public sealed class FloatingSqueezeProgress : MonoBehaviour
     {
-        Transform m_Target;
-        Camera m_Camera;
-        RectTransform m_Fill;
-        float m_Progress;
-
+        Transform m_Target; Camera m_Camera; Renderer[] m_TargetRenderers;
+        float m_Progress, m_LastPress, m_FullAt=-1, m_ShownAt, m_Alpha=1;
+        Color m_World; TMP_FontAsset m_Chinese, m_English; TextMeshPro m_Number;
+        SpriteRenderer m_Halo; readonly SpriteRenderer[] m_Dots=new SpriteRenderer[40], m_Gems=new SpriteRenderer[4];
+        readonly SpriteRenderer[,] m_Ripples=new SpriteRenderer[4,2];
+        readonly float[] m_DotAt=new float[40], m_GiftAt=new float[4];
+        public int LitCount => MoodiumUIRefreshLayout.EnergyLitCount(m_Progress);
+        public string DisplayText => m_Number != null ? m_Number.text : "";
+        public void ConfigureFonts(TMP_FontAsset chinese, TMP_FontAsset english) { m_Chinese=chinese; m_English=english; UpdateFont(); }
+        void UpdateFont() { if(m_Number!=null) { var f=PlayerPrefs.GetString("Moodium.Language","Chinese")=="English"?m_English:m_Chinese; if(f!=null)m_Number.font=f; } }
         public void Bind(Transform target, Camera viewer, bool nature)
         {
-            m_Target = target;
-            m_Camera = viewer;
-            if (m_Fill == null)
-            {
-                var canvas = gameObject.AddComponent<Canvas>();
-                canvas.renderMode = RenderMode.WorldSpace;
-                var rect = GetComponent<RectTransform>();
-                rect.sizeDelta = new Vector2(180, 6);
-                transform.localScale = Vector3.one * .001f;
-                CreateStrip("Track", new Color(.12f, .14f, .18f, .35f));
-                m_Fill = CreateStrip("Progress", nature
-                    ? new Color(.48f, .85f, .64f, .9f)
-                    : new Color(1f, .65f, .79f, .9f));
-            }
-            gameObject.SetActive(true);
+            m_Target=target; m_Camera=viewer; m_TargetRenderers=target!=null?target.GetComponentsInChildren<Renderer>(true):System.Array.Empty<Renderer>();
+            m_World=nature?MoodiumUIRefreshLayout.Nature:MoodiumUIRefreshLayout.Candy;
+            if(m_Halo==null) Build();
+            m_ShownAt=m_LastPress=Time.unscaledTime; m_FullAt=m_Progress>=1?Time.unscaledTime:-1; m_Alpha=1;
+            for(int i=0;i<40;i++)m_DotAt[i]=-100;
+            for(int i=0;i<4;i++)m_GiftAt[i]=-100;
+            UpdateFont(); UIRefreshVisuals.UnitScale(transform); gameObject.SetActive(true); Refresh(Time.unscaledTime);
         }
-
-        RectTransform CreateStrip(string label, Color color)
+        void Build()
         {
-            var child = new GameObject(label, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            child.transform.SetParent(transform, false);
-            var image = child.GetComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            var rect = child.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-            return rect;
+            gameObject.AddComponent<VisionOSSortingGroup>();
+            m_Halo=UIRefreshVisuals.Sprite(transform,"Energy Halo","energy_halo",new Vector3(0,0,.001f),1);
+            for(int i=0;i<40;i++)m_Dots[i]=UIRefreshVisuals.Sprite(transform,"Energy Dot "+i,"energy_dot_off",MoodiumUIRefreshLayout.EnergyDotPosition(i),2);
+            for(int i=0;i<4;i++)
+            {
+                m_Gems[i]=UIRefreshVisuals.Sprite(transform,"Energy Gift "+i,"energy_gem_empty",MoodiumUIRefreshLayout.EnergyGemPosition(i),5);
+                for(int j=0;j<2;j++)m_Ripples[i,j]=UIRefreshVisuals.Sprite(transform,"Gift Ripple "+i+"-"+j,"energy_ripple",MoodiumUIRefreshLayout.EnergyGemPosition(i),6);
+            }
+            m_Number=UIRefreshVisuals.Text(transform,"Energy Percent",m_Chinese,30,7); m_Number.fontStyle=FontStyles.Bold;
         }
-
-        public void SetProgress(float progress) => m_Progress = Mathf.Clamp01(progress);
-
+        public void NotifyPressed() { m_LastPress=Time.unscaledTime; }
+        public void SetProgress(float progress)
+        {
+            var old=m_Progress; m_Progress=Mathf.Clamp01(progress); var now=Time.unscaledTime;
+            for(int i=MoodiumUIRefreshLayout.EnergyLitCount(old);i<LitCount;i++)m_DotAt[i]=now;
+            for(int i=0;i<4;i++)if(!MoodiumUIRefreshLayout.EnergyGiftReached(i,old)&&MoodiumUIRefreshLayout.EnergyGiftReached(i,m_Progress))m_GiftAt[i]=now;
+            if(m_Progress>old)NotifyPressed();
+            if(old<1&&m_Progress>=1)m_FullAt=now; else if(m_Progress<1)m_FullAt=-1;
+            if(m_Halo!=null)Refresh(now);
+        }
+        void Refresh(float now)
+        {
+            var head=MoodiumUIRefreshLayout.EnergyHeadIndex(m_Progress);
+            for(int i=0;i<40;i++)
+            {
+                var lit=i<LitCount; UIRefreshVisuals.SetOrder(m_Dots[i],i==head?4:lit?3:2); m_Dots[i].sprite=UIRefreshVisuals.Load(i==head?"energy_dot_head":lit?"energy_dot_on":"energy_dot_off");
+                var c=i==head?MoodiumUIRefreshLayout.EnergyHeadColor(m_World):lit?m_World:Color.white; c.a*=m_Alpha; m_Dots[i].color=c;
+                float scale=1+.8f*(1-UIRefreshVisuals.Ease((now-m_DotAt[i])/.35f));
+                if(i==head)scale*=1+.075f*(1+Mathf.Sin(now*Mathf.PI*2/1.6f));
+                if(m_FullAt>=0) { var age=now-m_FullAt-i*.8f/40; if(age>=0&&age<.12f)scale*=1+.4f*Mathf.Sin(age/.12f*Mathf.PI); }
+                m_Dots[i].transform.localScale=Vector3.one*scale;
+            }
+            for(int i=0;i<4;i++)
+            {
+                var full=MoodiumUIRefreshLayout.EnergyGiftReached(i,m_Progress); m_Gems[i].sprite=UIRefreshVisuals.Load(full?"energy_gem_full":"energy_gem_empty");
+                var c=full?m_World:Color.white;c.a*=m_Alpha;m_Gems[i].color=c;var age=now-m_GiftAt[i];
+                m_Gems[i].transform.localScale=Vector3.one*(age>=0&&age<.5f?1+.5f*Mathf.Sin(age/.5f*Mathf.PI):1);
+                for(int j=0;j<2;j++){var t=(age-j*.12f)/.7f;var r=m_Ripples[i,j];r.enabled=t>=0&&t<1;r.transform.localScale=Vector3.one*Mathf.Lerp(.5f,1.6f,UIRefreshVisuals.Ease(t));var rc=m_World;rc.a=.8f*(1-Mathf.Clamp01(t))*m_Alpha;r.color=rc;}
+            }
+            m_Halo.color=new Color(1,1,1,m_Alpha);m_Number.color=new Color(1,1,1,m_Alpha);
+            m_Number.text=Mathf.RoundToInt(m_Progress*100)+"<size=47%><color=#FFFFFFB8>%</color></size>";
+        }
         void LateUpdate()
         {
-            if (m_Target == null || !m_Target.gameObject.activeInHierarchy)
-            {
-                gameObject.SetActive(false);
-                return;
-            }
-            var bounds = new Bounds(m_Target.position, Vector3.zero);
-            foreach (var renderer in m_Target.GetComponentsInChildren<Renderer>())
-                if (renderer.enabled) bounds.Encapsulate(renderer.bounds);
-            transform.position = new Vector3(bounds.center.x, bounds.max.y + .065f, bounds.center.z);
-            if (m_Camera != null) transform.rotation = m_Camera.transform.rotation;
-            if (m_Fill != null) m_Fill.anchorMax = new Vector2(m_Progress, 1);
+            if(m_Target==null||!m_Target.gameObject.activeInHierarchy){gameObject.SetActive(false);return;}
+            var b=new Bounds(m_Target.position,Vector3.zero);foreach(var r in m_TargetRenderers)if(r!=null&&r.enabled&&r.gameObject.activeInHierarchy)b.Encapsulate(r.bounds);
+            transform.position=new Vector3(b.center.x,b.max.y+.16f,b.center.z);
+            if(m_Camera!=null){var forward=transform.position-m_Camera.transform.position;forward.y=0;if(forward.sqrMagnitude>.0001f)transform.rotation=Quaternion.LookRotation(forward,Vector3.up);}
+            var now=Time.unscaledTime;var target=m_FullAt>=0&&now-Mathf.Max(m_FullAt,m_LastPress)>3?.4f:now-m_LastPress>8?.6f:1;
+            m_Alpha=Mathf.MoveTowards(m_Alpha,target,Time.unscaledDeltaTime/(target<1?.6f:.2f));
+            UIRefreshVisuals.UnitScale(transform);transform.localScale*=Mathf.Lerp(.9f,1,UIRefreshVisuals.Ease((now-m_ShownAt)/.4f));Refresh(now);
         }
     }
 }

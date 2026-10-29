@@ -82,16 +82,43 @@ public sealed class BubbleWorldTests
     }
 
     [Test]
-    public void NestedWorldsUseTheirRegisteredSourceFrameWhileOuterWorldsStayCanonical()
+    public void AllWorldsUseCanonicalSourceFrames()
     {
         Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NatureFolder), Quaternion.identity),
             Is.LessThan(.001f));
         Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.CandyFolder), Quaternion.identity),
             Is.LessThan(.001f));
         Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NestedNatureFolder), Quaternion.identity),
-            Is.GreaterThan(1f));
+            Is.LessThan(.001f));
         Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NestedCandyFolder), Quaternion.identity),
-            Is.GreaterThan(1f));
+            Is.LessThan(.001f));
+    }
+
+    [TestCase(BubbleWorldData.NestedNatureFolder, .369f)]
+    [TestCase(BubbleWorldData.NestedCandyFolder, .56f)]
+    public void NestedBakedLayersMatchExportedCloud(string folder, float measuredEye)
+    {
+        var bytes = File.ReadAllBytes("Assets/Resources/" + folder + "points.bytes");
+        Assert.That(BubbleWorldData.TryParse(bytes, out var cloud), Is.True);
+        Assert.That(cloud.Count, Is.EqualTo(500000));
+        Assert.That(cloud.EyeHeight, Is.InRange(.2f, 2f));
+        Assert.That(cloud.EyeHeight, Is.EqualTo(measuredEye).Within(.00001f));
+        for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)
+        {
+            var mesh = UnityEditor.AssetDatabase.LoadAssetAtPath<Mesh>("Assets/Resources/" + folder +
+                "Meshes/" + BubbleWorldData.LayerMeshName(layer) + ".asset");
+            Assert.That(mesh, Is.Not.Null, folder + layer);
+            BubbleWorldData.LayerRange(layer, cloud.Count, BubbleWorldData.LayerCount, out var start, out var end);
+            var vertices = mesh.vertices;
+            Assert.That(vertices.Length, Is.EqualTo((end - start) * 4));
+            for (var sample = 0; sample < 17; sample++)
+            {
+                var index = sample * (end - start - 1) / 16;
+                var centre = (vertices[index * 4] + vertices[index * 4 + 2]) * .5f;
+                Assert.That(Vector3.Distance(centre, cloud.Positions[start + index]), Is.LessThan(.00002f),
+                    $"{folder} layer {layer} point {index}");
+            }
+        }
     }
 
     [Test]

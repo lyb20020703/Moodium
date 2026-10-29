@@ -13,7 +13,8 @@ namespace Moodium.Calibration
         TopRight,
         BottomLeft,
         BottomRight,
-        Height
+        Height,
+        Rotate
     }
 
     /// <summary>Anchor-local two-dimensional bag bounds. It has no world-space mutable state.</summary>

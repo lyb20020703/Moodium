@@ -40,6 +40,24 @@ namespace Moodium.NatureWorld
             return found;
         }
 
+        // Query only owned room colliders, so virtual objects cannot occlude the probe.
+        public static bool TryRaycast(IEnumerable<Collider> colliders, Ray ray, float distance, out RaycastHit bestHit)
+        {
+            bestHit = default;
+            if (colliders == null || ray.direction.sqrMagnitude < .000001f) return false;
+            var found = false;
+            foreach (var collider in colliders)
+            {
+                if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy || collider.isTrigger)
+                    continue;
+                if (!collider.Raycast(ray, out var hit, distance)) continue;
+                distance = hit.distance;
+                bestHit = hit;
+                found = true;
+            }
+            return found;
+        }
+
         bool TryFindAt(Vector3 origin, out RaycastHit bestHit)
         {
             bestHit = default;

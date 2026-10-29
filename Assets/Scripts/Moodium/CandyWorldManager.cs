@@ -302,7 +302,7 @@ namespace Moodium.CandyWorld
                     m_SpatialMeshManager,
                     m_NatureIvyGeneratorPrefab,
                     m_NatureIvyGrowMaterial,
-                    3);
+                    48);
                 m_NatureIvyGrowth.SetDebugMode(m_NatureVineDebug);
                 m_NatureIvyGrowth.StartGrowth();
             }
@@ -490,6 +490,7 @@ namespace Moodium.CandyWorld
                         progress.transform.SetParent(transform, false);
                         m_FloatingProgress = progress.AddComponent<FloatingSqueezeProgress>();
                     }
+                    m_FloatingProgress.ConfigureFonts(m_ChineseFont,m_EnglishFont);
                     m_FloatingProgress.SetProgress(0f);
                     m_FloatingProgress.Bind(capsule.transform, Camera.main, m_NatureWorldActive);
                     break;
@@ -561,6 +562,7 @@ namespace Moodium.CandyWorld
                 m_NatureIvyGrowth?.SetNatureSoftOrigin(m_LastNatureSoftOrigin);
                 m_NatureLeaves?.SetOrigin(visualCenter);
             }
+            m_FloatingProgress?.NotifyPressed();
             if(m_SqueezeModes!=null)m_SqueezeModes.AcceptPinch(capsule);
             else m_Energy.RegisterPinch();
             if (m_Rescue != null) m_Rescue.NotifyPinch();
@@ -727,6 +729,7 @@ namespace Moodium.CandyWorld
             m_EnergyUI?.SetReleaseAvailable(EnergyReleasePolicy.ShouldShowToggle(normalizedProgress));
             if (m_NatureWorldActive)
             {
+                m_NatureIvyGrowth?.SetProgress(normalizedProgress);
                 m_NatureForestGrowth.SetProgress(normalizedProgress);
                 m_NatureFootstepGrass?.SetProgress(normalizedProgress);
                 m_NatureCompletionPanorama?.SetProgress(normalizedProgress);

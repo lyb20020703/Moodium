@@ -14,6 +14,14 @@ public static class BubbleWorldBaker
     static readonly string[] Folders = { BubbleWorldData.NatureFolder, BubbleWorldData.CandyFolder,
         BubbleWorldData.NestedNatureFolder, BubbleWorldData.NestedCandyFolder };
 
+    [MenuItem("Moodium/Bubble World/Bake Both Nested Worlds")]
+    public static void BakeBothNested()
+    {
+        // Re-exporting nested frames must never rebuild the accepted first-layer assets.
+        BakeNestedNature();
+        BakeNestedCandy();
+    }
+
     [MenuItem("Moodium/Bubble World/Bake Candy Meshes")]
     public static void BakeCandy()
     {

@@ -63,7 +63,10 @@ namespace Moodium.Calibration
         Transform m_Anchor;
         Quaternion m_InitialAnchorRotation;
         float m_RotationDegrees;
-        Transform m_RotateLeft, m_RotateRight;
+        Moodium.UI.CalibrationRotateDial m_RotateDial;
+        Vector3 m_RotationStartVector;
+        float m_RotationStartYaw;
+        public float RotationDegrees => m_RotationDegrees;
         Transform m_FrameRoot;
         GameObject m_FrameBody;
         readonly Dictionary<CalibrationHandleKind, Transform> m_Visuals = new();
@@ -178,7 +181,7 @@ namespace Moodium.Calibration
 
         public void BeginPointerDrag(int pointerId, CalibrationHandleKind kind, Vector3 worldPosition)
         {
-            if (!m_FrameVisible || m_Confirmed || m_Rectangle == null || m_Anchor == null || m_Drags.ContainsKey(pointerId))
+            if (!m_FrameVisible || m_Confirmed || m_Rectangle == null || m_Anchor == null || m_Drags.Count > 0)
                 return;
             var localPoint = SensoryBagCalibrationRectangle.ProjectWorldPointToAnchorPlane(m_Anchor, worldPosition);
             NotifyUserInteraction();
@@ -187,6 +190,11 @@ namespace Moodium.Calibration
             m_DragStartCenter[pointerId] = m_Rectangle.Data.CenterOffset;
             m_DragStartNormal[pointerId]=m_Anchor.InverseTransformPoint(worldPosition).y;
             m_DragStartPlane[pointerId]=m_Rectangle.Data.PlaneLocalOffset.y;
+            if(kind==CalibrationHandleKind.Rotate)
+            {
+                m_RotationStartVector=Vector3.ProjectOnPlane(worldPosition-m_FrameRoot.position,Vector3.up);
+                m_RotationStartYaw=m_RotationDegrees;
+            }
         }
 
         public void MovePointerDrag(int pointerId, Vector3 worldPosition)
@@ -194,6 +202,16 @@ namespace Moodium.Calibration
             if (!m_Drags.TryGetValue(pointerId, out var kind) || m_Anchor == null)
                 return;
             var localPoint = SensoryBagCalibrationRectangle.ProjectWorldPointToAnchorPlane(m_Anchor, worldPosition);
+            if(kind==CalibrationHandleKind.Rotate)
+            {
+                var current=Vector3.ProjectOnPlane(worldPosition-m_FrameRoot.position,Vector3.up);
+                if(current.sqrMagnitude>.000001f&&m_RotationStartVector.sqrMagnitude>.000001f)
+                {
+                    var target=Moodium.UI.MoodiumUIRefreshLayout.SnapYaw(m_RotationStartYaw+Vector3.SignedAngle(m_RotationStartVector,current,Vector3.up));
+                    ApplyFrameRotation(Mathf.DeltaAngle(m_RotationDegrees,target));
+                }
+                return;
+            }
             if(kind==CalibrationHandleKind.Height)
             {
                 SetPlaneHeight(m_DragStartPlane[pointerId]+m_Anchor.InverseTransformPoint(worldPosition).y-m_DragStartNormal[pointerId]);
@@ -259,10 +277,7 @@ namespace Moodium.Calibration
                 m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, planeOffset.y, data.CenterOffset.y)),
                 m_Anchor.rotation * data.LocalOrientation);
             UpdateDebugData();
-            if (m_RotateLeft != null)
-                m_RotateLeft.localPosition = new Vector3(-.09f, -(data.Height * .5f + .08f), -.025f);
-            if (m_RotateRight != null)
-                m_RotateRight.localPosition = new Vector3(.09f, -(data.Height * .5f + .08f), -.025f);
+
         }
 
         public void RotateFrame(float degrees)
@@ -270,6 +285,10 @@ namespace Moodium.Calibration
             if (m_Anchor == null || m_Rectangle == null || m_Confirmed || !m_FrameVisible) return;
             NotifyUserInteraction();
             ClearDrags();
+            ApplyFrameRotation(degrees);
+        }
+        void ApplyFrameRotation(float degrees)
+        {
             var data = m_Rectangle.Data;
             var center = m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, 0f, data.CenterOffset.y));
             m_RotationDegrees = Mathf.Repeat(m_RotationDegrees + degrees + 180f, 360f) - 180f;
@@ -284,6 +303,8 @@ namespace Moodium.Calibration
             SyncFrameNow();
             UpdateSpatialLayout();
             UpdateStateVisuals();
+            if(m_RotateDial!=null&&m_Rectangle!=null)m_RotateDial.Refresh(CurrentData.Width,CurrentData.Height,m_RotationDegrees,
+                m_Drags.ContainsValue(CalibrationHandleKind.Rotate),CurrentData.WorldKind==SensoryBagWorldKind.Nature,m_Viewer);
         }
 
         // ------------------------------------------------------------------ calibration UI v2 (visuals only)
@@ -362,12 +383,8 @@ namespace Moodium.Calibration
             CreateAction("重置 / Reset", m_ResetColor, CalibrationAction.Reset);
             CreateAction("Raise Table", m_ResetColor, CalibrationAction.RaiseTable);
             CreateAction("Lower Table", m_ResetColor, CalibrationAction.LowerTable);
-            m_RotateLeft = Moodium.Flow.SensoryBagBranchUI.Button(m_FrameRoot, "Rotate Frame Left",
-                m_English ? "↶  5°" : "左转 5°", Vector3.zero,
-                m_English ? m_EnglishFont : m_ChineseFont, () => RotateFrame(-5f), .065f).transform;
-            m_RotateRight = Moodium.Flow.SensoryBagBranchUI.Button(m_FrameRoot, "Rotate Frame Right",
-                m_English ? "5°  ↷" : "右转 5°", Vector3.zero,
-                m_English ? m_EnglishFont : m_ChineseFont, () => RotateFrame(5f), .065f).transform;
+            m_RotateDial=m_FrameRoot.gameObject.AddComponent<Moodium.UI.CalibrationRotateDial>();
+            m_RotateDial.Initialize(this,m_English?m_EnglishFont:m_ChineseFont);
         }
 
         Sprite LoadSprite(string spriteName)

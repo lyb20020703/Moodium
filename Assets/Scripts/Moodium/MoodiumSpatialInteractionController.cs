@@ -230,6 +230,23 @@ namespace Moodium.Flow
                 if (pointer.phase == SpatialPointerPhase.Began)
                 {
                     var target = pointer.targetObject;
+                    // Reuse the system's gaze+pinch Began event. Never use head-forward as gaze,
+                    // and never route a UI/model gesture through to the room behind it.
+                    if (pointer.Kind == SpatialPointerKind.IndirectPinch)
+                    {
+                        var ivy = FindFirstObjectByType<Moodium.NatureWorld.NatureIvySpatialGrowthController>();
+                        var collider = target != null ? target.GetComponent<Collider>() : null;
+                        if (ivy != null && ivy.CanPlantEnvironment &&
+                            (target == null || ivy.IsSpatialMeshCollider(collider)))
+                        {
+                            if (pointer.startInteractionRayDirection.sqrMagnitude > .000001f)
+                                ivy.TryGrowFromGazeRay(new Ray(pointer.startInteractionRayOrigin,
+                                    pointer.startInteractionRayDirection));
+                            else if (collider != null)
+                                ivy.TryGrowFromSpatialPointer(collider, pointer.interactionPosition);
+                            continue;
+                        }
+                    }
                     if (target != null)
                     {
                         var branchCarousel = target.GetComponentInParent<WorldCarouselSwipeHandle>();

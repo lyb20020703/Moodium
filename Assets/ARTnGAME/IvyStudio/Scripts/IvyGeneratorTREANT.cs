@@ -51,6 +51,16 @@ namespace Artngame.TreeGEN.ProceduralIvy
 
     public class IvyGeneratorTREANT : MonoBehaviour
     {
+        // Optional per-instance room-surface query. Unconfigured IvyStudio users keep stock behaviour.
+        public delegate bool SurfaceRaycast(Ray ray, float distance, out RaycastHit hit);
+        [System.NonSerialized] public SurfaceRaycast surfaceRaycast;
+        [System.NonSerialized] public bool requireSurfaceAttachment;
+        bool RaycastSurface(Ray ray, out RaycastHit hit, float distance, int mask)
+        {
+            return surfaceRaycast != null ? surfaceRaycast(ray, distance, out hit)
+                : Physics.Raycast(ray, out hit, distance, mask);
+        }
+
         //GENERAL OPTIONS
         [Header("------------------------------------------------------")]
         [Header("Player Setup")]
@@ -1149,7 +1159,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
         {
             LayerMask allLayers = ~0;
             Ray ray = new Ray(start, (end - start) / (end - start).magnitude);
-            return Physics.Raycast(ray, (end - start).magnitude, confineToLayers ? plantLayerMask : allLayers);//v1.0
+            return RaycastSurface(ray, out _, (end - start).magnitude, confineToLayers ? plantLayerMask : allLayers);//v1.0
         }        
         
         List<IvyPosition> makeBranches(int branchesCount, Vector3 position, Vector3 normal, Vector3 direction)
@@ -1181,7 +1191,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
                 Vector3 p1 = position + normal * branchPartLength;
 
                 LayerMask allLayers = ~0;
-                if (Physics.Raycast(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
+                if (RaycastSurface(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
                 {
                     p1 = hit.point;
                 }
@@ -1189,7 +1199,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
                 //SEARCH RIGHT parallel to surface from new point for collision (collision or free area) !!!!!!!!!!!!!!!!!!
                 ray = new Ray(p1, direction);
 
-                if (Physics.Raycast(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
+                if (RaycastSurface(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
                 {
                     Vector3 p2 = hit.point;
                     IvyPosition p2Node = new IvyPosition(p2, -direction);
@@ -1216,7 +1226,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
                     //LayerMask allLayers = ~0;
 
                     ray =new Ray((p2 + normalMult*normal), -normal); 
-                    if (Physics.Raycast(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
+                    if (RaycastSurface(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
                     {
                         Vector3 p3 = hit.point;
                         IvyPosition p3Node = new IvyPosition(p3, normal);
@@ -1257,7 +1267,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
 
                         ray = new Ray(p3 + normalMult* normal, -normal); 
 
-                        if (Physics.Raycast(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
+                        if (RaycastSurface(ray, out hit, branchPartLength, confineToLayers ? plantLayerMask : allLayers))//v1.0
                         {
                             Vector3 p4 = hit.point;
                             IvyPosition p4Node = new IvyPosition(p4, normal);
@@ -1295,6 +1305,7 @@ mousePos = UnityEngine.InputSystem.Mouse.current.position.ReadValue();
                         }
                         else
                         {
+                            if (requireSurfaceAttachment) return null;
                             Vector3 p4 = p3 - normal * branchPartLength;
 
                          

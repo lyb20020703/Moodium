@@ -49,6 +49,7 @@ namespace Moodium.Flow
         public event Action<StickerWorldEntry> WorldEntrySelected;
         public event Action MoodCheckRequested;
         public event Action OwnershipSwitchRequested;
+        public Transform SettingsAnchor { get; private set; }
         public bool IsSelectionActive => root != null;
         // The carousel is exclusively the no-sensory-bag fallback. Keep this guard
         // here as well as in the app-flow branch so a stale/re-entrant Begin call
@@ -153,8 +154,8 @@ namespace Moodium.Flow
             moodChip.Initialize(null, font, () => { if (CanInteract) MoodCheckRequested?.Invoke(); });
             moodChip.AllowIdleHint = false;
             moodChip.SetContent(english, summary);
-            SensoryBagBranchUI.Button(root, "Selection Settings", english ? "Settings" : "设置",
-                new Vector3(0, -.39f, -.08f), font, () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); });
+            SettingsAnchor = Moodium.UI.UIRefreshVisuals.Gear(root, new Vector3(0, -.39f, -.08f),
+                () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); }).transform.parent;
             root.gameObject.AddComponent<SensoryBagDirectTouchInput>();
             ApplyLayout();
             Debug.Log("[Sensory Bag Branch] mode=none step=carousel-begin image-tracking=false");

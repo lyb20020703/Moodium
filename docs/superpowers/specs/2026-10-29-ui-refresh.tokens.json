@@ -1,0 +1,161 @@
+{
+  "$description": "Moodium UI refresh: energy ring, calibration rotate dial, global settings, opening buttons. Sizes in design px unless marked _m (metres), _s (seconds) or _deg. Coordinates relative to the element centre, x right, y up.",
+  "scale": {
+    "designPxToMeters": 0.000807692,
+    "exportScale": 1.5,
+    "pixelsPerUnit": 1857.142857,
+    "note": "Same as the world guide cards. Every sprite comes out at real size; do not scale the GameObjects to size them."
+  },
+  "color": {
+    "candy": "#F27DB6",
+    "nature": "#55C47F",
+    "ink": "#1E1A28",
+    "text": "#FFFFFF",
+    "textMuted": "rgba(255,255,255,0.74)",
+    "labelUnselected": "rgba(255,255,255,0.82)"
+  },
+  "energyRing": {
+    "folder": "Assets/Resources/MoodiumUIRefresh/",
+    "placement": {
+      "anchor": "squeeze model (Candy Soft / Nature Soft) top centre",
+      "aboveModelTop_m": 0.16,
+      "facing": "yaw-only billboard toward the head; stays upright",
+      "followsHead": false
+    },
+    "dots": {
+      "count": 40,
+      "radius": 54,
+      "radius_m": 0.0436,
+      "angleOfDot_deg": "90 - (i + 1) * 9   (i = 0..39; clockwise from 12 o'clock; dot 39 sits at the top = 100%)",
+      "litCount": "floor(energy01 * 40)",
+      "headIndex": "litCount - 1 when 0 < energy01 < 1, else none",
+      "sprites": {
+        "off": { "sprite": "energy_dot_off", "canvas": 12, "tint": "none (white 34% baked)" },
+        "on": { "sprite": "energy_dot_on", "canvas": 24, "tint": "world colour" },
+        "head": { "sprite": "energy_dot_head", "canvas": 36, "tint": "lerp(world colour, white, 0.45)" }
+      }
+    },
+    "gifts": {
+      "dotIndex": [7, 19, 31, 39],
+      "percent": [20, 50, 80, 100],
+      "radius": 67,
+      "radius_m": 0.0541,
+      "empty": { "sprite": "energy_gem_empty", "canvas": 22, "tint": "none" },
+      "full": { "sprite": "energy_gem_full", "canvas": 36, "tint": "world colour" },
+      "ripple": { "sprite": "energy_ripple", "canvas": 64, "tint": "world colour" }
+    },
+    "halo": { "sprite": "energy_halo", "canvas": 200, "behind_m": 0.001, "note": "soft dark disc so white text reads on bright rooms" },
+    "number": {
+      "renderer": "TextMeshPro with the project fonts (ConfigureFonts)",
+      "value": "round(energy01 * 100)",
+      "digitsFontSize": 30,
+      "digitsWeight": "Bold",
+      "percentFontSize": 14,
+      "percentAlpha": 0.72,
+      "color": "#FFFFFF",
+      "nonUniformScaleCompensation": true
+    },
+    "sortingOrder": { "halo": 1, "dotOff": 2, "dotOn": 3, "head": 4, "gems": 5, "ripple": 6, "number": 7 },
+    "motion": {
+      "showIn_s": 0.4, "showInScaleFrom": 0.9,
+      "newDotPop_s": 0.35, "newDotPopScaleFrom": 1.8,
+      "headBreath_s": 1.6, "headBreathScale": [1.0, 1.15],
+      "giftPop_s": 0.5, "giftPopScale": [1.0, 1.5, 1.0],
+      "ripple_s": 0.7, "rippleScale": [0.5, 1.6], "rippleAlpha": [0.8, 0], "secondRippleDelay_s": 0.12,
+      "fullWave_s": 0.8,
+      "fullDimDelay_s": 3.0, "fullDimAlpha": 0.4, "fullDim_s": 0.6,
+      "idleDimAfter_s": 8.0, "idleDimAlpha": 0.6, "wakeOnSqueeze_s": 0.2,
+      "ease": "cubic-bezier(0.2, 0.8, 0.2, 1) / ease-out"
+    }
+  },
+  "calibrationRotate": {
+    "folder": "Assets/Resources/MoodiumUIRefresh/",
+    "knob": {
+      "sprites": { "idle": "calib_rot_knob_idle", "gaze": "calib_rot_knob_gaze (editor mouse only)", "active": "calib_rot_knob_active_candy / calib_rot_knob_active_nature" },
+      "canvas": 100,
+      "diameter": 52,
+      "diameter_m": 0.042,
+      "hitDiameter_m": 0.06,
+      "centreAboveTable_m": 0.05,
+      "facing": "yaw-only billboard toward the head",
+      "orbit": "on the rotation circle, in the direction of the frame corner nearest the user on their right; it moves with the frame as it turns"
+    },
+    "rotationCircle": {
+      "sprite": "calib_rot_circle",
+      "canvas": 520,
+      "spriteRadius": 252,
+      "spriteRadius_m": 0.2035,
+      "radius_m": "halfDiagonal(frameWidth, frameDepth) + 0.05",
+      "scale": "radius_m / 0.2035 (uniform)",
+      "lies": "flat on the table plane, centred on the frame centre",
+      "visible": "only while rotating; fade in 0.2 s, fade out 0.3 s"
+    },
+    "zeroTick": { "sprite": "calib_rot_zero_tick", "canvas": [16, 36], "where": "on the rotation circle at the knob direction of yaw 0 (the yaw when calibration began); flat on the table; long side radial", "visible": "only while rotating" },
+    "tether": { "sprite": "calib_rot_tether", "canvas": [8, 64], "where": "vertical, from the table up to the knob's bottom edge; scale Y to fit" },
+    "anglePill": {
+      "sprite": "calib_rot_pill",
+      "canvas": [96, 52],
+      "aboveKnobCentre_m": 0.045,
+      "text": "TextMeshPro, 16 px Semibold, white, format '+0°;−0°;0°'",
+      "visible": "only while rotating"
+    },
+    "rules": {
+      "snapToZero_deg": 3,
+      "snapFeedback": "zero tick scales 1 → 1.4 → 1 in 0.25 s",
+      "frameWhileRotating": "same world-colour state as the existing frame drag",
+      "keepExistingLogic": true
+    },
+    "sortingOrder": { "circle": 1, "zeroTick": 2, "tether": 5, "knob": 11, "pill": 12 }
+  },
+  "settings": {
+    "folder": "Assets/Resources/MoodiumUIRefresh/",
+    "button": {
+      "sprites": { "idle": "settings_btn_idle", "gaze": "settings_btn_gaze (editor mouse only)", "pressed": "settings_btn_pressed", "open": "settings_btn_open" },
+      "canvas": 104,
+      "diameter": 56,
+      "diameter_m": 0.045,
+      "hitDiameter_m": 0.06,
+      "where": "keep the existing settings key's position"
+    },
+    "panel": {
+      "sprites": { "zh": "settings_panel_zh", "en": "settings_panel_en" },
+      "canvas": [440, 316],
+      "size": [360, 236],
+      "size_m": [0.291, 0.191],
+      "where": "bottom edge 0.02 m above the settings button, same facing as the button",
+      "bakedText": "title and the two row labels are in the panel sprite"
+    },
+    "close": { "sprite": "settings_close", "canvas": 60, "diameter": 34, "centre": [139, 77], "hitDiameter": 44 },
+    "rows": {
+      "language": { "trackCentre": [56, 6], "options": ["settings_label_lang_zh", "settings_label_lang_en"], "values": ["zh", "en"] },
+      "sensoryBag": { "trackCentre": [56, -62], "options": ["settings_label_bag_has_{lang}", "settings_label_bag_none_{lang}"], "values": [true, false] }
+    },
+    "track": { "sprite": "settings_seg_track", "canvas": [216, 60], "size": [200, 44] },
+    "thumb": { "sprite": "settings_seg_thumb", "canvas": [120, 60], "size": [96, 36], "offsetX": [-48, 48], "slide_s": 0.25 },
+    "labels": {
+      "sprite": "settings_label_*",
+      "canvasHeight": 44,
+      "centreOffsetX": [-48, 48],
+      "tint": { "selected": "#1E1A28", "unselected": "rgba(255,255,255,0.82)" },
+      "tintFade_s": 0.2
+    },
+    "hit": { "eachHalf": [100, 44], "eachHalf_m": [0.081, 0.036] },
+    "behaviour": {
+      "apply": "immediately on tap; no save button",
+      "languageSwap": "swap panel sprite and bag labels with a 0.2 s crossfade",
+      "open_s": 0.3, "openScaleFrom": 0.92, "close_s": 0.2,
+      "closeWhen": ["tap ×", "tap the settings button again"]
+    },
+    "sortingOrder": { "panel": 20, "track": 21, "thumb": 22, "labels": 23, "close": 23 }
+  },
+  "openingButtons": {
+    "folder": "Assets/Resources/MoodiumOpening/",
+    "sprites": "opening_btn_{lang_zh|lang_en|bag_yes_zh|bag_no_zh|bag_yes_en|bag_no_en|bg}_{idle|gaze|pressed}",
+    "canvas": [332, 188],
+    "size": [220, 76],
+    "size_m": [0.178, 0.061],
+    "centreSpacing_m": 0.2,
+    "belowVideo_m": 0.04,
+    "pressedThen_s": 0.3
+  }
+}

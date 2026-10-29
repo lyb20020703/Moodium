@@ -39,18 +39,54 @@ public sealed class NatureIvySpatialGrowthControllerTests
             Object.DestroyImmediate(m_Root);
     }
 
-    [Test]
-    public void SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget()
+    [TestCase(1)]
+    [TestCase(5)]
+    public void SpatialHitGrowsOneIvyStrokeAndHonorsTheSessionBudget(int budget)
     {
         var controller = m_Root.AddComponent<NatureIvySpatialGrowthController>();
-        controller.Configure(m_GeneratorObject.GetComponent<IvyGeneratorTREANT>(), 1);
+        controller.Configure(m_GeneratorObject.GetComponent<IvyGeneratorTREANT>(), budget);
         controller.StartGrowth();
+        m_Root.AddComponent<Moodium.Flow.WorldJourneyDirector>().Rescued();
+        var colliders = (System.Collections.Generic.HashSet<Collider>)typeof(NatureIvySpatialGrowthController)
+            .GetField("m_SpatialColliders", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .GetValue(controller);
+        colliders.Add(m_Surface.GetComponent<Collider>());
+        controller.SetProgress(1f);
         Physics.SyncTransforms();
         Assert.That(Physics.Raycast(new Ray(Vector3.zero, Vector3.forward), out var hit, 3f), Is.True);
 
-        Assert.That(controller.TryGrowAtSpatialHit(hit), Is.True);
-        Assert.That(controller.GrownStrokeCount, Is.EqualTo(1));
+        for (var i = 0; i < budget; i++)
+            Assert.That(controller.TryGrowAtSpatialHit(hit), Is.True);
+        Assert.That(controller.GrownStrokeCount, Is.EqualTo(budget));
         Assert.That(controller.TryGrowAtSpatialHit(hit), Is.False);
+    }
+
+    [Test]
+    public void EnvironmentRequiresFullEnergyExploreAndRegisteredSurface()
+    {
+        var controller = m_Root.AddComponent<NatureIvySpatialGrowthController>();
+        controller.Configure(m_GeneratorObject.GetComponent<IvyGeneratorTREANT>(), 48);
+        controller.StartGrowth();
+        var journey = m_Root.AddComponent<Moodium.Flow.WorldJourneyDirector>();
+        journey.Rescued();
+        controller.SetProgress(.999f);
+        Assert.That(controller.CanPlantEnvironment, Is.False);
+        controller.SetProgress(1f);
+        Assert.That(controller.CanPlantEnvironment, Is.True);
+        Physics.SyncTransforms();
+        Assert.That(Physics.Raycast(Vector3.zero, Vector3.forward, out var hit, 3f), Is.True);
+        Assert.That(controller.TryGrowAtSpatialHit(hit), Is.False, "Unregistered virtual surface");
+        Assert.That(controller.GrownStrokeCount, Is.Zero);
+        controller.SetSuspended(true);
+        Assert.That(controller.CanPlantEnvironment, Is.False);
+        controller.SetSuspended(false);
+        journey.EnterBubble();
+        Assert.That(controller.CanPlantEnvironment, Is.False);
+        journey.Returned();
+        Assert.That(controller.CanPlantEnvironment, Is.True);
+        controller.StopAndClear();
+        Assert.That(controller.EnvironmentUnlocked, Is.False);
+        Assert.That(controller.CanPlantEnvironment, Is.False);
     }
 
     [Test]

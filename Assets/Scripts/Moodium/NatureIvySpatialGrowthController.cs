@@ -13,6 +13,13 @@ namespace Moodium.NatureWorld
     public sealed class NatureIvySpatialGrowthController : MonoBehaviour
     {
         bool m_Suspended;
+        bool m_EnvironmentUnlocked;
+        readonly HashSet<Mesh> m_OwnedMeshes = new();
+        public void SetProgress(float progress) { if (progress >= 1f) m_EnvironmentUnlocked = true; }
+        public bool EnvironmentUnlocked => m_EnvironmentUnlocked;
+        public bool CanPlantEnvironment => m_Running && !m_Suspended && m_EnvironmentUnlocked &&
+            GetComponent<Moodium.Flow.WorldJourneyDirector>()?.Stage == Moodium.Flow.WorldJourneyStage.Explore;
+
         public void SetSuspended(bool value) { m_Suspended = value; }
         public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_Generator != null) visibility.Register(m_Generator.gameObject); }
 
@@ -66,6 +73,11 @@ namespace Moodium.NatureWorld
         public void Configure(IvyGeneratorTREANT generator, int maxStrokes)
         {
             m_Generator = generator;
+            if (m_Generator != null)
+            {
+                m_Generator.surfaceRaycast = RaycastRoom;
+                m_Generator.requireSurfaceAttachment = true;
+            }
             m_MaxStrokes = Mathf.Max(1, maxStrokes);
         }
 
@@ -117,6 +129,8 @@ namespace Moodium.NatureWorld
             m_Generator.growIvySpeed = 0.65f;
             m_Generator.growIvyMaterial = useRuntimeGrowShader ? growMaterial : null;
             m_Generator.surfaceOffset = m_SurfaceOffset;
+            m_Generator.surfaceRaycast = RaycastRoom;
+            m_Generator.requireSurfaceAttachment = true;
             m_PolySpatialLeafMaterial ??= Resources.Load<Material>("MoodiumNature/NatureIvyLeaf");
             m_LeafVisualizedMeshIds.Clear();
             RefreshSpatialColliders();
@@ -124,6 +138,8 @@ namespace Moodium.NatureWorld
 
         public void StartGrowth()
         {
+            m_EnvironmentUnlocked = false;
+            m_Suspended = false;
             m_Running = m_Generator != null;
             m_GrownStrokeCount = 0;
             m_CompletionBurstTriggered = false;
@@ -157,29 +173,21 @@ namespace Moodium.NatureWorld
         /// </summary>
         public bool TryGrowFromSpatialPointer(Collider targetCollider, Vector3 interactionPosition)
         {
-            if (!m_Running || m_Camera == null || m_Generator == null)
-            {
-                Debug.Log("[Nature Ivy] Ignored spatial pinch: generator is not running.");
-                return false;
-            }
-            if (!IsSpatialMeshCollider(targetCollider))
-            {
-                Debug.Log("[Nature Ivy] Ignored spatial pinch: pointer target is not an AR mesh collider.");
-                return false;
-            }
-
-            var contact = targetCollider.ClosestPoint(interactionPosition);
-            var ray = new Ray(m_Camera.transform.position, contact - m_Camera.transform.position);
-            if (ray.direction.sqrMagnitude > .0001f && targetCollider.Raycast(ray, out var hit, 8f))
-            {
-                var grown = TryGrowAtSpatialHit(hit);
-                Debug.Log($"[Nature Ivy] Spatial pinch {(grown ? "grew ivy" : "did not grow ivy")} at {hit.point}.");
-                return grown;
-            }
-
-            Debug.Log("[Nature Ivy] Pointer target was valid, but a surface hit could not be resolved.");
-            return false;
+            if (!CanPlantEnvironment || m_Camera == null || !IsSpatialMeshCollider(targetCollider)) return false;
+            // interactionPosition is on the target, not the tracked pinch fingers.
+            return TryGrowFromGazeRay(new Ray(m_Camera.transform.position,
+                interactionPosition - m_Camera.transform.position));
         }
+
+        public bool TryGrowFromGazeRay(Ray ray)
+        {
+            if (!CanPlantEnvironment) return false;
+            RefreshSpatialColliders();
+            return RaycastRoom(ray, 8f, out var hit) && TryGrowAtSpatialHit(hit);
+        }
+
+        bool RaycastRoom(Ray ray, float distance, out RaycastHit hit) =>
+            NatureIvySurfaceResolver.TryRaycast(m_SpatialColliders, ray, distance, out hit);
 
         /// <summary>True only for colliders supplied by the room mesh, never tracked bag visuals.</summary>
         public bool IsSpatialMeshCollider(Collider collider)
@@ -193,8 +201,8 @@ namespace Moodium.NatureWorld
 
         public bool TryGrowAtSpatialHit(RaycastHit hit)
         {
-            if (!m_Running || m_Generator == null || m_GrownStrokeCount >= m_MaxStrokes ||
-                hit.collider == null)
+            if (!CanPlantEnvironment || m_Generator == null || m_GrownStrokeCount >= m_MaxStrokes ||
+                !IsSpatialMeshCollider(hit.collider))
                 return false;
             return RequestIvy(hit, true, "Environment Vine");
         }
@@ -244,13 +252,22 @@ namespace Moodium.NatureWorld
 
         public void StopAndClear()
         {
+            StopAllCoroutines();
+            m_EnvironmentUnlocked = false;
             m_Running = false;
+            foreach (var mesh in m_OwnedMeshes)
+                if (mesh != null) { if (Application.isPlaying) Destroy(mesh); else DestroyImmediate(mesh); }
+            m_OwnedMeshes.Clear();
             m_GrownStrokeCount = 0;
             m_CompletionBurstTriggered = false;
             m_SpatialColliders.Clear();
             m_LeafVisualizedMeshIds.Clear();
             if (m_Generator != null)
-                Destroy(m_Generator.gameObject);
+            {
+                m_Generator.surfaceRaycast = null;
+                if (Application.isPlaying) Destroy(m_Generator.gameObject);
+                else DestroyImmediate(m_Generator.gameObject);
+            }
             m_Generator = null;
         }
 
@@ -259,12 +276,9 @@ namespace Moodium.NatureWorld
             m_LastColliderRefresh = Time.time;
             m_SpatialColliders.Clear();
             if (m_MeshManager != null)
-                foreach (var collider in m_MeshManager.GetComponentsInChildren<Collider>(true))
+                foreach (var collider in m_MeshManager.GetComponentsInChildren<MeshCollider>(true))
                     m_SpatialColliders.Add(collider);
-            if (m_SpatialColliders.Count == 0 && m_MeshManager == null)
-                foreach (var collider in FindObjectsByType<MeshCollider>(
-                             FindObjectsInactive.Include, FindObjectsSortMode.None))
-                    m_SpatialColliders.Add(collider);
+
         }
 
         bool IsTrackedSpatialMeshCollider(Collider collider)
@@ -295,15 +309,25 @@ namespace Moodium.NatureWorld
             if (hit.collider == null || m_Generator == null)
                 return false;
             var previousBranches = m_Generator.transform.childCount;
+            var existing = new HashSet<MeshFilter>(m_Generator.GetComponentsInChildren<MeshFilter>(true));
             var originalPositions = m_Generator.maxBranchPositions;
             if (requestedLength > 0f)
                 m_Generator.maxBranchPositions = Mathf.Max(2, Mathf.CeilToInt(requestedLength / Mathf.Max(.01f, m_Generator.branchPartLength)));
             TraceSurface($"{source} → Ivy Request → generateIvyA Called", hit);
             m_Generator.generateIvyA(hit);
             m_Generator.maxBranchPositions = originalPositions;
+            var generated = new List<MeshFilter>();
+            foreach (var filter in m_Generator.GetComponentsInChildren<MeshFilter>(true))
+                if (!existing.Contains(filter) && filter.sharedMesh != null)
+                {
+                    m_OwnedMeshes.Add(filter.sharedMesh);
+                    generated.Add(filter);
+                }
+            if (generated.Count == 0) return false;
+            if (Application.isPlaying) StartCoroutine(RevealBranches(generated, hit.normal));
             if (consumeManualBudget)
                 m_GrownStrokeCount++;
-            StartCoroutine(InspectGeneratedIvy(source, previousBranches, hit.normal));
+            if (Application.isPlaying) StartCoroutine(InspectGeneratedIvy(source, previousBranches, hit.normal));
             return true;
         }
 
@@ -318,7 +342,7 @@ namespace Moodium.NatureWorld
                 Trace($"{source} → Generated Object {(created ? "Found" : "Not Found")} → Renderer Not Found", transform.position);
                 yield break;
             }
-            CreatePolySpatialLeafVisuals(surfaceNormal);
+
             Trace($"{source} → MeshRenderer Count={renderers.Length}", transform.position);
             foreach (var renderer in renderers)
             {
@@ -328,13 +352,39 @@ namespace Moodium.NatureWorld
             }
         }
 
-        void CreatePolySpatialLeafVisuals(Vector3 surfaceNormal)
+        // IvyStudio creates triangles in root-to-tip order. Reveal its actual geometry,
+        // without its unsupported custom growth shader or scaling the surface attachment.
+        System.Collections.IEnumerator RevealBranches(List<MeshFilter> filters, Vector3 normal)
+        {
+            var indices = new List<int[]>();
+            foreach (var filter in filters)
+            {
+                indices.Add(filter.sharedMesh.triangles);
+                filter.sharedMesh.SetTriangles(System.Array.Empty<int>(), 0);
+            }
+            var elapsed = 0f;
+            var duration = Mathf.Max(.01f, m_CompletionGrowthDuration);
+            while (elapsed < duration)
+            {
+                yield return null;
+                if (m_Suspended) continue;
+                elapsed += Time.deltaTime;
+                var fraction = Mathf.Clamp01(elapsed / duration);
+                for (var i = 0; i < filters.Count; i++)
+                    if (filters[i] != null)
+                        filters[i].sharedMesh.SetTriangles(indices[i], 0,
+                            Mathf.FloorToInt(indices[i].Length / 3 * fraction) * 3, 0);
+            }
+            CreatePolySpatialLeafVisuals(normal, filters);
+        }
+
+        void CreatePolySpatialLeafVisuals(Vector3 surfaceNormal, List<MeshFilter> filters)
         {
             if (m_Generator == null || m_PolySpatialLeafMaterial == null)
                 return;
 
             var normalizedNormal = surfaceNormal.sqrMagnitude > .0001f ? surfaceNormal.normalized : Vector3.up;
-            foreach (var meshFilter in m_Generator.GetComponentsInChildren<MeshFilter>(true))
+            foreach (var meshFilter in filters)
             {
                 if (meshFilter == null || meshFilter.gameObject == m_Generator.gameObject ||
                     meshFilter.name.StartsWith("Nature Ivy Leaf (PolySpatial)", System.StringComparison.Ordinal) ||
@@ -342,22 +392,26 @@ namespace Moodium.NatureWorld
                     continue;
 
                 var vertices = meshFilter.sharedMesh.vertices;
-                if (vertices == null || vertices.Length == 0)
-                    continue;
+                var normals = meshFilter.sharedMesh.normals;
+                // IvyStudio's 3D mesh over-allocates vertices. Only referenced vertices
+                // belong to the branch; unused slots are zero and would put leaves at origin.
+                var used = new List<int>(new HashSet<int>(meshFilter.sharedMesh.triangles));
+                used.Sort();
+                if (used.Count == 0) continue;
                 for (var i = 0; i < m_LeafVisualsPerBranch; i++)
                 {
-                    var vertexIndex = Mathf.Clamp(
-                        Mathf.FloorToInt((i + .5f) * vertices.Length / m_LeafVisualsPerBranch),
-                        0,
-                        vertices.Length - 1);
+                    var vertexIndex = used[Mathf.Clamp(
+                        Mathf.FloorToInt((i + .5f) * used.Count / m_LeafVisualsPerBranch), 0, used.Count - 1)];
+                    var leafNormal = vertexIndex < normals.Length && normals[vertexIndex].sqrMagnitude > .001f
+                        ? meshFilter.transform.TransformDirection(normals[vertexIndex]).normalized : normalizedNormal;
                     var leaf = GameObject.CreatePrimitive(PrimitiveType.Quad);
                     leaf.name = "Nature Ivy Leaf (PolySpatial)";
                     var collider = leaf.GetComponent<Collider>();
                     if (collider != null)
                         Destroy(collider);
                     leaf.transform.SetParent(meshFilter.transform.parent, true);
-                    leaf.transform.position = meshFilter.transform.TransformPoint(vertices[vertexIndex]) + normalizedNormal * m_LeafSurfaceOffset;
-                    leaf.transform.rotation = Quaternion.LookRotation(normalizedNormal) *
+                    leaf.transform.position = meshFilter.transform.TransformPoint(vertices[vertexIndex]) + leafNormal * m_LeafSurfaceOffset;
+                    leaf.transform.rotation = Quaternion.LookRotation(leafNormal) *
                                               Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.forward);
                     var size = m_LeafVisualSize * Random.Range(.75f, 1.2f);
                     leaf.transform.localScale = new Vector3(size, size, 1f);

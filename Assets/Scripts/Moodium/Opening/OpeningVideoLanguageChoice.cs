@@ -13,11 +13,13 @@ namespace Moodium.Opening
         GameObject m_English;
         readonly OpeningVideoSpatialChoiceGate m_TransitionGate = new OpeningVideoSpatialChoiceGate();
 
+        float m_SelectedAt = float.NegativeInfinity;
         public bool IsReadyForVideoTransition =>
-            m_TransitionGate.IsReadyForVideoTransition(Time.frameCount, false);
+            Time.unscaledTime-m_SelectedAt >= .3f && m_TransitionGate.IsReadyForVideoTransition(Time.frameCount, false);
 
         public void Configure(TMP_FontAsset font, Sprite roundedSprite)
         {
+            gameObject.AddComponent<Unity.PolySpatial.VisionOSSortingGroup>();
             var canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.worldCamera = Camera.main;
@@ -54,25 +56,20 @@ namespace Moodium.Opening
 
         GameObject CreateButton(string name, Vector2 position, string value, string assetId)
         {
-            var item = new GameObject(name, typeof(RectTransform));
-            item.transform.SetParent(transform, false);
-            item.transform.localScale = Vector3.one * .9f;
-            var rect = item.GetComponent<RectTransform>();
-            // The supplied art is a 498x282 canvas whose actual capsule is 330x114.
-            // The RectTransform must keep the full canvas aspect ratio or the baked text is squashed.
-            rect.sizeDelta = new Vector2(498f, 282f);
-            rect.anchoredPosition = position;
-            var image = item.AddComponent<Image>();
-            image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_idle");
-            image.type = Image.Type.Simple;
-            var spatialButton = item.AddComponent<OpeningVideoSpatialButton>();
-            spatialButton.Configure(touchId => { image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_pressed"); SelectFromPress(value, touchId); });
-            var button = item.AddComponent<Button>();
-            button.targetGraphic = image;
-            button.onClick.AddListener(() => spatialButton.OnPointerClick(null));
-            var collider = item.AddComponent<BoxCollider>();
-            collider.isTrigger = false;
-            collider.size = new Vector3(330f, 114f, 2f);
+            var renderer=Moodium.UI.UIRefreshVisuals.Sprite(transform,name,"MoodiumOpening/opening_btn_"+assetId+"_idle",Vector3.zero,10);
+            var item=renderer.gameObject;
+            Moodium.UI.UIRefreshVisuals.UnitScale(item.transform);
+            var display=transform.parent;
+            item.transform.position=display!=null
+                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.1f:.1f)-display.up*.04f-display.forward*.003f
+                : transform.position+transform.right*(position.x<0?-.1f:.1f);
+            var feedback=item.AddComponent<OpeningChoiceSpriteFeedback>();feedback.Configure(assetId);
+            var spatialButton=item.AddComponent<OpeningVideoSpatialButton>();
+            spatialButton.Configure(touchId=>{if(HasSelection)return;feedback.SetPressed();SelectFromPress(value, touchId);});
+            var button=item.AddComponent<Button>();button.transition=Selectable.Transition.None;
+            button.onClick.AddListener(()=>spatialButton.OnPointerClick(null));
+            item.AddComponent<BoxCollider>().size=new Vector3(.178f,.061f,.01f);
+            item.AddComponent<Unity.PolySpatial.VisionOSHoverEffect>().Type=Unity.PolySpatial.VisionOSHoverEffect.EffectType.Highlight;
             return item;
         }
 
@@ -85,6 +82,7 @@ namespace Moodium.Opening
                 m_TransitionGate.SelectFromSpatialTouch(Time.frameCount, touchId);
             else
                 m_TransitionGate.SelectAutomatically(Time.frameCount);
+            m_SelectedAt=Time.unscaledTime;
             HasSelection = true;
             Debug.Log($"[Moodium Opening] Video language selected by {(touchId >= 0 ? "spatial pointer" : "UI click")}: {value}.");
         }

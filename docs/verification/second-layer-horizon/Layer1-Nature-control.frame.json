@@ -1,0 +1,53 @@
+{
+ "name": "Layer1-Nature-control",
+ "source_ply": "01_SourceModels/Layer1_Reference/Nature/cca18ee63731606db19fc8f5852b03f5 (1).ply",
+ "panorama": "bubble-world/Source/panoramas/nature_source.jpg",
+ "convention": "Unity = T @ raw (column vectors); det(T) = -1 includes the right-handed -> left-handed flip; panorama unchanged, u = 0.5 + atan2(x, z)/2pi",
+ "T_rows": [
+  [
+   0.421535,
+   0.849521,
+   -0.317211
+  ],
+  [
+   0.771392,
+   -0.152031,
+   0.617933
+  ],
+  [
+   -0.476721,
+   0.505175,
+   0.7194
+  ]
+ ],
+ "row_transform_for_converter": [
+  0.421535,
+  0.771392,
+  -0.476721,
+  0.849521,
+  -0.152031,
+  0.505175,
+  -0.317211,
+  0.617933,
+  0.7194
+ ],
+ "up_in_raw_frame": [
+  0.77139,
+  -0.15203,
+  0.61793
+ ],
+ "score": 0.647,
+ "second_best_score": 0.582,
+ "sector_correlation": [
+  0.945,
+  0.748,
+  0.363,
+  0.426,
+  0.422,
+  0.64,
+  0.714,
+  0.871
+ ],
+ "ground_tilt_deg": 8.4,
+ "eye_height_above_ground_m": 1.331
+}

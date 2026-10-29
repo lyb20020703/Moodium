@@ -40,6 +40,7 @@ namespace Moodium.Flow
         public void SetHovered(bool hovered)
         {
             m_Hovered = hovered;
+            GetComponent<Moodium.UI.UIRefreshSpriteButton>()?.SetHovered(hovered);
         }
 
         public void SetSelected(bool selected)
