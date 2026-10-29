@@ -34,7 +34,7 @@ namespace Moodium.Calibration
 
         public static Pose Fallback(Pose viewer, Settings settings) => new(
             viewer.position + Forward(viewer) * settings.ForwardDistance - Vector3.up * settings.FallbackDrop,
-            Quaternion.LookRotation(-Forward(viewer), Vector3.up));
+            Quaternion.LookRotation(Forward(viewer), Vector3.up));
 
         public static Pose AnchorPose(Pose table, float lift) => new(table.position + Vector3.up * lift, table.rotation);
 
@@ -64,7 +64,10 @@ namespace Moodium.Calibration
                 var distance = (world - target).sqrMagnitude;
                 if (found && (bestTable && !isTable || bestTable == isTable && distance >= bestDistance)) continue;
                 bestTable = isTable; bestDistance = distance; found = true;
-                table = new Pose(world, Quaternion.LookRotation(-forward, Vector3.up));
+                // The tabletop model frame follows the viewer's horizontal forward.
+                // Facing UI toward the viewer here flipped the entire Soft model,
+                // including its video and hand prompts, by 180 degrees.
+                table = new Pose(world, Quaternion.LookRotation(forward, Vector3.up));
             }
             return found;
         }

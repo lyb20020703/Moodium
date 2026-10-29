@@ -41,7 +41,7 @@ namespace Moodium.Characters
 
         [Header("Perch")]
         [Tooltip("Palm surface to Moodi's body centre, metres.")]
-        [SerializeField, Range(0f, .06f)] float m_PerchHeight = .022f;
+        [SerializeField, Range(0f, .15f)] float m_PerchHeight = .075f;
         [SerializeField, Range(.15f, .6f)] float m_LiftDistance = .35f;
         [SerializeField, Range(0f, 30f)] float m_MaxTilt = 15f;
 
@@ -424,7 +424,10 @@ namespace Moodium.Characters
         {
             var bodyOffset = Vector3.zero;
             if (m_Animator != null) bodyOffset = m_Animator.transform.TransformPoint(m_Animator.BodyCenterLocal) - m_Guide.position;
-            return PerchPoint(hand.Palm, hand.Facing, m_PerchHeight) - bodyOffset;
+            // Keep old serialized 2.2 cm settings clear of the hand as well.
+            var lift = Mathf.Max(.075f, m_PerchHeight);
+            var bob = Mathf.Sin(Time.unscaledTime * (Mathf.PI * 2f / 3.6f)) * .004f;
+            return PerchPoint(hand.Palm, hand.Facing, lift) + Vector3.up * bob - bodyOffset;
         }
 
         void ReadHead(float dt)
@@ -473,7 +476,7 @@ namespace Moodium.Characters
             if (m_InvertPalmFacing) facing = -facing;
 
             var palm = TryJoint(hand, XRHandJointID.MiddleProximal, origin, out var middleKnuckle)
-                ? Vector3.Lerp(wrist, middleKnuckle, .55f)
+                ? Vector3.Lerp(wrist, middleKnuckle, .7f)
                 : (wrist + middleMeta) * .5f;
 
             var open = 0;

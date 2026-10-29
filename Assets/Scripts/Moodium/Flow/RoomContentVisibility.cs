@@ -12,7 +12,7 @@ namespace Moodium.Flow
         {
             public GameObject Target;
             public Action Hide, Restore;
-            public bool Snapshot, Active, Applied;
+            public bool Snapshot, Active, Applied, ImmediateHide;
             public Vector3 Scale;
             public SpriteRenderer[] Sprites;
             public Color[] Colors;
@@ -28,10 +28,23 @@ namespace Moodium.Flow
         {
             if (target != null && m_Targets.Add(target)) m_Items.Add(new Item { Target = target });
         }
+        public void RegisterImmediateHide(GameObject target)
+        {
+            if (target == null) return;
+            Register(target);
+            foreach (var item in m_Items)
+                if (item.Target == target) { item.ImmediateHide = true; break; }
+        }
         public void SetHidden(bool hidden)
         {
             if (Hidden == hidden) return;
             Hidden = hidden;
+            // Snapshot before deactivation so returning to the room restores the
+            // authored active state. Remove expensive clouds in this same frame.
+            if (hidden)
+                foreach (var item in m_Items)
+                    if (item.ImmediateHide && item.Target != null)
+                    { Capture(item); item.Target.SetActive(false); }
             if (m_Transition != null) StopCoroutine(m_Transition);
             m_Transition = StartCoroutine(Apply(hidden));
         }

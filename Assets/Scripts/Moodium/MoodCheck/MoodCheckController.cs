@@ -450,10 +450,10 @@ namespace Moodium.MoodCheck
         {
             var fonts = m_PanelInstance.GetComponentInChildren<MoodCheckFontReferences>(true);
             var font = m_English ? fonts?.English : fonts?.Chinese;
-            if (font != null)
                 foreach (var label in m_PanelInstance.GetComponentsInChildren<TMP_Text>(true))
                 {
-                    label.font = font;
+                    if (font != null) label.font = font;
+                    MoodTextMaterial.Apply(label);
                     // The panel is also used over white recommendation cards. A thick dark
                     // TMP outline/underlay becomes a black rectangle on visionOS, so keep all
                     // labels clean and let the panel glass provide contrast.

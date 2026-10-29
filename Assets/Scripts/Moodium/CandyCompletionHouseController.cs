@@ -8,7 +8,12 @@ namespace Moodium.CandyWorld
     [DisallowMultipleComponent]
     public sealed class CandyCompletionHouseController : MonoBehaviour
     {
-        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_HouseInstance != null) visibility.Register(m_HouseInstance); if (m_LittleHouseInstance != null) visibility.Register(m_LittleHouseInstance); if (m_HoneyJarInstance != null) visibility.Register(m_HoneyJarInstance); }
+        public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility)
+        {
+            visibility.RegisterImmediateHide(m_HouseInstance);
+            visibility.RegisterImmediateHide(m_LittleHouseInstance);
+            visibility.RegisterImmediateHide(m_HoneyJarInstance);
+        }
 
         const float MainHouseProgress = .55f;
         const float HoneyJarProgress = .75f;
@@ -113,18 +118,7 @@ namespace Moodium.CandyWorld
                 AudioSource.PlayClipAtPoint(m_PrefabSpawnSound, ground.Position, 0.7f);
             instance.transform.localScale *= scaleMultiplier;
             AlignVisualBaseToSurface(instance, ground.Position.y);
-            // Point-cloud look: a baked cloud (Resources/MoodiumPointClouds) replaces the mesh; touching bursts points
-            // out of the surface instead of denting the mesh, and still sends the contact sparkles.
-            var points = Moodium.PointClouds.PointCloudModel.TryAttach(instance, prefab.name);
-            if (points != null)
-            {
-                points.Touched += point =>
-                {
-                    if (m_Started && m_ContactBursts != null && instance != null)
-                        m_ContactBursts.BurstAtContact(point, instance.transform);
-                };
-                return instance;
-            }
+            // Progress rewards retain their authored meshes and local soft-touch deformation.
             var softInteraction = instance.GetComponent<CompletionHouseSoftInteraction>();
             if (softInteraction == null)
                 softInteraction = instance.AddComponent<CompletionHouseSoftInteraction>();

@@ -45,15 +45,9 @@ namespace Moodium.NatureWorld
         public static Quaternion SourceFrameRotation(string folder)
         {
             if (folder == NestedNatureFolder)
-                return RotationFromRowTransform(
-                    .9313814548f, .3591055350f, -.0597645409f,
-                    -.0525465782f, .2950614766f, .9540322752f,
-                    .3602324843f, -.8854275463f, .2936845545f);
+                return Quaternion.FromToRotation(new Vector3(-.905f, .420f, .063f).normalized, Vector3.up);
             if (folder == NestedCandyFolder)
-                return RotationFromRowTransform(
-                    -.4936099561f, -.5959706185f, -.6333784281f,
-                    -.5395667411f, -.3613133965f, .7604737743f,
-                    -.6820681367f, .7171273607f, -.1432180347f);
+                return Quaternion.FromToRotation(new Vector3(-.430f, .859f, .277f).normalized, Vector3.up);
             return Quaternion.identity;
         }
 

@@ -127,6 +127,7 @@ namespace Moodium.MoodCheck
             go.transform.localScale = Vector3.one * .03f;
             var text = go.GetComponent<TextMeshPro>();
             text.font = m_Font;
+            MoodTextMaterial.Apply(text);
             text.fontSize = height / .0029f;
             text.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
             text.alignment = TextAlignmentOptions.Center;

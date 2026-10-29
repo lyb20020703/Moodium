@@ -54,6 +54,16 @@ public sealed class SensoryBagBranchTests
         Assert.That(PlayerPrefs.GetInt(Key, -1), Is.Zero, "Skip after answering must retain that answer.");
     }
 
+    [Test] public void HasBagHardBlocksManualCarouselEvenIfBeginIsCalled()
+    {
+        SensoryBagOwnership.SetHasBag(true);
+        var carousel = host.AddComponent<WorldCarouselSelectionController>();
+        carousel.Begin(null);
+        Assert.That(carousel.IsSelectionActive, Is.False,
+            "Manual world carousel must never be created when sticker selection is required.");
+        Assert.That(carousel.CanInteract, Is.False);
+    }
+
     [Test] public void DefaultConfirmationBypassesFrameAndCompletesOnlyOnce()
     {
         var coordinator = host.AddComponent<SensoryBagCalibrationCoordinator>();

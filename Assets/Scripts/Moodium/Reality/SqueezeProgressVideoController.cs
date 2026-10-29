@@ -262,6 +262,7 @@ namespace Moodium.Reality
 
         public void ResetAndHide()
         {
+            m_BubbleSuspended = false;
             if (m_PrepareRoutine != null)
             {
                 StopCoroutine(m_PrepareRoutine);
@@ -530,13 +531,20 @@ namespace Moodium.Reality
             m_Display.transform.SetPositionAndRotation(worldPosition, worldRotation);
         }
 
+        bool m_BubbleSuspended;
+        public void SetBubbleSuspended(bool suspended)
+        {
+            m_BubbleSuspended = suspended;
+            UpdateDisplayVisibility();
+        }
+
         void UpdateDisplayVisibility()
         {
             // VideoPlayer.isPrepared only means decoding is ready; the target
             // RenderTexture may still contain an uninitialized frame for one or
             // more render submissions. Keep the mesh hidden until that first
             // frame has had a frame boundary to reach PolySpatial.
-            var visible = m_BoundToSoft && m_Prepared && m_FirstFrameReady && !m_Completed;
+            var visible = !m_BubbleSuspended && m_BoundToSoft && m_Prepared && m_FirstFrameReady && !m_Completed;
             if (m_DiscRenderer != null) m_DiscRenderer.enabled = visible;
             if (m_DomeRenderer != null) m_DomeRenderer.enabled = visible;
         }

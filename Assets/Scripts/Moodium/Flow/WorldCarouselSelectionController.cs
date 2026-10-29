@@ -50,7 +50,10 @@ namespace Moodium.Flow
         public event Action MoodCheckRequested;
         public event Action OwnershipSwitchRequested;
         public bool IsSelectionActive => root != null;
-        public bool CanInteract => IsSelectionActive && !suspended && !committed && !IsTransitioning;
+        // The carousel is exclusively the no-sensory-bag fallback. Keep this guard
+        // here as well as in the app-flow branch so a stale/re-entrant Begin call
+        // can never leave a swipe surface active while sticker selection is required.
+        public bool CanInteract => !SensoryBagOwnership.HasBag && IsSelectionActive && !suspended && !committed && !IsTransitioning;
         public bool IsTransitioning { get; private set; }
         public int SelectedIndex { get; private set; }
         public Transform Root => root;
@@ -67,6 +70,11 @@ namespace Moodium.Flow
         public void Begin(OpeningVideoSession session)
         {
             End();
+            if (SensoryBagOwnership.HasBag)
+            {
+                Debug.Log("[Sensory Bag Branch] mode=has step=carousel-blocked image-tracking=true");
+                return;
+            }
             english = session != null ? session.English : PlayerPrefs.GetString("Moodium.Language", "Chinese") == "English";
             session?.Player?.Pause(); session?.SetVisible(false);
             SelectedIndex = recommended == "nature" ? 1 : 0;
@@ -145,7 +153,7 @@ namespace Moodium.Flow
             moodChip.Initialize(null, font, () => { if (CanInteract) MoodCheckRequested?.Invoke(); });
             moodChip.AllowIdleHint = false;
             moodChip.SetContent(english, summary);
-            SensoryBagBranchUI.Button(root, "Sensory Bag Switch", MoodCheckCopy.Get("bag.switch.toHas", english),
+            SensoryBagBranchUI.Button(root, "Selection Settings", english ? "Settings" : "设置",
                 new Vector3(0, -.39f, -.08f), font, () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); });
             root.gameObject.AddComponent<SensoryBagDirectTouchInput>();
             ApplyLayout();

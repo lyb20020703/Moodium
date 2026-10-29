@@ -44,7 +44,9 @@ def round_atlas(colors, path: Path):
         x, y = (index % per_row) * 4, (index // per_row) * 4
         pixels[y:y + 4, x:x + 4, :3] = color[:3]
         pixels[y:y + 4, x:x + 4, 3] = alpha
-    Image.fromarray(pixels, "RGBA").save(path)
+    # Unity SetPixels32 starts at the bottom row; PNG starts at the top.
+    # Match BubbleWorldData.BuildRoundAtlas and the baked WriteRoundUVs layout.
+    Image.fromarray(pixels[::-1].copy(), "RGBA").save(path)
 
 
 def main():

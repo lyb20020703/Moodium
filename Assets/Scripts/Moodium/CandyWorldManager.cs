@@ -16,6 +16,7 @@ namespace Moodium.CandyWorld
 {
     public sealed class CandyWorldManager : MonoBehaviour
     {
+        FloatingSqueezeProgress m_FloatingProgress;
         CandyEnergyController m_Energy;
         CandyBurstController m_BurstController;
         CandyEnergyWristUI m_EnergyUI;
@@ -416,6 +417,7 @@ namespace Moodium.CandyWorld
                 m_Energy.EnergyChanged -= OnEnergyChanged;
             }
             m_Running = false;
+            if (m_FloatingProgress != null) m_FloatingProgress.gameObject.SetActive(false);
             m_SpatialTouchFeedback?.SetInteractionEnabled(false);
             m_HandOpenBurstGesture?.SetGestureEnabled(false);
             if (m_EnergyUI != null)
@@ -482,6 +484,14 @@ namespace Moodium.CandyWorld
                 if (capsule != null)
                 {
                     m_SqueezeProgressVideo?.BindToSoft(capsule);
+                    if (m_FloatingProgress == null)
+                    {
+                        var progress = new GameObject("Floating Squeeze Progress", typeof(RectTransform));
+                        progress.transform.SetParent(transform, false);
+                        m_FloatingProgress = progress.AddComponent<FloatingSqueezeProgress>();
+                    }
+                    m_FloatingProgress.SetProgress(0f);
+                    m_FloatingProgress.Bind(capsule.transform, Camera.main, m_NatureWorldActive);
                     break;
                 }
                 yield return null;
@@ -517,6 +527,7 @@ namespace Moodium.CandyWorld
 
         void OnCapsulePinched(ChocolateCapsuleInteraction capsule, Vector3 position)
         {
+            if (m_Journey != null && m_Journey.Stage == WorldJourneyStage.Bubble) return;
             if ((m_Journey != null && !m_Journey.CanGrowInRoom) || !m_Running || capsule == null || !capsule.gameObject.activeInHierarchy)
                 return;
             var trackedSource = capsule.GetComponentInParent<ARTrackedObject>() != null ||
@@ -709,6 +720,7 @@ namespace Moodium.CandyWorld
             {
                 m_NextEnergyUIUpdate=Time.unscaledTime+.1f;
                 m_EnergyUI.SetProgress(energy, normalizedProgress);
+                m_FloatingProgress?.SetProgress(normalizedProgress);
                 m_ProgressController.SetProgress(energy, normalizedProgress);
                 m_SqueezeProgressVideo?.SetProgress(normalizedProgress);
             }
@@ -798,6 +810,13 @@ namespace Moodium.CandyWorld
         void OnBubbleTouched()
         {
             if (m_Journey == null || !m_Journey.EnterBubble()) return;
+            m_SqueezeProgressVideo?.SetBubbleSuspended(true);
+            m_BurstController?.StopAndClear();
+            foreach (var effect in FindObjectsByType<ParticleBurstEffect>(FindObjectsSortMode.None))
+            {
+                effect.gameObject.SetActive(false);
+                Destroy(effect.gameObject);
+            }
             m_RevealedAt = -1f;
             m_Rings?.NotifyBubbleEntered();
             m_WalkTrailGuide?.SetSuspended(true);
@@ -859,6 +878,7 @@ namespace Moodium.CandyWorld
         {
             while (m_RoomVisibility != null && m_RoomVisibility.IsTransitioning) yield return null;
             if (!m_Running || m_Journey == null || m_Journey.Stage != WorldJourneyStage.Explore) yield break;
+            m_SqueezeProgressVideo?.SetBubbleSuspended(false);
             m_NatureFootstepGrass?.SetSuspended(false); m_NatureIvyGrowth?.SetSuspended(false); m_WalkTrailGuide?.SetSuspended(false);
             m_Help?.SetSuspended(false); m_SqueezeModes?.SetSuspended(false);
             m_SpatialTouchFeedback?.SetInteractionEnabled(true); m_HandOpenBurstGesture?.SetGestureEnabled(true);

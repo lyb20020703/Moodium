@@ -61,6 +61,9 @@ namespace Moodium.Calibration
         TextMeshProUGUI m_HeightValueLabel;
 
         Transform m_Anchor;
+        Quaternion m_InitialAnchorRotation;
+        float m_RotationDegrees;
+        Transform m_RotateLeft, m_RotateRight;
         Transform m_FrameRoot;
         GameObject m_FrameBody;
         readonly Dictionary<CalibrationHandleKind, Transform> m_Visuals = new();
@@ -104,6 +107,8 @@ namespace Moodium.Calibration
             SensoryBagCalibrationSettings settings)
         {
             m_Anchor = anchor;
+            m_InitialAnchorRotation = anchor != null ? anchor.rotation : Quaternion.identity;
+            m_RotationDegrees = 0f;
             HasUserInteracted = false;
             ClearDrags();
             m_Settings = settings;
@@ -218,6 +223,7 @@ namespace Moodium.Calibration
 
         public void ResetCalibration()
         {
+            RotateFrame(-m_RotationDegrees);
             NotifyUserInteraction();
             ClearDrags();
             if (m_Rectangle == null)
@@ -253,6 +259,24 @@ namespace Moodium.Calibration
                 m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, planeOffset.y, data.CenterOffset.y)),
                 m_Anchor.rotation * data.LocalOrientation);
             UpdateDebugData();
+            if (m_RotateLeft != null)
+                m_RotateLeft.localPosition = new Vector3(-.09f, -(data.Height * .5f + .08f), -.025f);
+            if (m_RotateRight != null)
+                m_RotateRight.localPosition = new Vector3(.09f, -(data.Height * .5f + .08f), -.025f);
+        }
+
+        public void RotateFrame(float degrees)
+        {
+            if (m_Anchor == null || m_Rectangle == null || m_Confirmed || !m_FrameVisible) return;
+            NotifyUserInteraction();
+            ClearDrags();
+            var data = m_Rectangle.Data;
+            var center = m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, 0f, data.CenterOffset.y));
+            m_RotationDegrees = Mathf.Repeat(m_RotationDegrees + degrees + 180f, 360f) - 180f;
+            m_Anchor.rotation = Quaternion.AngleAxis(m_RotationDegrees, Vector3.up) * m_InitialAnchorRotation;
+            // Rotate around the frame centre rather than swinging it around the anchor origin.
+            m_Anchor.position += center - m_Anchor.TransformPoint(new Vector3(data.CenterOffset.x, 0f, data.CenterOffset.y));
+            RefreshVisuals();
         }
 
         void LateUpdate()
@@ -338,6 +362,12 @@ namespace Moodium.Calibration
             CreateAction("重置 / Reset", m_ResetColor, CalibrationAction.Reset);
             CreateAction("Raise Table", m_ResetColor, CalibrationAction.RaiseTable);
             CreateAction("Lower Table", m_ResetColor, CalibrationAction.LowerTable);
+            m_RotateLeft = Moodium.Flow.SensoryBagBranchUI.Button(m_FrameRoot, "Rotate Frame Left",
+                m_English ? "↶  5°" : "左转 5°", Vector3.zero,
+                m_English ? m_EnglishFont : m_ChineseFont, () => RotateFrame(-5f), .065f).transform;
+            m_RotateRight = Moodium.Flow.SensoryBagBranchUI.Button(m_FrameRoot, "Rotate Frame Right",
+                m_English ? "5°  ↷" : "右转 5°", Vector3.zero,
+                m_English ? m_EnglishFont : m_ChineseFont, () => RotateFrame(5f), .065f).transform;
         }
 
         Sprite LoadSprite(string spriteName)

@@ -29,7 +29,8 @@ namespace Moodium.Opening
         public VideoPlayer Player { get; }
         public Transform DisplayRoot { get; }
         public GameObject InstructionRoot { get; }
-        public bool English { get; }
+        public bool English { get; private set; }
+        public void SetLanguage(bool english) => English = english;
         public bool IsDisposed { get; private set; }
 
         public void SetVisible(bool visible)

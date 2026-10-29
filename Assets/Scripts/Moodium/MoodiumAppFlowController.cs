@@ -271,6 +271,7 @@ namespace Moodium.Flow
 
         public void BeginStickerWorldSelection(OpeningVideoSession session)
         {
+            SensoryBagBranchUI.Dispose(m_SelectionSettingsPanel); m_SelectionSettingsPanel = null;
             if (session == null || session.IsDisposed)
             {
                 if (m_FallbackSelectionDisplay == null)
@@ -336,8 +337,8 @@ namespace Moodium.Flow
                 m_BranchCarousel.WorldEntrySelected += OnStickerWorldEntrySelected;
                 m_BranchCarousel.MoodCheckRequested -= RequestStickerMoodCheck;
                 m_BranchCarousel.MoodCheckRequested += RequestStickerMoodCheck;
-                m_BranchCarousel.OwnershipSwitchRequested -= SwitchSensoryBagOwnership;
-                m_BranchCarousel.OwnershipSwitchRequested += SwitchSensoryBagOwnership;
+                m_BranchCarousel.OwnershipSwitchRequested -= OpenSelectionSettings;
+                m_BranchCarousel.OwnershipSwitchRequested += OpenSelectionSettings;
                 m_BranchCarousel.SetMoodCheckSummary(m_MoodCheckContext.PreSample);
                 m_BranchCarousel.Begin(session);
                 Debug.Log("[Sensory Bag Branch] mode=none step=selection-begin image-tracking=false");
@@ -351,13 +352,13 @@ namespace Moodium.Flow
                 m_TrackedImageManager.enabled = true;
             StartStickerTrackingWarmup();
             session.SetVisible(true);
-            var switchPosition = m_StickerWorldSelection.MoodCheckButton != null
-                ? session.DisplayRoot.InverseTransformPoint(m_StickerWorldSelection.MoodCheckButton.transform.position - Vector3.up * .065f)
-                : new Vector3(0, -.48f, -.04f);
-            m_BagSwitch = SensoryBagBranchUI.Button(session.DisplayRoot, "Sensory Bag Switch",
-                MoodCheckCopy.Get("bag.switch.toNone", session.English), switchPosition,
-                session.English ? m_FontAsset : m_ChineseFontAsset, SwitchSensoryBagOwnership).gameObject;
-            if (m_BagSwitch.GetComponent<SensoryBagDirectTouchInput>() == null) m_BagSwitch.AddComponent<SensoryBagDirectTouchInput>();
+            var settingsFont = IsEnglish() ? m_FontAsset : m_ChineseFontAsset;
+            var settingsButton = SensoryBagBranchUI.Button(session.DisplayRoot, "Selection Settings",
+                IsEnglish() ? "Settings" : "设置", new Vector3(0, -.32f, -.04f), settingsFont, OpenSelectionSettings);
+            m_BagSwitch = settingsButton.gameObject;
+            m_BagSwitch.AddComponent<SensoryBagDirectTouchInput>();
+            // Ownership was chosen in the opening. Do not put a one-touch
+            // no-bag switch beside mood check / window movement in sticker mode.
             if (m_StickerWorldSelection.MoodCheckButton != null &&
                 m_StickerWorldSelection.MoodCheckButton.GetComponent<SensoryBagDirectTouchInput>() == null)
                 m_StickerWorldSelection.MoodCheckButton.gameObject.AddComponent<SensoryBagDirectTouchInput>();
@@ -367,9 +368,63 @@ namespace Moodium.Flow
 
         public void SwitchSensoryBagOwnership()
         {
+            // Also reject stale callbacks from a disposed selection surface.
+            if (m_SelectionHasBag || SensoryBagOwnership.HasBag) return;
             if (m_SelectedStickerEntry != null || MoodCheckInProgress) return;
-            SensoryBagOwnership.SetHasBag(!m_SelectionHasBag);
+            SensoryBagOwnership.SetHasBag(true);
             Debug.Log("[Sensory Bag Branch] step=selection-switch");
+            BeginStickerWorldSelection(m_OpeningVideoSession);
+        }
+
+        GameObject m_SelectionSettingsPanel;
+
+        void OpenSelectionSettings()
+        {
+            if (m_SelectedStickerEntry != null || MoodCheckInProgress) return;
+            if (m_SelectionSettingsPanel != null) return;
+            var viewer = m_MainCamera != null ? m_MainCamera : Camera.main;
+            if (viewer == null) return;
+            var panel = new GameObject("Selection Settings Panel");
+            m_SelectionSettingsPanel = panel;
+            panel.transform.position = viewer.transform.position + viewer.transform.forward * .65f;
+            panel.transform.rotation = viewer.transform.rotation;
+            var english = IsEnglish();
+            var font = english ? m_FontAsset : m_ChineseFontAsset;
+            m_StickerWorldSelection?.SetMoodCheckSuspended(true);
+            m_BranchCarousel?.SetMoodCheckSuspended(true);
+            if (m_BagSwitch != null) m_BagSwitch.SetActive(false);
+            SensoryBagBranchUI.Text(panel.transform, "Title", english ? "Settings" : "设置",
+                new Vector3(0, .13f, 0), font);
+            SensoryBagBranchUI.Text(panel.transform, "Language", english ? "Language" : "语言",
+                new Vector3(0, .075f, 0), font);
+            AddSetting(english ? "中文" : "• 中文", -.09f, .025f, () => ApplySelectionSettings(false, SensoryBagOwnership.HasBag));
+            AddSetting(english ? "• English" : "English", .09f, .025f, () => ApplySelectionSettings(true, SensoryBagOwnership.HasBag));
+            SensoryBagBranchUI.Text(panel.transform, "Bag", english ? "Sensory bag" : "感官袋",
+                new Vector3(0, -.035f, 0), font);
+            AddSetting((SensoryBagOwnership.HasBag ? "• " : "") + (english ? "Have bag" : "有感官袋"), -.09f, -.085f,
+                () => ApplySelectionSettings(english, true));
+            AddSetting((!SensoryBagOwnership.HasBag ? "• " : "") + (english ? "No bag" : "无感官袋"), .09f, -.085f,
+                () => ApplySelectionSettings(english, false));
+            AddSetting(english ? "Close" : "关闭", 0, -.15f, () =>
+            {
+                SensoryBagBranchUI.Dispose(m_SelectionSettingsPanel); m_SelectionSettingsPanel = null;
+                m_StickerWorldSelection?.SetMoodCheckSuspended(false);
+                m_BranchCarousel?.SetMoodCheckSuspended(false);
+                if (m_BagSwitch != null) m_BagSwitch.SetActive(true);
+            });
+            panel.AddComponent<SensoryBagDirectTouchInput>();
+
+            void AddSetting(string text, float x, float y, System.Action action) =>
+                SensoryBagBranchUI.Button(panel.transform, text, text, new Vector3(x, y, 0), font, action, .17f);
+        }
+
+        void ApplySelectionSettings(bool english, bool hasBag)
+        {
+            PlayerPrefs.SetString("Moodium.Language", english ? "English" : "Chinese");
+            SensoryBagOwnership.SetHasBag(hasBag);
+            PlayerPrefs.Save();
+            m_OpeningVideoSession?.SetLanguage(english);
+            SensoryBagBranchUI.Dispose(m_SelectionSettingsPanel); m_SelectionSettingsPanel = null;
             BeginStickerWorldSelection(m_OpeningVideoSession);
         }
 
@@ -1129,6 +1184,7 @@ namespace Moodium.Flow
 
         void OnDestroy()
         {
+            SensoryBagBranchUI.Dispose(m_SelectionSettingsPanel);
             UnsubscribeMoodCheck();
             m_TableAnchorFinder?.StopDetection();
             if (m_FallbackSelectionDisplay != null) SensoryBagBranchUI.Dispose(m_FallbackSelectionDisplay);

@@ -13,7 +13,8 @@ namespace Moodium.Reality
         TrackedObjectPoseFollower m_Follower;
         float m_BaseHeight = .10f;
         float m_Travel = .08f;
-        float m_Speed = 0.45f;
+        // 8 cm down and back in about 1.8 seconds.
+        float m_Speed = 0.09f;
 
         public void Configure(ChocolateCapsuleInteraction target, GameObject leftPrefab, GameObject rightPrefab)
         {
