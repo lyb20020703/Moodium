@@ -73,9 +73,13 @@ namespace Moodium.NatureWorld
 
         Camera m_Viewer;
         string m_Folder = BubbleWorldData.NatureFolder;
+        string m_OuterFolder = BubbleWorldData.NatureFolder;
         AudioClip m_TouchSound;
         Phase m_Phase = Phase.Idle;
         Coroutine m_Routine;
+        Coroutine m_BuildRoutine;
+        bool m_CoreLayersReady;
+        bool m_AllLayersReady;
 
         // Scene objects
         GameObject m_Root;          // bubble centre; the scan centre (eye point) sits here
@@ -85,7 +89,9 @@ namespace Moodium.NatureWorld
         Transform m_Sky;
         readonly List<GameObject> m_Layers = new();
         readonly List<Mesh> m_RuntimeMeshes = new();
-        Material m_HomeMaterial;
+        Vector3[] m_LayerRestPositions;
+        Quaternion[] m_LayerRestRotations;
+        Material m_HomeMaterial, m_HomePreviewMaterial;
         Material m_PointMaterial, m_SkyMaterial, m_SkyFadeMaterial, m_MembraneMaterial;
         MeshRenderer m_SkyRenderer;
         AudioSource m_Audio;
@@ -150,6 +156,10 @@ namespace Moodium.NatureWorld
             return n;
         }
 
+        /// <summary>Number of near layers needed for the visible miniature bubble.</summary>
+        public static int WarmupLayerCount(int miniLayerCount, int totalLayers) =>
+            Mathf.Clamp(miniLayerCount, 1, Mathf.Max(1, totalLayers));
+
         /// <summary>When (0..1 of the reveal) the j-th of <paramref name="remaining"/> outer layers switches on.</summary>
         public static float LayerRevealTime(int j, int remaining) => remaining <= 0 ? 0f : j / (float)remaining;
 
@@ -199,15 +209,28 @@ namespace Moodium.NatureWorld
         /// </summary>
         public void Begin(Camera viewer, string folder)
         {
+            m_HasOuterEntry = false;
+            m_EnteringNestedWorld = false;
+            Begin(viewer, folder, 0);
+        }
+
+        void Begin(Camera viewer, string folder, int natureWorldDepth)
+        {
             StopAndClear();
             m_Viewer = viewer;
             m_Folder = string.IsNullOrEmpty(folder) ? BubbleWorldData.NatureFolder : folder;
+            if (natureWorldDepth == 0) m_OuterFolder = m_Folder;
+            m_NatureWorldDepth = natureWorldDepth;
+            m_EnteringNestedWorld = false;
             if (!HasData(m_Folder))
             {
                 Debug.LogWarning($"[Bubble World] Missing Resources/{BubbleWorldData.PointsResource(m_Folder)}.bytes; the bubble world reward is off for this world.");
                 return;
             }
             m_Phase = Phase.Armed;
+            // Start building while the user is still in the room. This moves mesh
+            // deserialization and GPU setup away from the eventual bubble tap.
+            m_BuildRoutine = StartCoroutine(Build());
         }
 
         public void SetProgress(float normalizedProgress)
@@ -225,6 +248,10 @@ namespace Moodium.NatureWorld
         {
             if (m_Routine != null) StopCoroutine(m_Routine);
             m_Routine = null;
+            if (m_BuildRoutine != null) StopCoroutine(m_BuildRoutine);
+            m_BuildRoutine = null;
+            m_CoreLayersReady = false;
+            m_AllLayersReady = false;
             m_TouchRequested = false;
             m_Phase = Phase.Idle;
             m_Breath = 0f; m_BreathScale = 1f; m_WanderFade = 1f; m_WanderTarget = 1f;
@@ -234,12 +261,16 @@ namespace Moodium.NatureWorld
             if (m_Home != null) m_Home.SetActive(false);
             if (m_Home != null) Destroy(m_Home);
             m_Home = null;
+            m_HomePreview = null;
             m_Layers.Clear();
+            m_LayerRestPositions = null;
+            m_LayerRestRotations = null;
             if (m_Root != null) Destroy(m_Root);
             m_Root = null; m_WorldRoot = null; m_Membrane = null; m_MembraneCollider = null; m_Sky = null; m_SkyRenderer = null; m_Audio = null;
             foreach (var mesh in m_RuntimeMeshes) if (mesh != null) Destroy(mesh);
             m_RuntimeMeshes.Clear();
             DestroyMaterial(ref m_HomeMaterial);
+            DestroyMaterial(ref m_HomePreviewMaterial);
             DestroyMaterial(ref m_PointMaterial);
             DestroyMaterial(ref m_SkyMaterial);
             DestroyMaterial(ref m_SkyFadeMaterial);
@@ -252,10 +283,13 @@ namespace Moodium.NatureWorld
         public event Action HomeRequested;
         public event Action Wandered;
         Vector3 m_From, m_Hover, m_Entry, m_HomeTarget;
+        Vector3 m_OuterEntryFrom, m_OuterEntryHover;
         float m_InsideAt, m_Breath, m_BreathScale = 1f, m_WanderFade = 1f;
         float m_WanderTarget = 1f;
-        bool m_Wandering;
+        bool m_Wandering, m_HasOuterEntry, m_EnteringNestedWorld;
+        int m_NatureWorldDepth;
         GameObject m_Home;
+        Transform m_HomePreview;
 
         public static Vector3 SummonPosition(Vector3 from, Vector3 hover, float t) =>
             Vector3.Lerp(from, hover, Ease(t)) + Vector3.up * (Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * .12f);
@@ -267,8 +301,29 @@ namespace Moodium.NatureWorld
         {
             if (m_Phase != Phase.Armed) return;
             m_From = from; m_Hover = hover;
+            if (m_NatureWorldDepth == 0)
+            {
+                m_OuterEntryFrom = from;
+                m_OuterEntryHover = hover;
+                m_HasOuterEntry = true;
+            }
             m_Phase = Phase.Rising;
             m_Routine = StartCoroutine(Run());
+        }
+
+        /// <summary>Reopens the last room entry after returning from the bubble world.</summary>
+        public bool ResummonAtLastEntry()
+        {
+            if (m_Phase != Phase.Armed || m_Viewer == null || !m_HasOuterEntry)
+                return false;
+            var from = m_OuterEntryFrom;
+            var hover = m_OuterEntryHover;
+            // Returning from a completed bubble keeps its meshes/materials hidden.
+            // Reuse that warmed cache instead of synchronously rebuilding it again.
+            if (m_Root == null || m_Folder != m_OuterFolder || !m_AllLayersReady)
+                Begin(m_Viewer, m_OuterFolder, 0);
+            Summon(from, hover);
+            return true;
         }
         public void Dismiss()
         {
@@ -349,13 +404,61 @@ namespace Moodium.NatureWorld
             m_BreathScale = 1f; m_Breath = 0; m_WanderFade = 1f; m_WanderTarget = 1f; m_Wandering = false;
             m_TouchRequested = false; m_BobPhase = 0f;
             if (m_Home != null) m_Home.SetActive(false);
+            RestoreQuietLayerPose();
             BubbleWorldData.SetAlpha(m_PointMaterial, 1f);
             foreach (var layer in m_Layers) { layer.SetActive(m_Layers.IndexOf(layer) < m_MiniLayerCount); layer.transform.localScale = Vector3.one; }
+        }
+
+        void CacheQuietLayerPose()
+        {
+            m_LayerRestPositions = new Vector3[m_Layers.Count];
+            m_LayerRestRotations = new Quaternion[m_Layers.Count];
+            for (var i = 0; i < m_Layers.Count; i++)
+            {
+                m_LayerRestPositions[i] = m_Layers[i].transform.localPosition;
+                m_LayerRestRotations[i] = m_Layers[i].transform.localRotation;
+            }
+        }
+
+        void RestoreQuietLayerPose()
+        {
+            if (m_LayerRestPositions == null || m_LayerRestRotations == null) return;
+            var count = Mathf.Min(m_Layers.Count, m_LayerRestPositions.Length);
+            for (var i = 0; i < count; i++)
+            {
+                m_Layers[i].transform.localPosition = m_LayerRestPositions[i];
+                m_Layers[i].transform.localRotation = m_LayerRestRotations[i];
+            }
+        }
+
+        void UpdateQuietLayerDrift()
+        {
+            if (m_LayerRestPositions == null || m_LayerRestRotations == null) return;
+            var count = Mathf.Min(m_Layers.Count, m_LayerRestPositions.Length);
+            var time = Time.time * .42f;
+            for (var i = 0; i < count; i++)
+            {
+                var layer = m_Layers[i];
+                if (layer == null || !layer.activeSelf) continue;
+                var phase = i * .73f;
+                var amplitude = Mathf.Lerp(.0012f, .0026f, i / Mathf.Max(1f, count - 1f));
+                var offset = new Vector3(
+                    Mathf.Sin(time * .83f + phase) * amplitude,
+                    Mathf.Sin(time * .57f + phase * 1.7f) * amplitude * .65f,
+                    Mathf.Cos(time * .71f + phase * .8f) * amplitude);
+                var tilt = new Vector3(
+                    Mathf.Sin(time * .47f + phase) * .12f,
+                    Mathf.Cos(time * .31f + phase * .6f) * .16f,
+                    Mathf.Sin(time * .39f + phase * 1.2f) * .10f);
+                layer.transform.localPosition = m_LayerRestPositions[i] + offset;
+                layer.transform.localRotation = m_LayerRestRotations[i] * Quaternion.Euler(tilt);
+            }
         }
         void Update()
         {
             CheckEditorMouse();
             if (m_Phase != Phase.Inside) return;
+            UpdateQuietLayerDrift();
             var viewer = ResolveViewer(); if (viewer == null) return;
             var offset = viewer.transform.position - m_Entry; offset.y = 0;
             var away = WanderState(m_Wandering, offset.magnitude);
@@ -378,6 +481,7 @@ namespace Moodium.NatureWorld
                 BubbleWorldData.SetAlpha(m_HomeMaterial, m_MembraneAlpha);
                 m_Home.GetComponent<Renderer>().sharedMaterial = m_HomeMaterial;
                 m_Home.AddComponent<MoodiumSpatialButton>().Configure(null, null, RequestHome);
+                BuildNestedHomePreview();
                 m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
                 m_Home.transform.position = m_HomeTarget;
             }
@@ -386,6 +490,37 @@ namespace Moodium.NatureWorld
                 m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
             m_Home.transform.position = Vector3.Lerp(m_Home.transform.position, m_HomeTarget, 1f - Mathf.Exp(-Time.deltaTime * 5f));
             if (FingertipTouching(m_Home.transform.position, .08f)) RequestHome();
+        }
+
+        // The first layer uses this as a portal preview; the final layer keeps the plain exit bubble.
+        void BuildNestedHomePreview()
+        {
+            if (m_NatureWorldDepth != 0) return;
+            var nestedFolder = m_Folder == BubbleWorldData.NatureFolder
+                ? BubbleWorldData.NestedNatureFolder
+                : m_Folder == BubbleWorldData.CandyFolder
+                    ? BubbleWorldData.NestedCandyFolder
+                    : null;
+            if (nestedFolder == null || !HasData(nestedFolder)) return;
+            var panorama = Resources.Load<Texture2D>(BubbleWorldData.PanoramaResource(nestedFolder));
+            if (panorama == null) return;
+            var mesh = Resources.Load<Mesh>(BubbleWorldData.MeshResource(nestedFolder, BubbleWorldData.PanoramaMeshName));
+            if (mesh == null)
+            {
+                mesh = BubbleWorldData.BuildPanoramaSphere(48, 24);
+                m_RuntimeMeshes.Add(mesh);
+            }
+            var preview = new GameObject("Nested World Preview");
+            preview.transform.SetParent(m_Home.transform, false);
+            preview.transform.localScale = Vector3.one * .78f;
+            preview.transform.localRotation = BubbleWorldData.SourceFrameRotation(nestedFolder);
+            m_HomePreview = preview.transform;
+            m_HomePreviewMaterial = BubbleWorldData.CreateUnlit("Nested Bubble Preview", panorama, false, CullMode.Off, Color.white);
+            m_HomePreviewMaterial.renderQueue = BackgroundRenderQueue;
+            var renderer = CreateRenderer("Nested World Panorama", m_HomePreview, mesh, m_HomePreviewMaterial);
+            renderer.transform.localScale = Vector3.one * .92f;
+            renderer.GetComponent<Renderer>().shadowCastingMode = ShadowCastingMode.Off;
+            renderer.GetComponent<Renderer>().receiveShadows = false;
         }
         public static float SkyScaleForBreath(float breathScale) => SkyMaxRadius / Mathf.Max(.001f, breathScale);
 
@@ -424,7 +559,38 @@ namespace Moodium.NatureWorld
 #endif
 #endif
         }
-        void RequestHome() { if (m_Phase != Phase.Inside) return; HomeRequested?.Invoke(); Leave(LeaveTarget.Room); }
+        void RequestHome()
+        {
+            if (m_Phase != Phase.Inside) return;
+            var nestedFolder = m_Folder == BubbleWorldData.NatureFolder
+                ? BubbleWorldData.NestedNatureFolder
+                : m_Folder == BubbleWorldData.CandyFolder
+                    ? BubbleWorldData.NestedCandyFolder
+                    : null;
+            if (m_NatureWorldDepth == 0 && nestedFolder != null && HasData(nestedFolder))
+            {
+                if (m_EnteringNestedWorld) return;
+                m_EnteringNestedWorld = true;
+                StartCoroutine(EnterNestedWorld(nestedFolder));
+                return;
+            }
+            HomeRequested?.Invoke();
+            Leave(LeaveTarget.Room);
+        }
+
+        IEnumerator EnterNestedWorld(string nestedFolder)
+        {
+            var viewer = ResolveViewer();
+            if (viewer == null || m_Home == null) yield break;
+            var from = m_Home.transform.position;
+            var forward = Vector3.ProjectOnPlane(viewer.transform.forward, Vector3.up).normalized;
+            if (forward.sqrMagnitude < .0001f) forward = Vector3.forward;
+            var hover = viewer.transform.position + forward * .55f - Vector3.up * .18f;
+            Begin(viewer, nestedFolder, 1);
+            Summon(from, hover);
+            while (m_Phase == Phase.Rising) yield return null;
+            if (m_Phase == Phase.Floating) Touch();
+        }
 
         // ---------- Sequence ----------
 
@@ -441,7 +607,8 @@ namespace Moodium.NatureWorld
                 yield break;
             }
 
-            if (m_Root == null) yield return Build();
+            while (!m_CoreLayersReady && m_BuildRoutine != null)
+                yield return null;
             if (m_Root != null) ResetCached();
             if (m_Root == null)
             {
@@ -454,7 +621,7 @@ namespace Moodium.NatureWorld
             var yaw = Quaternion.Euler(0f, GazeYaw(viewer.transform.forward), 0f);
             var home = m_Hover;
             m_Root.transform.SetPositionAndRotation(home, Quaternion.identity);
-            m_WorldRoot.localRotation = yaw;
+            m_WorldRoot.localRotation = yaw * BubbleWorldData.SourceFrameRotation(m_Folder);
             for (var t = 0f; t < .8f; t += Time.deltaTime)
             {
                 m_Root.transform.position = SummonPosition(m_From, home, t / .8f);
@@ -474,7 +641,7 @@ namespace Moodium.NatureWorld
                 m_BobPhase += Time.deltaTime / m_BobPeriod * Mathf.PI * 2f;
                 m_Root.transform.position = home + Vector3.up * (Mathf.Sin(m_BobPhase) * m_BobAmplitude);
                 spin += m_SpinDegreesPerSecond * Time.deltaTime;
-                m_WorldRoot.localRotation = yaw * Quaternion.Euler(0f, spin, 0f);
+                m_WorldRoot.localRotation = yaw * Quaternion.Euler(0f, spin, 0f) * BubbleWorldData.SourceFrameRotation(m_Folder);
                 yield return null;
             }
 
@@ -523,6 +690,16 @@ namespace Moodium.NatureWorld
             SetRadius(MiniWorldRadius);
             m_Membrane.gameObject.SetActive(false);
             m_Sky.gameObject.SetActive(false);
+
+            // The visible mini world was ready immediately; wait here only when a
+            // user has touched unusually quickly, so the full reveal never hitches.
+            while (!m_AllLayersReady && m_BuildRoutine != null)
+                yield return null;
+            if (!m_AllLayersReady)
+            {
+                m_Phase = Phase.Idle;
+                yield break;
+            }
 
             // Reveal: the rest of the scan spreads out shell by shell, the sky receding just behind it.
             m_Phase = Phase.Reveal;
@@ -575,7 +752,8 @@ namespace Moodium.NatureWorld
             var head = viewer.transform.position;
             var floor = ResolveOrigin() != null ? m_Origin.Origin.transform.position.y : 0f;
             var center = FinalCenter(head, floor, m_EyeHeight, m_AlignGroundToFloor);
-            return (center, Quaternion.Euler(0f, GazeYaw(viewer.transform.forward), 0f));
+            return (center, Quaternion.Euler(0f, GazeYaw(viewer.transform.forward), 0f) *
+                BubbleWorldData.SourceFrameRotation(m_Folder));
         }
 
         /// <summary>World scale follows the bubble radius: the mini world exactly fills it.</summary>
@@ -606,6 +784,8 @@ namespace Moodium.NatureWorld
 
         IEnumerator Build()
         {
+            // Give the current world transition one frame to settle before resource work.
+            yield return null;
             var points = Resources.Load<TextAsset>(BubbleWorldData.PointsResource(m_Folder));
             var colors = Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(m_Folder));
             var panorama = Resources.Load<Texture2D>(BubbleWorldData.PanoramaResource(m_Folder));
@@ -613,12 +793,14 @@ namespace Moodium.NatureWorld
             if (points == null || colors == null || panorama == null)
             {
                 Debug.LogWarning($"[Bubble World] Missing points / point_colors / panorama under Resources/{m_Folder}.");
+                m_BuildRoutine = null;
                 yield break;
             }
             var bytes = points.bytes;
             if (!BubbleWorldData.TryReadSummary(bytes, BubbleWorldData.LayerCount, out _, out m_EyeHeight, out m_LayerRadii))
             {
                 Debug.LogWarning("[Bubble World] points.bytes is not a valid MSPC v1 file.");
+                m_BuildRoutine = null;
                 yield break;
             }
             m_MiniLayerCount = MiniLayerCount(m_LayerRadii, MiniWorldRadius);
@@ -651,11 +833,43 @@ namespace Moodium.NatureWorld
             m_SkyRenderer = m_Sky.GetComponent<MeshRenderer>();
             m_Sky.localScale = Vector3.one * (MiniWorldRadius * .99f);
 
+            // The interaction shell belongs to the core warmup, so a user can
+            // summon the miniature world while outer point layers keep streaming.
+            var membrane = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            membrane.name = "Bubble Film";
+            membrane.transform.SetParent(m_Root.transform, false);
+            var membraneRenderer = membrane.GetComponent<MeshRenderer>();
+            membraneRenderer.sharedMaterial = m_MembraneMaterial;
+            membraneRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            membraneRenderer.receiveShadows = false;
+            var button = membrane.AddComponent<MoodiumSpatialButton>();
+            button.Configure(null, null, Touch);
+            var hover = membrane.AddComponent<VisionOSHoverEffect>();
+            hover.Type = VisionOSHoverEffect.EffectType.Highlight;
+            hover.Color = new Color(.85f, 1f, .9f, 1f);
+            m_Membrane = membrane.transform;
+            m_MembraneCollider = membrane.GetComponent<Collider>();
+            m_Audio = m_Root.AddComponent<AudioSource>();
+            m_Audio.playOnAwake = false;
+            m_Audio.spatialBlend = 1f;
+
             // Point layers (near → far). Baked meshes first; otherwise build them a few per frame.
             BubbleWorldData.Cloud cloud = null;
+            var warmupLayers = WarmupLayerCount(m_MiniLayerCount, BubbleWorldData.LayerCount);
             for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)
             {
-                var mesh = Resources.Load<Mesh>(BubbleWorldData.MeshResource(m_Folder, BubbleWorldData.LayerMeshName(layer)));
+                var resourcePath = BubbleWorldData.MeshResource(m_Folder, BubbleWorldData.LayerMeshName(layer));
+                Mesh mesh;
+                if (layer < warmupLayers)
+                {
+                    mesh = Resources.Load<Mesh>(resourcePath);
+                }
+                else
+                {
+                    var request = Resources.LoadAsync<Mesh>(resourcePath);
+                    yield return request;
+                    mesh = request.asset as Mesh;
+                }
                 if (mesh == null)
                 {
                     if (cloud == null && !BubbleWorldData.TryParse(bytes, out cloud))
@@ -672,31 +886,24 @@ namespace Moodium.NatureWorld
                 var go = CreateRenderer(BubbleWorldData.LayerMeshName(layer), m_WorldRoot, mesh, m_PointMaterial);
                 go.SetActive(layer < m_MiniLayerCount);
                 m_Layers.Add(go);
+                if (layer + 1 == warmupLayers)
+                {
+                    // The miniature bubble can now appear. Remaining layers stream
+                    // in one per frame while it floats and approaches the viewer.
+                    SetRadius(.001f);
+                    m_CoreLayersReady = true;
+                    yield return null;
+                }
+                else if (layer + 1 > warmupLayers)
+                    yield return null;
             }
+            CacheQuietLayerPose();
+            m_AllLayersReady = true;
+            m_BuildRoutine = null;
             if (cloud != null) Debug.Log("[Bubble World] Built point meshes at runtime; bake them (Moodium ▸ Bubble World ▸ Bake Meshes) for device builds.");
 
-            // Membrane: the built-in sphere (a mesh asset, safe on device) with its collider for look + pinch.
-            var membrane = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            membrane.name = "Bubble Film";
-            membrane.transform.SetParent(m_Root.transform, false);
-            var membraneRenderer = membrane.GetComponent<MeshRenderer>();
-            membraneRenderer.sharedMaterial = m_MembraneMaterial;
-            membraneRenderer.shadowCastingMode = ShadowCastingMode.Off;
-            membraneRenderer.receiveShadows = false;
-            var button = membrane.AddComponent<MoodiumSpatialButton>();
-            button.Configure(null, null, Touch);
-            var hover = membrane.AddComponent<VisionOSHoverEffect>();
-            hover.Type = VisionOSHoverEffect.EffectType.Highlight;
-            hover.Color = new Color(.85f, 1f, .9f, 1f);
-            m_Membrane = membrane.transform;
-            m_MembraneCollider = membrane.GetComponent<Collider>();
-
-            m_Audio = m_Root.AddComponent<AudioSource>();
-            m_Audio.playOnAwake = false;
-            m_Audio.spatialBlend = 1f;
-
             SetRadius(.001f);
-            m_Root.SetActive(true);
+            // ResetCached enables the root only when the bubble is actually summoned.
         }
 
         static GameObject CreateRenderer(string name, Transform parent, Mesh mesh, Material material)

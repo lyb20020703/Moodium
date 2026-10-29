@@ -30,8 +30,8 @@ namespace Moodium.Opening
             var question = CreateText("Language Question", "你更希望 Moodi 用哪种语言陪你探索？\nWhich language would you like Moodi to use?", font, 36f);
             question.rectTransform.anchoredPosition = new Vector2(0f, 260f);
             question.rectTransform.sizeDelta = new Vector2(860f, 115f);
-            m_Chinese = CreateButton("Language Button - Chinese", new Vector2(-165f, -160f), "中文", "lang_zh");
-            m_English = CreateButton("Language Button - English", new Vector2(165f, -160f), "English", "lang_en");
+            m_Chinese = CreateButton("Language Button - Chinese", new Vector2(-179f, -160f), "中文", "lang_zh");
+            m_English = CreateButton("Language Button - English", new Vector2(179f, -160f), "English", "lang_en");
         }
 
         public void SelectChineseWhenTimedOut() => SelectAutomatically("中文");
@@ -56,8 +56,11 @@ namespace Moodium.Opening
         {
             var item = new GameObject(name, typeof(RectTransform));
             item.transform.SetParent(transform, false);
+            item.transform.localScale = Vector3.one * .9f;
             var rect = item.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(330f, 114f);
+            // The supplied art is a 498x282 canvas whose actual capsule is 330x114.
+            // The RectTransform must keep the full canvas aspect ratio or the baked text is squashed.
+            rect.sizeDelta = new Vector2(498f, 282f);
             rect.anchoredPosition = position;
             var image = item.AddComponent<Image>();
             image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_idle");

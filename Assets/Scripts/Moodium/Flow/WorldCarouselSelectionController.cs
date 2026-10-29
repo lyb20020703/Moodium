@@ -18,13 +18,13 @@ namespace Moodium.Flow
         [SerializeField] float m_DropBelowEyes = .12f;
         [SerializeField] float m_RecenterAngle = 50;
         [Header("Carousel")]
-        [SerializeField] float m_ItemSpacing = .34f;
+        [SerializeField] float m_ItemSpacing = .58f;
         [SerializeField] float m_SideScale = .7f;
         [SerializeField] float m_SideAlpha = .55f;
         [SerializeField] float m_SideYaw = 20;
         [SerializeField] float m_SwipeThreshold = .06f;
         [SerializeField] float m_SwitchSeconds = .35f;
-        [SerializeField] float m_ModelSize = .22f;
+        [SerializeField] float m_ModelSize = .44f;
 
         readonly GameObject[] prefabs = new GameObject[2];
         readonly MoodiumWorldDefinition[] worlds = new MoodiumWorldDefinition[2];
@@ -82,9 +82,8 @@ namespace Moodium.Flow
                 item.transform.SetParent(root, false); items[i] = item.transform;
                 var target = new GameObject("Model Touch Target");
                 target.transform.SetParent(item.transform, false);
-                target.AddComponent<BoxCollider>().size = new Vector3(.26f, .25f, .14f);
+                target.AddComponent<BoxCollider>().size = new Vector3(.48f, .46f, .18f);
                 target.AddComponent<WorldCarouselSwipeHandle>().Configure(this, i);
-                target.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
                 if (prefabs[i] != null)
                 {
                     var model = Instantiate(prefabs[i], target.transform);
@@ -125,29 +124,29 @@ namespace Moodium.Flow
                 // Controls are siblings of the drag target, never its descendants.
                 var control = new GameObject("Enter World Slider");
                 control.transform.SetParent(item.transform, false);
-                control.transform.localPosition = new Vector3(0, .18f, -.08f);
+                control.transform.localPosition = new Vector3(0, .31f, -.08f);
                 sliders[i] = control.AddComponent<GlassSlideToEnter>();
                 sliders[i].Configure(SensoryBagBranchUI.EnterLabel(worlds[i], english), i == 0 ? GlassSlideToEnter.Theme.Candy : GlassSlideToEnter.Theme.Nature,
                     font, glass, english ? "Entering…" : "正在进入…");
                 var index = i;
                 sliders[i].Completed += () => SelectEntry(index);
                 tags[i] = SensoryBagBranchUI.Text(item.transform, "Moodi Recommendation Tag", "★ " + MoodCheckCopy.Get("tag.pick", english),
-                    new Vector3(0, .235f, -.08f), font, .018f, .3f);
+                    new Vector3(0, .40f, -.08f), font, .018f, .38f);
             }
             var drag = new GameObject("Carousel Drag Area");
             drag.transform.SetParent(root, false); drag.transform.localPosition = new Vector3(0, 0, .12f);
-            drag.AddComponent<BoxCollider>().size = new Vector3(1.0f, .27f, .02f);
+            drag.AddComponent<BoxCollider>().size = new Vector3(1.35f, .48f, .02f);
             drag.AddComponent<WorldCarouselSwipeHandle>().Configure(this);
-            SensoryBagBranchUI.Button(root, "Previous World", "‹", new Vector3(-.49f, 0, -.04f), font, () => SelectIndex(0), .07f);
-            SensoryBagBranchUI.Button(root, "Next World", "›", new Vector3(.49f, 0, -.04f), font, () => SelectIndex(1), .07f);
+            SensoryBagBranchUI.Button(root, "Previous World", "‹", new Vector3(-.70f, 0, -.04f), font, () => SelectIndex(0), .07f);
+            SensoryBagBranchUI.Button(root, "Next World", "›", new Vector3(.70f, 0, -.04f), font, () => SelectIndex(1), .07f);
             var mood = new GameObject("Mood Check Entry"); mood.transform.SetParent(root, false);
-            mood.transform.localPosition = new Vector3(0, -.21f, -.08f);
+            mood.transform.localPosition = new Vector3(0, -.30f, -.08f);
             moodChip = mood.AddComponent<MoodEntryChip>();
             moodChip.Initialize(null, font, () => { if (CanInteract) MoodCheckRequested?.Invoke(); });
             moodChip.AllowIdleHint = false;
             moodChip.SetContent(english, summary);
             SensoryBagBranchUI.Button(root, "Sensory Bag Switch", MoodCheckCopy.Get("bag.switch.toHas", english),
-                new Vector3(0, -.28f, -.08f), font, () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); });
+                new Vector3(0, -.39f, -.08f), font, () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); });
             root.gameObject.AddComponent<SensoryBagDirectTouchInput>();
             ApplyLayout();
             Debug.Log("[Sensory Bag Branch] mode=none step=carousel-begin image-tracking=false");

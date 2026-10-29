@@ -73,12 +73,14 @@ namespace Moodium.Reality
         Coroutine m_PrepareRoutine;
         Transform m_SurfaceAnchor;
         Vector3 m_AnchorLocalPosition;
+        Quaternion m_AnchorLocalRotation = Quaternion.identity;
         Vector3 m_AnchorLocalNormal = Vector3.up;
         Vector3 m_AnchorLocalForward = Vector3.forward;
         double m_TargetTime;
         float m_NormalizedProgress;
         bool m_Advancing;
         bool m_Prepared;
+        bool m_FirstFrameReady;
         bool m_Completed;
         bool m_BoundToSoft;
         bool m_NatureWorld;
@@ -220,6 +222,9 @@ namespace Moodium.Reality
 
             var worldPosition = BuildSurfacePosition(trackingCenter, softTopY, surfaceNormal, m_SurfaceOffset);
             m_AnchorLocalPosition = m_SurfaceAnchor.InverseTransformPoint(worldPosition);
+            // Preserve the authored CandySoft/NatureSoft capsule orientation.
+            // The previous camera-facing reconstruction added an unintended Y flip.
+            m_AnchorLocalRotation = Quaternion.Inverse(m_SurfaceAnchor.rotation) * capsule.transform.rotation;
             m_AnchorLocalNormal = m_SurfaceAnchor.InverseTransformDirection(surfaceNormal).normalized;
             m_BoundCapsule = capsule;
             var surfaceOrientation=presentation!=null ? presentation.AnchorOrientation :
@@ -273,9 +278,11 @@ namespace Moodium.Reality
             m_PressedByEvent = false;
             m_Advancing = false;
             m_Prepared = false;
+            m_FirstFrameReady = false;
             m_Completed = false;
             m_BoundToSoft = false;
             m_SurfaceAnchor = null;
+            m_AnchorLocalRotation = Quaternion.identity;
             m_NormalizedProgress = 0f;
             if (m_Player != null)
             {
@@ -519,14 +526,17 @@ namespace Moodium.Reality
             if (!m_BoundToSoft || m_SurfaceAnchor == null || m_Display == null)
                 return;
             var worldPosition = m_SurfaceAnchor.TransformPoint(m_AnchorLocalPosition);
-            var worldNormal = m_SurfaceAnchor.TransformDirection(m_AnchorLocalNormal).normalized;
-            var worldForward=m_SurfaceAnchor.TransformDirection(m_AnchorLocalForward);
-            m_Display.transform.SetPositionAndRotation(worldPosition, BuildSurfaceRotation(worldNormal,worldForward));
+            var worldRotation = m_SurfaceAnchor.rotation * m_AnchorLocalRotation;
+            m_Display.transform.SetPositionAndRotation(worldPosition, worldRotation);
         }
 
         void UpdateDisplayVisibility()
         {
-            var visible = m_BoundToSoft && m_Prepared && !m_Completed;
+            // VideoPlayer.isPrepared only means decoding is ready; the target
+            // RenderTexture may still contain an uninitialized frame for one or
+            // more render submissions. Keep the mesh hidden until that first
+            // frame has had a frame boundary to reach PolySpatial.
+            var visible = m_BoundToSoft && m_Prepared && m_FirstFrameReady && !m_Completed;
             if (m_DiscRenderer != null) m_DiscRenderer.enabled = visible;
             if (m_DomeRenderer != null) m_DomeRenderer.enabled = visible;
         }
@@ -551,6 +561,13 @@ namespace Moodium.Reality
             m_Prepared = true;
             m_Completed = false;
             m_Player.Pause();
+            // Do not expose the disc on the same frame that preparation completes.
+            // This prevents a transient missing-texture/magenta frame during scene
+            // transitions and video source changes.
+            yield return null;
+            if (m_Player == null || !m_Player.isPrepared)
+                yield break;
+            m_FirstFrameReady = true;
             UpdateDisplayVisibility();
             SetProgress(m_NormalizedProgress);
             Debug.Log($"[Moodium Squeeze Video] Ready: {m_Player.clip.name}, duration={m_Player.length:0.00}s.");

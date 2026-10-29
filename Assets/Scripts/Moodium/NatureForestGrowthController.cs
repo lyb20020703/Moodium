@@ -141,10 +141,10 @@ namespace Moodium.NatureWorld
             if (ground.HasSpatialSurface)
                 AlignVisualBaseToSurface(instance, ground.Position.y);
             m_SpawnedTrees.Add(instance);
-            // Point-cloud look: when Resources/MoodiumPointClouds has a baked cloud for this tree, its points fly in
-            // and scatter under the hand; otherwise the mesh keeps the original scale grow-in.
-            if (Moodium.PointClouds.PointCloudModel.TryAttach(instance, prefab.name) == null)
-                instance.AddComponent<NatureTreeGrowIn>();
+            // Nature Forest uses the authored mesh presentation. Point-cloud assets may
+            // still exist for other experiences, but must not replace these trees because
+            // their foliage quality is too coarse at the room-scale viewing distance.
+            instance.AddComponent<NatureTreeGrowIn>();
         }
 
         Vector3 FindSeparatedDesiredPosition(int index, Vector3 right, Vector3 forward)

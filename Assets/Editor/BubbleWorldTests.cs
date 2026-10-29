@@ -74,6 +74,27 @@ public sealed class BubbleWorldTests
     }
 
     [Test]
+    public void WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers()
+    {
+        Assert.That(BubbleWorldController.WarmupLayerCount(4, 20), Is.EqualTo(4));
+        Assert.That(BubbleWorldController.WarmupLayerCount(0, 20), Is.EqualTo(1));
+        Assert.That(BubbleWorldController.WarmupLayerCount(25, 20), Is.EqualTo(20));
+    }
+
+    [Test]
+    public void NestedWorldsUseTheirRegisteredSourceFrameWhileOuterWorldsStayCanonical()
+    {
+        Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NatureFolder), Quaternion.identity),
+            Is.LessThan(.001f));
+        Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.CandyFolder), Quaternion.identity),
+            Is.LessThan(.001f));
+        Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NestedNatureFolder), Quaternion.identity),
+            Is.GreaterThan(1f));
+        Assert.That(Quaternion.Angle(BubbleWorldData.SourceFrameRotation(BubbleWorldData.NestedCandyFolder), Quaternion.identity),
+            Is.GreaterThan(1f));
+    }
+
+    [Test]
     public void FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit()
     {
         var go = new GameObject("bubble lifecycle test");

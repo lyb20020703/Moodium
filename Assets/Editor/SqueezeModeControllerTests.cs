@@ -61,9 +61,10 @@ public sealed class SqueezeModeControllerTests
         Assert.That(SqueezeTuning.ForMood(new SqueezeParameters(),MoodKind.Tense).ExhaleOk,Is.EqualTo(6));
         Assert.That(SqueezeTuning.ForMood(new SqueezeParameters(),MoodKind.Low).Window,Is.EqualTo(.28));
         Assert.That(new SqueezeModeState(null).Current,Is.EqualTo(SqueezeMode.Free));
-        Assert.That(state.Request(SqueezeMode.Rhythm,true),Is.False);
-        Assert.That(state.Current,Is.EqualTo(SqueezeMode.Breath));
-        Assert.That(state.Released(),Is.True);Assert.That(state.Current,Is.EqualTo(SqueezeMode.Rhythm));
+        Assert.That(state.Request(SqueezeMode.Rhythm,true),Is.True);
+        Assert.That(state.Pending,Is.Null);
+        Assert.That(state.Current,Is.EqualTo(SqueezeMode.Rhythm));
+        Assert.That(state.Released(),Is.False);Assert.That(state.Current,Is.EqualTo(SqueezeMode.Rhythm));
     }
     [Test] public void EnergyAcceptsFractionalAmountsWithoutDuplicateThresholds()
     {

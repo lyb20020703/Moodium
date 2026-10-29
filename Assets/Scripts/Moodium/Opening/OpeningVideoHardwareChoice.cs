@@ -34,8 +34,8 @@ namespace Moodium.Opening
                 font, 30f);
             question.rectTransform.anchoredPosition = new Vector2(0f, 260f);
             question.rectTransform.sizeDelta = new Vector2(860f, 130f);
-            m_Yes = CreateButton("Hardware Button - Yes", new Vector2(-165f, -160f), english ? "bag_yes_en" : "bag_yes_zh", true);
-            m_No = CreateButton("Hardware Button - No", new Vector2(165f, -160f), english ? "bag_no_en" : "bag_no_zh", false);
+            m_Yes = CreateButton("Hardware Button - Yes", new Vector2(-179f, -160f), english ? "bag_yes_en" : "bag_yes_zh", true);
+            m_No = CreateButton("Hardware Button - No", new Vector2(179f, -160f), english ? "bag_no_en" : "bag_no_zh", false);
         }
 
         TextMeshProUGUI CreateText(string name, string value, TMP_FontAsset font, float size)
@@ -58,8 +58,10 @@ namespace Moodium.Opening
         {
             var item = new GameObject(name, typeof(RectTransform));
             item.transform.SetParent(transform, false);
+            item.transform.localScale = Vector3.one * .9f;
             var rect = item.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(330f, 114f);
+            // Keep the 498x282 source canvas intact; only the collider follows the 330x114 capsule.
+            rect.sizeDelta = new Vector2(498f, 282f);
             rect.anchoredPosition = position;
             var image = item.AddComponent<Image>();
             image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_idle");

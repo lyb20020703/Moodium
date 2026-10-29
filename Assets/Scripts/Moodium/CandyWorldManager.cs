@@ -36,7 +36,8 @@ namespace Moodium.CandyWorld
         RoomContentVisibility m_RoomVisibility;
         BubbleRingController m_Rings;
         [SerializeField] bool m_SqueezeBreath = true;
-        bool m_FirstReveal, m_BreathTaught;
+        bool m_FirstReveal, m_BreathTaught, m_BubbleEntryScheduled;
+        bool m_ReopenBubbleEntry;
         float m_RevealedAt = -1f;
         bool m_StayReminder;
         public WorldJourneyDirector Journey => m_Journey;
@@ -361,7 +362,7 @@ namespace Moodium.CandyWorld
             m_BubbleWorld.Left += OnBubbleLeft;
             m_BubbleWorld.Revealed += OnBubbleRevealed;
             m_BubbleWorld.Wandered += OnBubbleWandered;
-            m_FirstReveal = m_BreathTaught = m_StayReminder = false; m_RevealedAt = -1f;
+            m_FirstReveal = m_BreathTaught = m_StayReminder = false; m_BubbleEntryScheduled = false; m_ReopenBubbleEntry = false; m_RevealedAt = -1f;
             m_Energy.ResetEnergy();
             m_SqueezeModes=GetComponent<SqueezeModeController>()??gameObject.AddComponent<SqueezeModeController>();
             m_SqueezeModes.BeginSession(m_Energy,m_SqueezeContext,m_NatureWorldActive,IsValidSqueezeSource);
@@ -691,7 +692,11 @@ namespace Moodium.CandyWorld
         void OnEnergyChanged(float energy, float normalizedProgress)
         {
             if (m_Journey != null && !m_Journey.CanGrowInRoom) return;
-            if (normalizedProgress >= 1f) m_Journey?.EnergyFull(m_Rescue != null);
+            if (normalizedProgress >= 1f)
+            {
+                m_Journey?.EnergyFull(m_Rescue != null);
+                if (!m_BubbleEntryScheduled) { m_BubbleEntryScheduled = true; StartCoroutine(SummonBubbleAtEnergyFull()); }
+            }
             if(!m_ExploreGuideShown&&normalizedProgress>=1f&&m_Help!=null)
             {
                 m_ExploreGuideShown=true;
@@ -730,6 +735,21 @@ namespace Moodium.CandyWorld
 
         void OnFirstRing() => m_Help?.OnFirstRingShown();
         void OnRingHint(string id, Vector3 point) => m_WalkTrailGuide?.PresentRing(id, point);
+        System.Collections.IEnumerator SummonBubbleAtEnergyFull()
+        {
+            // Energy 100% is now the bubble-world entry point. Wait only for the
+            // current voice line and for the rescue flow to finish changing stages.
+            var timeout = Time.unscaledTime + 12f;
+            while (m_Running && (MoodiVoice.IsAnyoneSpeaking || m_Journey == null || m_Journey.Stage != WorldJourneyStage.Explore) && Time.unscaledTime < timeout)
+                yield return null;
+            if (!m_Running || m_BubbleWorld == null || m_Journey == null || m_Journey.Stage != WorldJourneyStage.Explore) yield break;
+            var viewer = Camera.main != null ? Camera.main.transform : transform;
+            var bagObject = FindActiveCalibratedNatureCapsule();
+            var calibrated = bagObject != null ? bagObject.GetComponentInParent<CalibratedSensoryBagPresentation>() : null;
+            var hover = calibrated != null ? calibrated.CenterWorldPosition + Vector3.up * .3f : viewer.position + viewer.forward * .6f - Vector3.up * .25f;
+            m_BubbleWorld.Summon(hover - Vector3.up * .35f, hover);
+            Debug.Log("[World Journey] Bubble summoned immediately at energy 100%.");
+        }
         void OnGardenDiscovered(Vector3 headSnapshot)
         {
             var occupied = new System.Collections.Generic.List<Vector3>();
@@ -791,6 +811,7 @@ namespace Moodium.CandyWorld
             m_Frost?.SetSuspended(true); m_NatureLeaves?.SetSuspended(true);
             m_Help?.SetSuspended(true); m_SqueezeModes?.SetSuspended(true);
             m_RoomVisibility.Clear();
+            RegisterBubbleHiddenModels();
             m_NatureFootstepGrass?.RegisterRoomVisibility(m_RoomVisibility);
             m_NatureForestGrowth?.RegisterRoomVisibility(m_RoomVisibility);
             m_CandyCompletionHouse?.RegisterRoomVisibility(m_RoomVisibility);
@@ -799,6 +820,21 @@ namespace Moodium.CandyWorld
             m_SqueezeStageRewards?.RegisterRoomVisibility(m_RoomVisibility);
             if (m_SqueezeModes?.View?.TableRoot != null) m_RoomVisibility.Register(m_SqueezeModes.View.TableRoot.gameObject);
             m_RoomVisibility.SetHidden(true);
+        }
+
+        void RegisterBubbleHiddenModels()
+        {
+            // These models are not owned by the room-effect controllers below, so
+            // register them explicitly before the bubble transition starts. The
+            // visibility service snapshots their original active state and restores
+            // it correctly when the user returns to the room.
+            foreach (var presentation in FindObjectsByType<CalibratedSensoryBagPresentation>(FindObjectsSortMode.None))
+                if (presentation != null)
+                    m_RoomVisibility.Register(presentation.gameObject);
+
+            foreach (var moodi in FindObjectsByType<MoodiCompanionAnimator>(FindObjectsSortMode.None))
+                if (moodi != null)
+                    m_RoomVisibility.Register(moodi.gameObject);
         }
         void OnBubbleRevealed()
         {
@@ -811,6 +847,9 @@ namespace Moodium.CandyWorld
         {
             if (!m_Running) return;
             if (target == LeaveTarget.Exit) { m_Journey.End(); m_ExitAction?.Invoke(); return; }
+            // Returning to the room keeps the same small-bubble entry available.
+            // Reopen it after the room visibility transition so this can repeat.
+            m_ReopenBubbleEntry = true;
             m_Journey.Returned();
             if (m_Journey.Stage == WorldJourneyStage.Ending) { m_ExitAction?.Invoke(); return; }
             m_RoomVisibility.SetHidden(false);
@@ -829,6 +868,11 @@ namespace Moodium.CandyWorld
             foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(true);
             m_EnergyUI?.SetReleaseAvailable(true); m_Rings?.NotifyBubbleReturned();
             m_WalkTrailGuide?.Say("F7");
+            if (m_ReopenBubbleEntry)
+            {
+                m_ReopenBubbleEntry = false;
+                m_BubbleWorld?.ResummonAtLastEntry();
+            }
         }
 
         void ReleaseAccumulatedEnergy()

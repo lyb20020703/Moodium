@@ -454,11 +454,14 @@ namespace Moodium.MoodCheck
                 foreach (var label in m_PanelInstance.GetComponentsInChildren<TMP_Text>(true))
                 {
                     label.font = font;
-                    if (label.transform.parent != null && label.transform.parent.name == "AxisLabels" && Application.isPlaying)
-                    {
-                        label.outlineWidth = .15f;
-                        label.outlineColor = new Color(20f / 255f, 10f / 255f, 40f / 255f, .5f);
-                    }
+                    // The panel is also used over white recommendation cards. A thick dark
+                    // TMP outline/underlay becomes a black rectangle on visionOS, so keep all
+                    // labels clean and let the panel glass provide contrast.
+                    label.outlineWidth = 0f;
+                    label.outlineColor = Color.clear;
+                    label.fontSharedMaterial.SetColor("_UnderlayColor", Color.clear);
+                    label.fontSharedMaterial.SetFloat("_UnderlayDilate", 0f);
+                    label.fontSharedMaterial.SetFloat("_UnderlaySoftness", 0f);
                 }
             SetText("Header/Kicker", MoodCheckCopy.Get("plate.kicker", m_English));
             SetText("Footer/Hint", MoodCheckCopy.Get("plate.hint", m_English));

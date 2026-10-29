@@ -29,9 +29,11 @@ namespace Moodium.Reality
         {
             if (m_Target == null) return;
             var down = Mathf.PingPong(Time.time * m_Speed, m_Travel);
-            var orientation=m_Presentation!=null ? m_Presentation.AnchorOrientation :
-                m_Follower!=null&&m_Follower.Anchor!=null ? m_Follower.Anchor.rotation : m_Target.rotation;
-            transform.SetPositionAndRotation(m_Presentation!=null?m_Presentation.CenterWorldPosition:m_Target.position,orientation);
+            var position=m_Presentation!=null?m_Presentation.CenterWorldPosition:m_Target.position;
+            // The guide is authored for the CandySoft/NatureSoft model frame.
+            // Do not replace that frame with a camera-facing rotation: doing so
+            // introduced an unwanted 180-degree Y flip on the hand prompt.
+            transform.SetPositionAndRotation(position, m_Target.rotation);
             var center=Vector3.up*(m_BaseHeight-down);
             if (m_Left != null) m_Left.transform.localPosition = center + Vector3.left * .06f;
             if (m_Right != null) m_Right.transform.localPosition = center + Vector3.right * .06f;

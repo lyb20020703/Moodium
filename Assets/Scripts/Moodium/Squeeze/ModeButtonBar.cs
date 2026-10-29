@@ -13,6 +13,9 @@ namespace Moodium.Squeeze
         readonly SpriteRenderer[] icons=new SpriteRenderer[3],labels=new SpriteRenderer[3],glows=new SpriteRenderer[3],ripples=new SpriteRenderer[3],badges=new SpriteRenderer[3],bases=new SpriteRenderer[3];
         readonly BoxCollider[] colliders=new BoxCollider[3];
         readonly bool[] touching=new bool[3];readonly float[] pressed={-100,-100,-100};
+        readonly bool[] lastRippleVisible=new bool[3],lastColliderEnabled=new bool[3];
+        readonly Color[] lastBaseColor=new Color[3],lastGlowColor=new Color[3],lastIconColor=new Color[3],lastLabelColor=new Color[3],lastBadgeColor=new Color[3];
+        readonly Vector3[] lastButtonScale=new Vector3[3];
         readonly float born;
         XROrigin xrOrigin;
         /// <summary>A mode button was pressed (the help card turns to that mode's page).</summary>
@@ -42,7 +45,8 @@ namespace Moodium.Squeeze
         public void Press(int i)
         {
             if(mode.Complete||Time.unscaledTime-born<1||Time.unscaledTime-pressed[i]<.2f)return;
-            pressed[i]=Time.unscaledTime;mode.RequestMode((SqueezeMode)i);Pressed?.Invoke((SqueezeMode)i);
+            pressed[i]=Time.unscaledTime;var old=mode.Mode;mode.RequestMode((SqueezeMode)i);
+            if(old!=mode.Mode||mode.Pending==(SqueezeMode)i)Pressed?.Invoke((SqueezeMode)i);
         }
         public void Tick(float completionAlpha)
         {
@@ -52,14 +56,13 @@ namespace Moodium.Squeeze
             {
                 bool selected=mode.Mode==(SqueezeMode)i;var pressAge=Time.unscaledTime-pressed[i];
                 var pos=buttons[i].localPosition;pos.y=(selected?.004f:0)-Mathf.Max(0,1-pressAge/.12f)*.003f-(1-Mathf.Clamp01((age-1)/.4f))*.01f;buttons[i].localPosition=pos;
-                buttons[i].localScale=Vector3.one*(selected?1.04f:1);
-                bases[i].color=new Color(1,1,1,alpha);glows[i].color=WithAlpha(v.Accent,selected?alpha:mode.Pending==(SqueezeMode)i?alpha*.4f:0);
-                icons[i].color=WithAlpha(selected?v.Accent:Color.white,alpha*(selected?1:.55f));
-                labels[i].color=WithAlpha(selected?v.Accent:new Color(.85f,.83f,.89f),alpha*(selected?1:.6f));
-                badges[i].color=WithAlpha(v.Accent,mode.Recommended==(SqueezeMode)i?alpha:0);
-                ripples[i].gameObject.SetActive(pressAge<.45f);
+                SetScale(buttons[i],Vector3.one*(selected?1.04f:1),ref lastButtonScale[i]);
+                SetColor(bases[i],new Color(1,1,1,alpha),ref lastBaseColor[i]);SetColor(glows[i],WithAlpha(v.Accent,selected?alpha:mode.Pending==(SqueezeMode)i?alpha*.4f:0),ref lastGlowColor[i]);
+                SetColor(icons[i],WithAlpha(selected?v.Accent:Color.white,alpha*(selected?1:.55f)),ref lastIconColor[i]);SetColor(labels[i],WithAlpha(selected?v.Accent:new Color(.85f,.83f,.89f),alpha*(selected?1:.6f)),ref lastLabelColor[i]);
+                SetColor(badges[i],WithAlpha(v.Accent,mode.Recommended==(SqueezeMode)i?alpha:0),ref lastBadgeColor[i]);
+                var rippleVisible=pressAge<.45f;if(rippleVisible!=lastRippleVisible[i]){ripples[i].gameObject.SetActive(rippleVisible);lastRippleVisible[i]=rippleVisible;}
                 if(pressAge<.45f){ripples[i].color=WithAlpha(v.Soft,(1-pressAge/.45f)*.9f*alpha);var size=.12f/ripples[i].sprite.bounds.size.x;ripples[i].transform.localScale=Vector3.one*size*Mathf.Lerp(1,1.5f,pressAge/.45f);}
-                colliders[i].enabled=alpha>.5f&&!mode.Complete;
+                var colliderEnabled=alpha>.5f&&!mode.Complete;if(colliderEnabled!=lastColliderEnabled[i]){colliders[i].enabled=colliderEnabled;lastColliderEnabled[i]=colliderEnabled;}
                 var touch=colliders[i].enabled&&subsystem!=null&&(Touches(subsystem.leftHand,colliders[i])||Touches(subsystem.rightHand,colliders[i]));
                 if(touch&&!touching[i])Press(i);touching[i]=touch;
             }
@@ -76,5 +79,7 @@ namespace Moodium.Squeeze
             return (collider.ClosestPoint(position)-position).sqrMagnitude<.000025f;
         }
         static Color WithAlpha(Color c,float a){c.a=a;return c;}
+        static void SetColor(SpriteRenderer r,Color c,ref Color last){if(last==c)return;r.color=c;last=c;}
+        static void SetScale(Transform t,Vector3 s,ref Vector3 last){if(last==s)return;t.localScale=s;last=s;}
     }
 }

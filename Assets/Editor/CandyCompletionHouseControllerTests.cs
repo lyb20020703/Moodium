@@ -12,18 +12,18 @@ public sealed class CandyCompletionHouseControllerTests
     }
 
     [Test]
-    public void MainHouseSpawnsAtEightyPercentOnlyOnce()
+    public void MainHouseSpawnsAtFiftyFivePercentOnlyOnce()
     {
-        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyHouse(.8f, false), Is.True);
-        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyHouse(.79f, false), Is.False);
+        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyHouse(.55f, false), Is.True);
+        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyHouse(.54f, false), Is.False);
         Assert.That(CandyCompletionHouseController.ShouldSpawnCandyHouse(1f, true), Is.False);
     }
 
     [Test]
-    public void LittleHouseSpawnsAtFullProgressOnlyOnce()
+    public void LittleHouseSpawnsAtNinetyPercentOnlyOnce()
     {
-        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyLittleHouse(1f, false), Is.True);
-        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyLittleHouse(.99f, false), Is.False);
+        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyLittleHouse(.9f, false), Is.True);
+        Assert.That(CandyCompletionHouseController.ShouldSpawnCandyLittleHouse(.89f, false), Is.False);
         Assert.That(CandyCompletionHouseController.ShouldSpawnCandyLittleHouse(1f, true), Is.False);
     }
 

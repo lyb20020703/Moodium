@@ -48,10 +48,10 @@ public sealed class CandyWorldProgressControllerTests
     [Test]
     public void HoneyJarIsScheduledForTheThirdAmbientCandyNode()
     {
-        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.8f), Is.False);
-        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.86f), Is.False);
-        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.92f), Is.True);
-        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.98f), Is.False);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.7f), Is.False);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.75f), Is.True);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.86f), Is.True);
+        Assert.That(CandyWorldProgressController.IsHoneyJarStage(.9f), Is.False);
     }
 
     [Test]

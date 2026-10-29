@@ -11,7 +11,8 @@ using UnityEngine;
 /// </summary>
 public static class BubbleWorldBaker
 {
-    static readonly string[] Folders = { BubbleWorldData.NatureFolder, BubbleWorldData.CandyFolder };
+    static readonly string[] Folders = { BubbleWorldData.NatureFolder, BubbleWorldData.CandyFolder,
+        BubbleWorldData.NestedNatureFolder, BubbleWorldData.NestedCandyFolder };
 
     [MenuItem("Moodium/Bubble World/Bake Candy Meshes")]
     public static void BakeCandy()
@@ -33,6 +34,32 @@ public static class BubbleWorldBaker
         {
             if (!BakeFolder("Assets/Resources/" + BubbleWorldData.NatureFolder))
                 throw new System.InvalidOperationException("Nature point cloud could not be baked.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+        finally { EditorUtility.ClearProgressBar(); }
+    }
+
+    [MenuItem("Moodium/Bubble World/Bake Nested Nature Meshes")]
+    public static void BakeNestedNature()
+    {
+        try
+        {
+            if (!BakeFolder("Assets/Resources/" + BubbleWorldData.NestedNatureFolder))
+                throw new System.InvalidOperationException("Nested Nature point cloud could not be baked.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+        finally { EditorUtility.ClearProgressBar(); }
+    }
+
+    [MenuItem("Moodium/Bubble World/Bake Nested Candy Meshes")]
+    public static void BakeNestedCandy()
+    {
+        try
+        {
+            if (!BakeFolder("Assets/Resources/" + BubbleWorldData.NestedCandyFolder))
+                throw new System.InvalidOperationException("Nested Candy point cloud could not be baked.");
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }

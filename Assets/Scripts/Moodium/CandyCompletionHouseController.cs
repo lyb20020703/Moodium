@@ -10,8 +10,9 @@ namespace Moodium.CandyWorld
     {
         public void RegisterRoomVisibility(Moodium.Flow.RoomContentVisibility visibility) { if (m_HouseInstance != null) visibility.Register(m_HouseInstance); if (m_LittleHouseInstance != null) visibility.Register(m_LittleHouseInstance); if (m_HoneyJarInstance != null) visibility.Register(m_HoneyJarInstance); }
 
-        const float MainHouseProgress = .8f;
-        const float LittleHouseProgress = .999f;
+        const float MainHouseProgress = .55f;
+        const float HoneyJarProgress = .75f;
+        const float LittleHouseProgress = .9f;
         const float HouseScaleMultiplier = 3f;
         // Place both completion houses in the user's forward view first. The two
         // offsets form the first arc around the viewer instead of hiding behind them.
@@ -73,7 +74,7 @@ namespace Moodium.CandyWorld
 
             if (m_HousePrefab != null && ShouldSpawnCandyHouse(normalizedProgress, m_HouseInstance != null))
                 m_HouseInstance = SpawnHouse(m_HousePrefab, "Candy Completion House", ViewerRelativeSpawnOffset);
-            if (m_HoneyJarPrefab != null && normalizedProgress >= .92f && m_HoneyJarInstance == null)
+            if (m_HoneyJarPrefab != null && normalizedProgress >= HoneyJarProgress && m_HoneyJarInstance == null)
                 m_HoneyJarInstance = SpawnHouse(m_HoneyJarPrefab, "Candy Progress Honey Jar", new Vector2(0f, 2.2f), 1f);
             if (m_LittleHousePrefab != null &&
                 ShouldSpawnCandyLittleHouse(normalizedProgress, m_LittleHouseInstance != null))

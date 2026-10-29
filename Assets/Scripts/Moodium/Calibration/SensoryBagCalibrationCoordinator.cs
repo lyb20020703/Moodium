@@ -23,7 +23,7 @@ namespace Moodium.Calibration
         [Header("Calibration Defaults")]
         [SerializeField, Min(0.01f)] float m_DefaultWidth = 0.40f;
         [SerializeField, Min(0.01f)] float m_DefaultHeight = 0.25f;
-        [SerializeField, Min(0.005f)] float m_DefaultDepth = 0.05f;
+        [SerializeField, Min(0.005f)] float m_DefaultDepth = 0.08f;
         [SerializeField] Vector2 m_DefaultCenterOffset;
         [SerializeField, Min(0.01f)] float m_MinWidth = 0.08f;
         [SerializeField, Min(0.01f)] float m_MaxWidth = 0.6f;

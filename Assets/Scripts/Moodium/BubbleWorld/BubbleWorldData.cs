@@ -21,7 +21,9 @@ namespace Moodium.NatureWorld
         // One folder per world under Resources/. Each holds points.bytes, point_colors.png, panorama.png and the
         // baked Meshes/ folder; the bubble film is shared.
         public const string NatureFolder = "MoodiumBubbleWorld/";
+        public const string NestedNatureFolder = "MoodiumBubbleWorld/NestedNature/";
         public const string CandyFolder = "MoodiumBubbleWorld/Candy/";
+        public const string NestedCandyFolder = "MoodiumBubbleWorld/Candy/Nested/";
         public const string FilmResource = NatureFolder + "bubble_film";
 
         public static string FolderFor(bool candyWorld) => candyWorld ? CandyFolder : NatureFolder;
@@ -32,6 +34,41 @@ namespace Moodium.NatureWorld
         public static string MeshResource(string folder, string meshName) => folder + "Meshes/" + meshName;
         public const int LayerCount = 20;
         public const int RecordSize = 18;
+
+        /// <summary>
+        /// Converts each scan's authoring frame into the canonical Bubble World
+        /// frame. The first-layer assets were already exported in that frame;
+        /// the two nested Gaussian sources retain their own capture rotations.
+        /// Values are recovered by registering source splat colours against the
+        /// supplied panorama, so all contents (points and panorama) stay aligned.
+        /// </summary>
+        public static Quaternion SourceFrameRotation(string folder)
+        {
+            if (folder == NestedNatureFolder)
+                return RotationFromRowTransform(
+                    .9313814548f, .3591055350f, -.0597645409f,
+                    -.0525465782f, .2950614766f, .9540322752f,
+                    .3602324843f, -.8854275463f, .2936845545f);
+            if (folder == NestedCandyFolder)
+                return RotationFromRowTransform(
+                    -.4936099561f, -.5959706185f, -.6333784281f,
+                    -.5395667411f, -.3613133965f, .7604737743f,
+                    -.6820681367f, .7171273607f, -.1432180347f);
+            return Quaternion.identity;
+        }
+
+        // Source positions use row vectors (p × M); Unity uses column vectors,
+        // so the Transform rotation is Mᵀ. Matrix columns below are M's rows.
+        static Quaternion RotationFromRowTransform(float m00, float m01, float m02,
+            float m10, float m11, float m12, float m20, float m21, float m22)
+        {
+            var matrix = new Matrix4x4(
+                new Vector4(m00, m01, m02, 0f),
+                new Vector4(m10, m11, m12, 0f),
+                new Vector4(m20, m21, m22, 0f),
+                new Vector4(0f, 0f, 0f, 1f));
+            return matrix.rotation;
+        }
 
         public sealed class Cloud
         {

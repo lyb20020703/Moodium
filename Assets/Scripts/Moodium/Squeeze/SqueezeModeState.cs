@@ -11,7 +11,9 @@ namespace Moodium.Squeeze
         public bool Request(SqueezeMode mode,bool held)
         {
             if(mode==Current){Pending=null;return false;}
-            if(held){Pending=mode;return false;}
+            // Mode buttons are explicit selections: commit immediately even when
+            // the sensory model is currently held. The old deferred behaviour made
+            // the button look selected only after the next squeeze was released.
             Current=mode;Pending=null;ManualOverride=true;return true;
         }
         public bool Released(){if(!Pending.HasValue)return false;return Request(Pending.Value,false);}

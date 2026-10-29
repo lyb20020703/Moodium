@@ -172,7 +172,7 @@ namespace Moodium.CandyWorld
 
         /// <summary>Reserve the third of four ambient milestones for the Honey Jar reward prop.</summary>
         public static bool IsHoneyJarStage(float progress) =>
-            progress >= .92f && progress < .98f;
+            progress >= .75f && progress < .9f;
 
         public static string NormalizePrefabName(string prefabName) =>
             (prefabName ?? string.Empty)
