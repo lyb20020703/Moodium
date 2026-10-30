@@ -105,7 +105,7 @@ namespace Moodium.NatureWorld
         Material m_PointMaterial, m_SkyMaterial, m_SkyFadeMaterial, m_MembraneMaterial;
         MeshRenderer m_SkyRenderer;
         AudioSource m_Audio;
-        GameObject m_HandRipple;
+        BubbleSplatMotion m_Motion;
 
         // Data
         float m_EyeHeight;
@@ -263,8 +263,7 @@ namespace Moodium.NatureWorld
         void ClearVisuals()
         {
             m_ExitingHandoff = false;
-            if (m_HandRipple != null) Destroy(m_HandRipple);
-            m_HandRipple = null;
+            m_Motion = null;
             if (m_Routine != null) StopCoroutine(m_Routine);
             m_Routine = null;
             if (m_BuildRoutine != null) StopCoroutine(m_BuildRoutine);
@@ -376,10 +375,10 @@ namespace Moodium.NatureWorld
                 m_Nested.Leave(target);
                 return;
             }
-            if (m_HandRipple != null) m_HandRipple.SetActive(false);
             if (m_Phase != Phase.Inside && m_Phase != Phase.Approach && m_Phase != Phase.Envelop && m_Phase != Phase.Reveal) return;
             if (m_Routine != null) StopCoroutine(m_Routine);
             m_Phase = Phase.Leaving;
+            if (m_Motion != null) m_Motion.SetStage(BubbleSplatMotion.Stage.Leaving);
             m_Routine = StartCoroutine(Return(target));
         }
         IEnumerator Return(LeaveTarget target)
@@ -457,31 +456,20 @@ namespace Moodium.NatureWorld
             }
         }
 
-        void UpdateQuietLayerDrift()
+        public static BubbleSplatMotion.Stage MotionStage(Phase phase)
         {
-            if (m_LayerRestPositions == null || m_LayerRestRotations == null) return;
-            var count = Mathf.Min(m_Layers.Count, m_LayerRestPositions.Length);
-            var time = Time.time * .42f;
-            for (var i = 0; i < count; i++)
+            switch (phase)
             {
-                var layer = m_Layers[i];
-                if (layer == null || !layer.activeSelf) continue;
-                var phase = i * .73f;
-                var amplitude = Mathf.Lerp(.0012f, .0026f, i / Mathf.Max(1f, count - 1f));
-                var offset = new Vector3(
-                    Mathf.Sin(time * .83f + phase) * amplitude,
-                    Mathf.Sin(time * .57f + phase * 1.7f) * amplitude * .65f,
-                    Mathf.Cos(time * .71f + phase * .8f) * amplitude);
-                var tilt = new Vector3(
-                    Mathf.Sin(time * .47f + phase) * .12f,
-                    Mathf.Cos(time * .31f + phase * .6f) * .16f,
-                    Mathf.Sin(time * .39f + phase * 1.2f) * .10f);
-                layer.transform.localPosition = m_LayerRestPositions[i] + offset;
-                layer.transform.localRotation = m_LayerRestRotations[i] * Quaternion.Euler(tilt);
+                case Phase.Inside: return BubbleSplatMotion.Stage.Inside;
+                case Phase.HandingOff: return BubbleSplatMotion.Stage.HandingOff;
+                case Phase.Leaving: return BubbleSplatMotion.Stage.Leaving;
+                case Phase.Idle: case Phase.Armed: case Phase.Done: return BubbleSplatMotion.Stage.Dormant;
+                default: return BubbleSplatMotion.Stage.Miniature;
             }
         }
         void Update()
         {
+            if (m_Motion != null) m_Motion.SetStage(MotionStage(m_Phase));
             CheckEditorMouse();
             if (m_Phase == Phase.Portal)
             {
@@ -497,11 +485,8 @@ namespace Moodium.NatureWorld
                     m_Sky.gameObject.SetActive(false);
                 return;
             }
-            foreach (var layer in m_Layers)
-                if (layer != null && layer.TryGetComponent<BubbleWorldAmbientWind>(out var wind))
-                    wind.SetAnimating(m_Phase == Phase.Inside);
             if (m_Phase != Phase.Inside) return;
-            // Wind moves individual splats via skinning; keep layer frames and the horizon fixed.
+            // The GPU moves splats; keep layer frames and the horizon fixed.
             var viewer = ResolveViewer(); if (viewer == null) return;
             var offset = viewer.transform.position - m_Entry; offset.y = 0;
             var away = WanderState(m_Wandering, offset.magnitude);
@@ -618,9 +603,7 @@ namespace Moodium.NatureWorld
             m_Nested.Touched += () =>
             {
                 m_Phase = Phase.HandingOff;
-                if (m_HandRipple != null) m_HandRipple.SetActive(false);
-                foreach (var layer in m_Layers)
-                    if (layer.TryGetComponent<BubbleWorldAmbientWind>(out var wind)) wind.SetAnimating(false);
+                if (m_Motion != null) m_Motion.SetStage(BubbleSplatMotion.Stage.HandingOff);
             };
             m_Nested.Revealed += () => { ClearVisuals(); m_Phase = Phase.HandingOff; };
         }
@@ -833,10 +816,7 @@ namespace Moodium.NatureWorld
             }
             m_SkyRenderer.sharedMaterial = m_SkyMaterial;
             m_Phase = Phase.Inside;
-            if (m_HandRipple != null) Destroy(m_HandRipple);
-            m_HandRipple = new GameObject("Bubble Hand Ripple");
-            m_HandRipple.transform.SetParent(m_Root.transform, false);
-            m_HandRipple.AddComponent<BubbleWorldHandRipple>().Initialize(m_Folder, viewer);
+            if (m_Motion != null) m_Motion.SetStage(BubbleSplatMotion.Stage.Inside);
             m_InsideAt = Time.time;
             if (m_Home != null) { Destroy(m_Home); m_Home = null; }
             m_Routine = null;
@@ -902,9 +882,8 @@ namespace Moodium.NatureWorld
             }
             m_MiniLayerCount = MiniLayerCount(m_LayerRadii, MiniWorldRadius);
 
-            m_PointMaterial = BubbleWorldData.CreateUnlit("Bubble World Points", colors, true, CullMode.Off, Color.white);
-            BubbleWorldData.ConfigureRoundPoints(m_PointMaterial);
-            ConfigureTransparentPoints(m_PointMaterial);
+            m_PointMaterial = BubbleSplatMaterial.Create(colors, m_EyeHeight,
+                m_Folder == BubbleWorldData.CandyFolder || m_Folder == BubbleWorldData.NestedCandyFolder);
             m_SkyMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky", panorama, false, CullMode.Back, Color.white);
             m_SkyMaterial.renderQueue = BackgroundRenderQueue + m_NatureWorldDepth;
             if (m_SkyMaterial.HasProperty("_ZWrite")) m_SkyMaterial.SetFloat("_ZWrite", 0f);
@@ -919,6 +898,11 @@ namespace Moodium.NatureWorld
             m_Root.SetActive(false);
             m_WorldRoot = new GameObject("Scan (scaled)").transform;
             m_WorldRoot.SetParent(m_Root.transform, false);
+            if (m_PointMaterial.shader.name == BubbleSplatMaterial.ShaderName)
+            {
+                m_Motion = m_Root.AddComponent<BubbleSplatMotion>();
+                m_Motion.Initialize(m_PointMaterial, m_WorldRoot, ResolveViewer());
+            }
 
             // Sky
             var skyMesh = Resources.Load<Mesh>(BubbleWorldData.MeshResource(m_Folder, BubbleWorldData.PanoramaMeshName));
@@ -980,14 +964,11 @@ namespace Moodium.NatureWorld
                         yield break;
                     }
                     BubbleWorldData.LayerRange(layer, cloud.Count, BubbleWorldData.LayerCount, out var s, out var e);
-                    mesh = BubbleWorldData.BuildLayerMesh(cloud, s, e, BubbleWorldData.LayerMeshName(layer));
+                    mesh = BubbleWorldData.BuildLayerMesh(cloud, s, e, BubbleWorldData.LayerMeshName(layer), candy: BubbleWorldData.IsCandy(m_Folder));
                     m_RuntimeMeshes.Add(mesh);
                     if (layer % 2 == 1) yield return null;
                 }
                 var go = CreateRenderer(BubbleWorldData.LayerMeshName(layer), m_WorldRoot, mesh, m_PointMaterial);
-                go.AddComponent<BubbleWorldAmbientWind>().Configure(layer,
-                    m_Folder == BubbleWorldData.CandyFolder || m_Folder == BubbleWorldData.NestedCandyFolder,
-                    Quaternion.identity);
                 go.SetActive(layer < m_MiniLayerCount);
                 m_Layers.Add(go);
                 if (layer + 1 == warmupLayers)

@@ -13,8 +13,8 @@ namespace Moodium.NatureWorld
     ///   char[4] "MSPC", int32 version (1), int32 count, float32 eyeHeight, float32 maxRadius,
     ///   count × { float32 x, y, z, half size, byte r, g, b, a }  — Unity frame, metres, sorted near → far.
     /// Point i takes its colour from texel (i % S, i / S) of point_colors.png (row 0 at the top), so the
-    /// meshes only need positions and UVs and render with the stock URP/Unlit shader (no vertex colours,
-    /// no custom shader — PolySpatial/RealityKit safe).
+    /// UV0 samples display colors; UV1 carries seed/sway, and float vertex colors encode a shared
+    /// per-splat center for rigid GPU motion through a PolySpatial-compatible Shader Graph.
     /// </summary>
     public static class BubbleWorldData
     {
@@ -183,12 +183,16 @@ namespace Moodium.NatureWorld
         /// One soft round textured quad per point, facing the scan centre (where the viewer stands), turned by a
         /// per-point angle. Front faces point at the centre.
         /// </summary>
-        public static Mesh BuildLayerMesh(Cloud cloud, int start, int end, string name, float sizeScale = 1f)
+        public static bool IsCandy(string folder) => folder == CandyFolder || folder == NestedCandyFolder;
+
+        public static Mesh BuildLayerMesh(Cloud cloud, int start, int end, string name, float sizeScale = 1f, bool candy = false)
         {
             var atlas = RoundAtlasSizeFor(cloud.Count);
             var n = Mathf.Max(0, end - start);
             var vertices = new Vector3[n * 4];
             var uvs = new Vector2[n * 4];
+            var motionUVs = new Vector2[n * 4];
+            var centers = new Color[n * 4];
             var indices = new int[n * 6];
             for (var k = 0; k < n; k++)
             {
@@ -208,6 +212,9 @@ namespace Moodium.NatureWorld
                 vertices[v + 2] = c + tr + br;
                 vertices[v + 3] = c - tr + br;
                 WriteRoundUVs(uvs, v, i, atlas);
+                var motion = new Vector2(MotionSeed(i), BubbleSplatMotionMath.Sway(c, cloud.Colors[i], cloud.EyeHeight, candy));
+                var center = BubbleSplatMotionMath.EncodeCenter(c);
+                for (var corner = 0; corner < 4; corner++) { motionUVs[v + corner] = motion; centers[v + corner] = center; }
                 var q = k * 6;
                 indices[q] = v; indices[q + 1] = v + 1; indices[q + 2] = v + 2;
                 indices[q + 3] = v; indices[q + 4] = v + 2; indices[q + 5] = v + 3;
@@ -216,9 +223,14 @@ namespace Moodium.NatureWorld
             if (vertices.Length > 65535) mesh.indexFormat = IndexFormat.UInt32;
             mesh.vertices = vertices;
             mesh.uv = uvs;
+            mesh.uv2 = motionUVs;
+            mesh.colors = centers;
             mesh.triangles = indices;
             if (n > 0 && !FacesTowards(mesh, 0, -cloud.Positions[start])) FlipWinding(mesh);
             mesh.RecalculateBounds();
+            var bounds = mesh.bounds;
+            bounds.Expand(BubbleSplatMotionMath.MaxDisplacement * 2);
+            mesh.bounds = bounds;
             return mesh;
         }
 
@@ -274,6 +286,8 @@ namespace Moodium.NatureWorld
             for (var i = 0; i < tris.Length; i += 3) (tris[i + 1], tris[i + 2]) = (tris[i + 2], tris[i + 1]);
             mesh.triangles = tris;
         }
+
+        public static float MotionSeed(int i) => Hash01(i) * (65535f / 65536f);
 
         static float Hash01(int i)
         {

@@ -61,7 +61,8 @@ namespace Moodium.Opening
             Moodium.UI.UIRefreshVisuals.UnitScale(item.transform);
             var display=transform.parent;
             item.transform.position=display!=null
-                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.1f:.1f)-display.up*.04f-display.forward*.003f
+                // Keep the buttons just inside the video's bottom edge, clear of the window move bar.
+                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.1f:.1f)+display.up*.04f-display.forward*.003f
                 : transform.position+transform.right*(position.x<0?-.1f:.1f);
             var feedback=item.AddComponent<OpeningChoiceSpriteFeedback>();feedback.Configure(assetId);
             var spatialButton=item.AddComponent<OpeningVideoSpatialButton>();

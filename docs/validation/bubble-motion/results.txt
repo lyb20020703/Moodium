@@ -1,0 +1,10 @@
+GPU: Apple M3 Pro
+Static baseline mean RGB error: 0.000000
+Boost 8 wind RGB change: 0.150777
+Temporal wind RGB change (>=1.2 s): 0.151801
+Hand ray RGB change: 0.013890
+Near hand RGB change: 0.001688
+nature normal motion RGB change: 0.074268
+candy normal motion RGB change: 0.102425
+nested-nature normal motion RGB change: 0.036346
+nested-candy normal motion RGB change: 0.049259

@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="94" result="Passed" total="94" passed="94" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:03:00Z" duration="2.5911289">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="637" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:03:00Z" duration="2.591129" total="94" passed="94" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1780" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="628" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:03:00Z" duration="2.540536" total="94" passed="94" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="54591" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1030" name="BubbleWorldTests" fullname="BubbleWorldTests" classname="BubbleWorldTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.014691" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1037" name="AllWorldsUseCanonicalSourceFrames" fullname="BubbleWorldTests.AllWorldsUseCanonicalSourceFrames" methodname="AllWorldsUseCanonicalSourceFrames" classname="BubbleWorldTests" runstate="Runnable" seed="1181252744" result="Passed" start-time="2026-10-30 04:02:51Z" end-time="2026-10-30 04:02:51Z" duration="0.008318" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1031" name="BreathingKeepsSkyAtFixedWorldRadius" fullname="BubbleWorldTests.BreathingKeepsSkyAtFixedWorldRadius" methodname="BreathingKeepsSkyAtFixedWorldRadius" classname="BubbleWorldTests" runstate="Runnable" seed="1224058243" result="Passed" start-time="2026-10-30 04:02:51Z" end-time="2026-10-30 04:02:51Z" duration="0.002253" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1050" name="BubbleAppearsOnlyAtFullEnergy" fullname="BubbleWorldTests.BubbleAppearsOnlyAtFullEnergy" methodname="BubbleAppearsOnlyAtFullEnergy" classname="BubbleWorldTests" runstate="Runnable" seed="1793750400" result="Passed" start-time="2026-10-30 04:02:51Z" end-time="2026-10-30 04:02:51Z" duration="0.000255" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1047" name="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" fullname="BubbleWorldTests.ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" methodname="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" classname="BubbleWorldTests" runstate="Runnable" seed="538076159" result="Passed" start-time="2026-10-30 04:02:51Z" end-time="2026-10-30 04:02:51Z" duration="0.000369" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1060" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000506" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1058" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="1498512732" result="Passed" start-time="2026-10-30 04:02:51Z" end-time="2026-10-30 04:02:52Z" duration="0.566994" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1059" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="885850661" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.536991" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1057" name="EachWorldHasItsOwnResourceFolder" fullname="BubbleWorldTests.EachWorldHasItsOwnResourceFolder" methodname="EachWorldHasItsOwnResourceFolder" classname="BubbleWorldTests" runstate="Runnable" seed="905873853" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000232" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1052" name="FilmFadesOnceTheViewerIsInside" fullname="BubbleWorldTests.FilmFadesOnceTheViewerIsInside" methodname="FilmFadesOnceTheViewerIsInside" classname="BubbleWorldTests" runstate="Runnable" seed="2004229692" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000160" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1055" name="FingertipTouchesWithinRadiusPlusPadding" fullname="BubbleWorldTests.FingertipTouchesWithinRadiusPlusPadding" methodname="FingertipTouchesWithinRadiusPlusPadding" classname="BubbleWorldTests" runstate="Runnable" seed="1976471700" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000215" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1041" name="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" fullname="BubbleWorldTests.FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" methodname="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" classname="BubbleWorldTests" runstate="Runnable" seed="248811408" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.001204" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1051" name="GrowthCurvesStartAndEndOnTheDesignedSizes" fullname="BubbleWorldTests.GrowthCurvesStartAndEndOnTheDesignedSizes" methodname="GrowthCurvesStartAndEndOnTheDesignedSizes" classname="BubbleWorldTests" runstate="Runnable" seed="1371531267" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000467" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1048" name="LayerMeshIsOneCentreFacingQuadPerPoint" fullname="BubbleWorldTests.LayerMeshIsOneCentreFacingQuadPerPoint" methodname="LayerMeshIsOneCentreFacingQuadPerPoint" classname="BubbleWorldTests" runstate="Runnable" seed="582962026" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.005001" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1035" name="LayersCollapseFromFarToNearAndWanderUsesHysteresis" fullname="BubbleWorldTests.LayersCollapseFromFarToNearAndWanderUsesHysteresis" methodname="LayersCollapseFromFarToNearAndWanderUsesHysteresis" classname="BubbleWorldTests" runstate="Runnable" seed="189987523" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000336" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1046" name="LayersCoverEveryPointExactlyOnce" fullname="BubbleWorldTests.LayersCoverEveryPointExactlyOnce" methodname="LayersCoverEveryPointExactlyOnce" classname="BubbleWorldTests" runstate="Runnable" seed="75254809" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000400" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1053" name="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" fullname="BubbleWorldTests.MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" methodname="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" classname="BubbleWorldTests" runstate="Runnable" seed="1957875777" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:52Z" duration="0.000321" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1040" name="NestedBakedLayersMatchExportedCloud" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000341" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1038" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="1027831073" result="Passed" start-time="2026-10-30 04:02:52Z" end-time="2026-10-30 04:02:53Z" duration="0.582628" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1039" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="1154470987" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.543520" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1043" name="ParsesTheConverterFormat" fullname="BubbleWorldTests.ParsesTheConverterFormat" methodname="ParsesTheConverterFormat" classname="BubbleWorldTests" runstate="Runnable" seed="1904502600" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000681" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1044" name="RejectsWrongMagicVersionOrTruncatedData" fullname="BubbleWorldTests.RejectsWrongMagicVersionOrTruncatedData" methodname="RejectsWrongMagicVersionOrTruncatedData" classname="BubbleWorldTests" runstate="Runnable" seed="139143910" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000197" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1042" name="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" fullname="BubbleWorldTests.RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" methodname="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" classname="BubbleWorldTests" runstate="Runnable" seed="994676813" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.002780" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1032" name="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" fullname="BubbleWorldTests.RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" methodname="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" classname="BubbleWorldTests" runstate="Runnable" seed="1613905191" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000486" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1056" name="ScanForwardTurnsToTheGaze" fullname="BubbleWorldTests.ScanForwardTurnsToTheGaze" methodname="ScanForwardTurnsToTheGaze" classname="BubbleWorldTests" runstate="Runnable" seed="1214295946" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000501" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1054" name="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" fullname="BubbleWorldTests.ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" methodname="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" classname="BubbleWorldTests" runstate="Runnable" seed="1810221182" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000527" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1063" name="ShippedPointCloudIsValidWhenPresent" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000318" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1061" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="25301246" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.004942" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1062" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="1128117303" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.005045" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1049" name="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" fullname="BubbleWorldTests.SkySphereFacesInwardAndUsesTheConverterEquirectMapping" methodname="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" classname="BubbleWorldTests" runstate="Runnable" seed="402651662" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.001541" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1033" name="StopClearsBreathAndWanderAndIsIdempotent" fullname="BubbleWorldTests.StopClearsBreathAndWanderAndIsIdempotent" methodname="StopClearsBreathAndWanderAndIsIdempotent" classname="BubbleWorldTests" runstate="Runnable" seed="2145010750" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000984" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1045" name="SummaryMatchesFullParseWithoutReadingEveryPoint" fullname="BubbleWorldTests.SummaryMatchesFullParseWithoutReadingEveryPoint" methodname="SummaryMatchesFullParseWithoutReadingEveryPoint" classname="BubbleWorldTests" runstate="Runnable" seed="1898547582" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000331" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1034" name="SummonArcAndReturnRadiusHaveExactEndpoints" fullname="BubbleWorldTests.SummonArcAndReturnRadiusHaveExactEndpoints" methodname="SummonArcAndReturnRadiusHaveExactEndpoints" classname="BubbleWorldTests" runstate="Runnable" seed="1647369894" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000354" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1036" name="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" fullname="BubbleWorldTests.WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" methodname="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" classname="BubbleWorldTests" runstate="Runnable" seed="1974541142" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000151" asserts="0">
+          <properties />
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1294" name="MoodiAnimatedTests" fullname="MoodiAnimatedTests" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.001233" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+]]></output>
+        <test-suite type="ParameterizedMethod" id="1308" name="ClipNames_DropTheBlenderPrefix" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000216" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1305" name="ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Idle&quot;,&quot;Idle&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Idle&quot;,&quot;Idle&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="1613638547" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000262" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1306" name="ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Moodi_Rig|Touched&quot;,&quot;Touched&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Moodi_Rig|Touched&quot;,&quot;Touched&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="1742192531" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000026" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1307" name="ClipNames_DropTheBlenderPrefix(&quot;Wave&quot;,&quot;Wave&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Wave&quot;,&quot;Wave&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="779046836" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:53Z" duration="0.000022" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1302" name="ColdPlacementIsNotInterpretedAsWalking" fullname="MoodiAnimatedTests.ColdPlacementIsNotInterpretedAsWalking" methodname="ColdPlacementIsNotInterpretedAsWalking" classname="MoodiAnimatedTests" runstate="Runnable" seed="1071823311" result="Passed" start-time="2026-10-30 04:02:53Z" end-time="2026-10-30 04:02:54Z" duration="0.020244" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1303" name="LatestTouchedReactionDoesNotLeaveAPendingWave" fullname="MoodiAnimatedTests.LatestTouchedReactionDoesNotLeaveAPendingWave" methodname="LatestTouchedReactionDoesNotLeaveAPendingWave" classname="MoodiAnimatedTests" runstate="Runnable" seed="480661936" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.002726" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1299" name="LegacySelectionDoesNotWrapOrHijackRiggedCompanion" fullname="MoodiAnimatedTests.LegacySelectionDoesNotWrapOrHijackRiggedCompanion" methodname="LegacySelectionDoesNotWrapOrHijackRiggedCompanion" classname="MoodiAnimatedTests" runstate="Runnable" seed="1265504238" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.001639" asserts="0">
+          <properties />
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+]]></output>
+        </test-case>
+        <test-case id="1300" name="MenuCommandsHaveVoidReturnTypes" fullname="MoodiAnimatedTests.MenuCommandsHaveVoidReturnTypes" methodname="MenuCommandsHaveVoidReturnTypes" classname="MoodiAnimatedTests" runstate="Runnable" seed="1070088691" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000142" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1301" name="RebuildingControllerPreservesAssetGuid" fullname="MoodiAnimatedTests.RebuildingControllerPreservesAssetGuid" methodname="RebuildingControllerPreservesAssetGuid" classname="MoodiAnimatedTests" runstate="Runnable" seed="1506122512" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.155470" asserts="0">
+          <properties />
+          <output><![CDATA[[Moodi Setup] Animator controller written to Assets/__MoodiAnimatedTest_21c71bbe3395463ebd1625d602ec55d3.controller
+]]></output>
+        </test-case>
+        <test-case id="1304" name="TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" fullname="MoodiAnimatedTests.TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" methodname="TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" classname="MoodiAnimatedTests" runstate="Runnable" seed="2030995885" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.002005" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1298" name="UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" fullname="MoodiAnimatedTests.UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" methodname="UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" classname="MoodiAnimatedTests" runstate="Runnable" seed="243909585" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.002524" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1297" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000128" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1295" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(1.0f)" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(1.0f)" methodname="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" seed="49164369" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.001629" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1296" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(0.0f)" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(0.0f)" methodname="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" seed="316908768" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000443" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1310" name="YawStep_IgnoresTinyAndVerticalDifferences" fullname="MoodiAnimatedTests.YawStep_IgnoresTinyAndVerticalDifferences" methodname="YawStep_IgnoresTinyAndVerticalDifferences" classname="MoodiAnimatedTests" runstate="Runnable" seed="1261801682" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000203" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1309" name="YawStep_TurnsTheShortWayAndIsLimited" fullname="MoodiAnimatedTests.YawStep_TurnsTheShortWayAndIsLimited" methodname="YawStep_TurnsTheShortWayAndIsLimited" classname="MoodiAnimatedTests" runstate="Runnable" seed="875581065" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000124" asserts="0">
+          <properties />
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1335" name="MoodiEmergenceTests" fullname="MoodiEmergenceTests" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="21" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:03:00Z" duration="2.476503" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1346" name="AnimatorProgressMovesBodyAndMouthTogether" fullname="MoodiEmergenceTests.AnimatorProgressMovesBodyAndMouthTogether" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000097" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1344" name="AnimatorProgressMovesBodyAndMouthTogether(&quot;Nature&quot;)" fullname="MoodiEmergenceTests.AnimatorProgressMovesBodyAndMouthTogether(&quot;Nature&quot;)" methodname="AnimatorProgressMovesBodyAndMouthTogether" classname="MoodiEmergenceTests" runstate="Runnable" seed="167322560" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.032177" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1345" name="AnimatorProgressMovesBodyAndMouthTogether(&quot;Candy&quot;)" fullname="MoodiEmergenceTests.AnimatorProgressMovesBodyAndMouthTogether(&quot;Candy&quot;)" methodname="AnimatorProgressMovesBodyAndMouthTogether" classname="MoodiEmergenceTests" runstate="Runnable" seed="898817033" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.010245" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1362" name="BindingAndAttachmentPreserveTheMouthFrame" fullname="MoodiEmergenceTests.BindingAndAttachmentPreserveTheMouthFrame" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000092" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1360" name="BindingAndAttachmentPreserveTheMouthFrame(&quot;Nature&quot;)" fullname="MoodiEmergenceTests.BindingAndAttachmentPreserveTheMouthFrame(&quot;Nature&quot;)" methodname="BindingAndAttachmentPreserveTheMouthFrame" classname="MoodiEmergenceTests" runstate="Runnable" seed="1402672447" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.001549" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1361" name="BindingAndAttachmentPreserveTheMouthFrame(&quot;Candy&quot;)" fullname="MoodiEmergenceTests.BindingAndAttachmentPreserveTheMouthFrame(&quot;Candy&quot;)" methodname="BindingAndAttachmentPreserveTheMouthFrame" classname="MoodiEmergenceTests" runstate="Runnable" seed="112955849" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000509" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1343" name="MoodiHasAllNineteenBonesAndNineClips" fullname="MoodiEmergenceTests.MoodiHasAllNineteenBonesAndNineClips" methodname="MoodiHasAllNineteenBonesAndNineClips" classname="MoodiEmergenceTests" runstate="Runnable" seed="2050431018" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000547" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1357" name="MouthAssetsHaveRigAndAnimations" fullname="MoodiEmergenceTests.MouthAssetsHaveRigAndAnimations" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000082" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1355" name="MouthAssetsHaveRigAndAnimations(&quot;Nature&quot;)" fullname="MoodiEmergenceTests.MouthAssetsHaveRigAndAnimations(&quot;Nature&quot;)" methodname="MouthAssetsHaveRigAndAnimations" classname="MoodiEmergenceTests" runstate="Runnable" seed="1068452715" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.001267" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1356" name="MouthAssetsHaveRigAndAnimations(&quot;Candy&quot;)" fullname="MoodiEmergenceTests.MouthAssetsHaveRigAndAnimations(&quot;Candy&quot;)" methodname="MouthAssetsHaveRigAndAnimations" classname="MoodiEmergenceTests" runstate="Runnable" seed="1836252435" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000796" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1342" name="OriginalActionsKeepTheirOriginalDuration" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000221" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1337" name="OriginalActionsKeepTheirOriginalDuration(&quot;Idle&quot;,3.0f)" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration(&quot;Idle&quot;,3.0f)" methodname="OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" seed="72236337" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000299" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1338" name="OriginalActionsKeepTheirOriginalDuration(&quot;Walk&quot;,0.8f)" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration(&quot;Walk&quot;,0.8f)" methodname="OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" seed="1624918912" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000039" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1339" name="OriginalActionsKeepTheirOriginalDuration(&quot;Touched&quot;,1.0f)" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration(&quot;Touched&quot;,1.0f)" methodname="OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" seed="184809001" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000038" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1340" name="OriginalActionsKeepTheirOriginalDuration(&quot;Happy&quot;,1.4f)" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration(&quot;Happy&quot;,1.4f)" methodname="OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" seed="1428159641" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000033" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1341" name="OriginalActionsKeepTheirOriginalDuration(&quot;Wave&quot;,1.6f)" fullname="MoodiEmergenceTests.OriginalActionsKeepTheirOriginalDuration(&quot;Wave&quot;,1.6f)" methodname="OriginalActionsKeepTheirOriginalDuration" classname="MoodiEmergenceTests" runstate="Runnable" seed="1177214751" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000036" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1358" name="PoppedIsOneShotAndResetAllowsAnotherSession" fullname="MoodiEmergenceTests.PoppedIsOneShotAndResetAllowsAnotherSession" methodname="PoppedIsOneShotAndResetAllowsAnotherSession" classname="MoodiEmergenceTests" runstate="Runnable" seed="2108922917" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.004339" asserts="0">
+          <properties />
+        </test-case>
+        <test-case id="1359" name="ProgressNeverReversesAndFullEmergenceTakesAtLeastThreeSeconds" fullname="MoodiEmergenceTests.ProgressNeverReversesAndFullEmergenceTakesAtLeastThreeSeconds" methodname="ProgressNeverReversesAndFullEmergenceTakesAtLeastThreeSeconds" classname="MoodiEmergenceTests" runstate="Runnable" seed="1155395398" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000198" asserts="0">
+          <properties />
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1351" name="QuickBlinkClosesAndFullyReopens" fullname="MoodiEmergenceTests.QuickBlinkClosesAndFullyReopens" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 04:02:58Z" end-time="2026-10-30 04:02:58Z" duration="0.000184" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1347" name="QuickBlinkClosesAndFullyReopens(0.0f,1.0f)" fullname="MoodiEmergenceTests.QuickBlinkClosesAndFullyReopens(0.0f,1.0f)" methodname="QuickBlinkClosesAndFullyReopens" classname="MoodiEmergenceTests" runstate="Runnable" seed="566456073" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000205" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1348" name="QuickBlinkClosesAndFullyReopens(0.1f,0.08f)" fullname="MoodiEmergenceTests.QuickBlinkClosesAndFullyReopens(0.1f,0.08f)" methodname="QuickBlinkClosesAndFullyReopens" classname="MoodiEmergenceTests" runstate="Runnable" seed="1357229661" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000036" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1349" name="QuickBlinkClosesAndFullyReopens(0.2f,1.0f)" fullname="MoodiEmergenceTests.QuickBlinkClosesAndFullyReopens(0.2f,1.0f)" methodname="QuickBlinkClosesAndFullyReopens" classname="MoodiEmergenceTests" runstate="Runnable" seed="635101836" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000030" asserts="0">
+            <properties />
+          </test-case>
+          <test-case id="1350" name="QuickBlinkClosesAndFullyReopens(0.4f,1.0f)" fullname="MoodiEmergenceTests.QuickBlinkClosesAndFullyReopens(0.4f,1.0f)" methodname="QuickBlinkClosesAndFullyReopens" classname="MoodiEmergenceTests" runstate="Runnable" seed="1518354549" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:02:54Z" duration="0.000027" asserts="0">
+            <properties />
+          </test-case>
+        </test-suite>
+        <test-case id="1336" name="RescueHandoverIsOneShotAndFollowsPop" fullname="MoodiEmergenceTests.RescueHandoverIsOneShotAndFollowsPop" methodname="RescueHandoverIsOneShotAndFollowsPop" classname="MoodiEmergenceTests" runstate="Runnable" seed="482379111" result="Passed" start-time="2026-10-30 04:02:54Z" end-time="2026-10-30 04:03:00Z" duration="6.429610" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+[SessionState] Ending Connection! 0
+]]></output>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1354" name="SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable" fullname="MoodiEmergenceTests.SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable" classname="MoodiEmergenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.016131" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1352" name="SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable(&quot;Nature&quot;)" fullname="MoodiEmergenceTests.SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable(&quot;Nature&quot;)" methodname="SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable" classname="MoodiEmergenceTests" runstate="Runnable" seed="1134265842" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.008858" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1353" name="SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable(&quot;Candy&quot;)" fullname="MoodiEmergenceTests.SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable(&quot;Candy&quot;)" methodname="SoftSurfaceIsHorizontalAndMouthUpPointsAboveTable" classname="MoodiEmergenceTests" runstate="Runnable" seed="862187472" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.005880" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1371" name="MoodiRescueTests" fullname="MoodiRescueTests" classname="MoodiRescueTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.004173" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1377" name="CheersNeedSteadyPressingAndAGap" fullname="MoodiRescueTests.CheersNeedSteadyPressingAndAGap" methodname="CheersNeedSteadyPressingAndAGap" classname="MoodiRescueTests" runstate="Runnable" seed="659707402" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000528" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1374" name="DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" fullname="MoodiRescueTests.DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" methodname="DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" classname="MoodiRescueTests" runstate="Runnable" seed="1959305838" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000711" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1379" name="JumpArcStartsAndEndsOnItsPoints" fullname="MoodiRescueTests.JumpArcStartsAndEndsOnItsPoints" methodname="JumpArcStartsAndEndsOnItsPoints" classname="MoodiRescueTests" runstate="Runnable" seed="495736938" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000417" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1378" name="NudgeOnlyWhenTheUserStopsMidway" fullname="MoodiRescueTests.NudgeOnlyWhenTheUserStopsMidway" methodname="NudgeOnlyWhenTheUserStopsMidway" classname="MoodiRescueTests" runstate="Runnable" seed="1908711396" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000111" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1372" name="PressingSquashesQuicklyWithoutWobble" fullname="MoodiRescueTests.PressingSquashesQuicklyWithoutWobble" methodname="PressingSquashesQuicklyWithoutWobble" classname="MoodiRescueTests" runstate="Runnable" seed="944294525" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000226" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1373" name="ReleasingSpringsBackTallerThenSettles" fullname="MoodiRescueTests.ReleasingSpringsBackTallerThenSettles" methodname="ReleasingSpringsBackTallerThenSettles" classname="MoodiRescueTests" runstate="Runnable" seed="959520521" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000117" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1376" name="StagesMapToTheirLines" fullname="MoodiRescueTests.StagesMapToTheirLines" methodname="StagesMapToTheirLines" classname="MoodiRescueTests" runstate="Runnable" seed="1758954095" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000160" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1375" name="VoiceIsMuffledInsideAndClearNearTheEnd" fullname="MoodiRescueTests.VoiceIsMuffledInsideAndClearNearTheEnd" methodname="VoiceIsMuffledInsideAndClearNearTheEnd" classname="MoodiRescueTests" runstate="Runnable" seed="317753506" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000110" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1628" name="SqueezeProgressVideoControllerTests" fullname="SqueezeProgressVideoControllerTests" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.011827" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1642" name="CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" fullname="SqueezeProgressVideoControllerTests.CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" methodname="CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="312228786" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000315" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1638" name="HasReachedTarget_UsesSmallToleranceBeforePausing" fullname="SqueezeProgressVideoControllerTests.HasReachedTarget_UsesSmallToleranceBeforePausing" methodname="HasReachedTarget_UsesSmallToleranceBeforePausing" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1769238776" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000088" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1637" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.001345" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1632" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.0f,12.0d,0.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.0f,12.0d,0.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1746525262" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000402" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1633" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.25f,12.0d,3.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.25f,12.0d,3.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="423627831" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000025" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1634" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.5f,12.0d,6.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.5f,12.0d,6.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1747663618" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000024" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1635" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.0f,12.0d,12.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.0f,12.0d,12.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="2070409904" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000022" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1636" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.5f,12.0d,12.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.5f,12.0d,12.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="855407389" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000022" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1631" name="SqueezeVideoDisablesEmbeddedAudio" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.006910" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1629" name="SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/CandySqueezeAlpha.mp4&quot;)" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/CandySqueezeAlpha.mp4&quot;)" methodname="SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="515864403" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.005579" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1630" name="SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/newnaturesqueeze.mp4&quot;)" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/newnaturesqueeze.mp4&quot;)" methodname="SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1018809377" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000808" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1641" name="SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" methodname="SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1369649683" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000233" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1640" name="SqueezeVideoUsesAForegroundRenderQueue" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoUsesAForegroundRenderQueue" methodname="SqueezeVideoUsesAForegroundRenderQueue" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1261447632" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000165" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1645" name="SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" fullname="SqueezeProgressVideoControllerTests.SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" methodname="SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1873637664" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000191" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1644" name="SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" fullname="SqueezeProgressVideoControllerTests.SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" methodname="SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1194384214" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000098" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1643" name="SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" fullname="SqueezeProgressVideoControllerTests.SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" methodname="SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="2088403069" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000317" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1639" name="UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" fullname="SqueezeProgressVideoControllerTests.UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" methodname="UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="288910854" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000376" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1712" name="WalkTrailGuideControllerTests" fullname="WalkTrailGuideControllerTests" classname="WalkTrailGuideControllerTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.003936" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1716" name="CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" fullname="WalkTrailGuideControllerTests.CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" methodname="CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="364303814" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000835" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1717" name="GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" fullname="WalkTrailGuideControllerTests.GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" methodname="GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="927792260" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000181" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1715" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000960" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1713" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight(0.0f,1.65f)" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight(0.0f,1.65f)" methodname="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="272461388" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000295" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1714" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight(-0.3f,1.2f)" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight(-0.3f,1.2f)" methodname="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="2022998592" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000052" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1719" name="MelodyClimbsThenLoopsFromFourthNote" fullname="WalkTrailGuideControllerTests.MelodyClimbsThenLoopsFromFourthNote" methodname="MelodyClimbsThenLoopsFromFourthNote" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="1211621385" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000095" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1718" name="WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" fullname="WalkTrailGuideControllerTests.WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" methodname="WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="1444092469" result="Passed" start-time="2026-10-30 04:03:00Z" end-time="2026-10-30 04:03:00Z" duration="0.000087" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

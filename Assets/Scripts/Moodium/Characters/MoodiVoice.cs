@@ -76,7 +76,11 @@ namespace Moodium.Characters
         public void Muffle(float amount)
         {
             EnsureEmitter();
-            if (m_LowPass == null) m_LowPass = s_Emitter.GetComponent<AudioLowPassFilter>() ?? s_Emitter.gameObject.AddComponent<AudioLowPassFilter>();
+            if (m_LowPass == null)
+            {
+                m_LowPass=s_Emitter.GetComponent<AudioLowPassFilter>();
+                if(m_LowPass==null)m_LowPass=s_Emitter.gameObject.AddComponent<AudioLowPassFilter>();
+            }
             m_LowPass.enabled = amount > .001f;
             m_LowPass.cutoffFrequency = MuffleCutoff(amount);
             m_LowPass.lowpassResonanceQ = 1f;
@@ -105,6 +109,16 @@ namespace Moodium.Characters
         public static bool IsAnyoneSpeaking => s_Emitter != null && s_Emitter.isPlaying;
         public bool HasPendingSpeech => HasQueued(this);
         public string CurrentLine => IsSpeaking ? m_Current : null;
+
+        public bool TryGetOutputLevel(float[] samples, out float level)
+        {
+            level=0f;
+            if(!IsSpeaking || samples==null || samples.Length==0)return false;
+            s_Emitter.GetOutputData(samples,0);
+            foreach(var sample in samples)level+=sample*sample;
+            level=Mathf.Sqrt(level/samples.Length);
+            return level>0.00001f;
+        }
 
         void Awake() => EnsureEmitter();
 
@@ -215,7 +229,9 @@ namespace Moodium.Characters
         {
             if (s_Emitter != null) return;
             var go = GameObject.Find("Moodi Voice Emitter") ?? new GameObject("Moodi Voice Emitter");
-            s_Emitter = go.GetComponent<AudioSource>() ?? go.AddComponent<AudioSource>();
+            s_Emitter = go.GetComponent<AudioSource>();
+            // Unity's missing native components can be non-null CLR wrappers.
+            if(s_Emitter==null)s_Emitter=go.AddComponent<AudioSource>();
             s_Emitter.playOnAwake = false; s_Emitter.loop = false; s_Emitter.spatialBlend = 1f; s_Emitter.rolloffMode = AudioRolloffMode.Logarithmic; s_Emitter.minDistance=.4f; s_Emitter.maxDistance=6f; s_Emitter.dopplerLevel=0f;
         }
         void LateUpdate() { if (s_Current == this && s_Emitter != null) s_Emitter.transform.position = transform.position; }

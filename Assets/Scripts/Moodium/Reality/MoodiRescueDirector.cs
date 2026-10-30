@@ -53,7 +53,7 @@ namespace Moodium.Reality
         public bool IntroDone { get; private set; }
         public bool IsRescued { get; private set; }
 
-        SqueezeProgressVideoController m_Video;
+        ISqueezeProgressDisplay m_Video;
         Transform m_Viewer;
         GameObject m_Prefab;
         Transform m_Root;
@@ -69,6 +69,7 @@ namespace Moodium.Reality
         float m_LastNudge = -100f;
         readonly Queue<float> m_RecentPinches = new();
         Coroutine m_Routine;
+        MoodiEmergenceDisplay MeshDisplay => (m_Video as SqueezeProgressDisplayRouter)?.Mesh;
 
         // ---------- pure rules (tested) ----------
 
@@ -98,7 +99,7 @@ namespace Moodium.Reality
 
         // ---------- API ----------
 
-        public void Begin(GameObject moodiPrefab, SqueezeProgressVideoController video, Transform viewer)
+        public void Begin(GameObject moodiPrefab, ISqueezeProgressDisplay video, Transform viewer)
         {
             StopAndClear();
             m_Prefab = moodiPrefab;
@@ -143,6 +144,7 @@ namespace Moodium.Reality
 
         public void NotifyStage(int stage)
         {
+            MeshDisplay?.NotifyStage(stage);
             if (IsRescued) return;
             var line = StageLine(stage);
             if (line != null && m_Voice != null)
@@ -162,6 +164,7 @@ namespace Moodium.Reality
 
         public void StopAndClear()
         {
+            MeshDisplay?.DetachMoodi();
             if (m_Video != null) m_Video.Popped -= OnPopped;
             StopAllCoroutines();
             m_Routine = null;
@@ -237,6 +240,15 @@ namespace Moodium.Reality
             }
             m_Video.Splash(1.6f);
             CandyWorldManager.SpawnSoftSqueezeFeedback(center);
+            if(MeshDisplay!=null && MeshDisplay.Ready)
+            {
+                SetVisualScale(1);SetVisualVisible(true);
+                MeshDisplay.AttachMoodi(m_Visual.GetComponentInChildren<Animator>(true));
+                yield return new WaitForSeconds(.5f);
+                MeshDisplay.SetPeeking(true);
+            }
+            else
+            {
             for (var t = 0f; t < .25f; t += Time.deltaTime)
             {
                 var k = Mathf.Clamp01(t / .25f);
@@ -245,6 +257,7 @@ namespace Moodium.Reality
                 yield return null;
             }
             SetVisualVisible(false);
+            }
             m_Inside = true;
             m_Voice.Muffle(MuffleForProgress(m_Progress));
 
@@ -255,6 +268,7 @@ namespace Moodium.Reality
             m_Voice.Say("K3");
             yield return WaitUntilQuiet(.6f);
             FinishIntro();
+            if(MeshDisplay!=null && MeshDisplay.Attached)MeshDisplay.SetPeeking(false);
             m_Routine = null;
         }
 
@@ -269,6 +283,10 @@ namespace Moodium.Reality
         {
             // If the video is missing or never popped, still let Moodi out shortly after 100%.
             yield return new WaitForSeconds(1.2f);
+            // The mesh display must finish its paced emergence before the fallback can interrupt it.
+            var deadline=Time.time+8f;
+            while(MeshDisplay!=null && MeshDisplay.Ready && !IsRescued && m_Progress>=1f && Time.time<deadline)
+                yield return null;
             if (IsRescued) yield break;
             if (m_Video != null && m_Video.TryGetDomeCenter(out var center, out _))
                 OnPopped(center);
@@ -278,6 +296,8 @@ namespace Moodium.Reality
 
         IEnumerator JumpOut(Vector3 center)
         {
+            var fromMesh=MeshDisplay!=null && MeshDisplay.Attached;
+            if(fromMesh)MeshDisplay.DetachMoodi();
             IsRescued = true;
             if (!IntroDone) FinishIntro();
             if (m_Root == null) CreateMoodi(center);
@@ -295,11 +315,12 @@ namespace Moodium.Reality
             {
                 var k = Mathf.Clamp01(t / .6f);
                 m_Root.position = ArcPoint(center, hover, up, 1f - (1f - k) * (1f - k), .08f);
-                SetVisualScale(Mathf.Clamp01(t / .15f));
+                if(!fromMesh)SetVisualScale(Mathf.Clamp01(t / .15f));
                 yield return null;
             }
             m_Root.position = hover;
             SetVisualScale(1f);
+            if(fromMesh && m_Visual!=null)MoodiLandingBlink.Play(m_Visual);
             m_Voice.Say("K10");
             yield return new WaitForSeconds(m_HandOverDelay);
 

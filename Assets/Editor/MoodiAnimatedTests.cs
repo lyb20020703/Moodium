@@ -45,9 +45,9 @@ public sealed class MoodiAnimatedTests
         Assert.That(prefab.transform.Find("moodi_rigged").gameObject.activeSelf,Is.True);
         var animator=prefab.GetComponentInChildren<Animator>();
         Assert.That(animator.applyRootMotion,Is.False);
-        Assert.That(animator.runtimeAnimatorController.animationClips.Select(c=>c.name),Is.EquivalentTo(new[]{"Idle","Walk","Touched","Happy","Wave"}));
+        Assert.That(animator.runtimeAnimatorController.animationClips.Select(c=>c.name),Is.EquivalentTo(new[]{"Idle","Walk","Touched","Happy","Wave","Emerge","FallIn","Peek","Strain"}));
         foreach(var clip in animator.runtimeAnimatorController.animationClips)
-            Assert.That(clip.isLooping,Is.EqualTo(clip.name=="Idle"||clip.name=="Walk"),clip.name);
+            Assert.That(clip.isLooping,Is.EqualTo(clip.name=="Idle"||clip.name=="Walk"||clip.name=="Peek"),clip.name);
         var floating=new SerializedObject(prefab.GetComponent<MoodiBreathingFloat>());
         Assert.That(floating.FindProperty("m_VerticalAmplitude").floatValue,Is.GreaterThan(0));
         Assert.That(floating.FindProperty("m_ScaleAmplitude").floatValue,Is.Zero);

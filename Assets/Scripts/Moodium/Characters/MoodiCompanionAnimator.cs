@@ -74,6 +74,11 @@ namespace Moodium.Characters
         public event Action Touched;
 
         public Animator Animator => m_Animator;
+        public void ResumeAfterRescue()
+        {
+            enabled=true;m_StartPending=false;m_Greeted=true;m_LastPosition=transform.position;
+            m_Velocity=Vector3.zero;m_HasWalked=false;
+        }
         public Vector3 BodyCenterLocal => m_BodyCenterLocal;
         public float CurrentSpeed => m_Velocity.magnitude;
 

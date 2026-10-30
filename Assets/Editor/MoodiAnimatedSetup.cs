@@ -23,7 +23,7 @@ public static class MoodiAnimatedSetup
     const string StaticChildName = "moodi";
     const string RiggedChildName = "moodi_rigged";
     static readonly string[] Clips = { "Idle", "Walk", "Touched", "Happy", "Wave" };
-    static readonly string[] LoopClips = { "Idle", "Walk" };
+    static readonly string[] LoopClips = { "Idle", "Walk", "Peek" };
 
     // Landmarks measured on the Meshy mesh in Blender space (front = -Y, up = +Z).
     // The static prefab maps Blender (x, y, z) to its root space as (x, z, y) * unitsPerBlender,
@@ -87,6 +87,7 @@ public static class MoodiAnimatedSetup
             clip.name = ShortClipName(clip.takeName);
             clip.loopTime = LoopClips.Contains(clip.name);
             clip.loopPose = false;
+            if(clip.name=="Strain"){clip.hasAdditiveReferencePose=true;clip.additiveReferencePoseFrame=0;}
         }
         importer.clipAnimations = clips;
         importer.SaveAndReimport();
@@ -102,6 +103,7 @@ public static class MoodiAnimatedSetup
         var controllerPath=outputPath??ControllerPath;
         var clips = AssetDatabase.LoadAllAssetsAtPath(ModelPath).OfType<AnimationClip>()
             .Where(c => !c.name.StartsWith("__preview__")).ToDictionary(c => c.name);
+        MoodiEmergenceSetup.UseOriginalClips(clips);
         var missing = Clips.Where(n => !clips.ContainsKey(n)).ToArray();
         if (missing.Length > 0)
         {
@@ -158,6 +160,7 @@ public static class MoodiAnimatedSetup
             back.exitTime = .95f;
             back.duration = .15f;
         }
+        MoodiEmergenceSetup.AugmentMoodi(controller, clips);
         // Changes to reused sub-assets must be persisted before forcing a reimport.
         foreach(var child in sm.states)
         {

@@ -114,7 +114,8 @@ public static class BubbleWorldBaker
             EditorUtility.DisplayProgressBar("Bubble World", $"{folder} · layer {layer + 1}/{BubbleWorldData.LayerCount}",
                 layer / (float)BubbleWorldData.LayerCount);
             BubbleWorldData.LayerRange(layer, cloud.Count, BubbleWorldData.LayerCount, out var s, out var e);
-            var mesh = BubbleWorldData.BuildLayerMesh(cloud, s, e, BubbleWorldData.LayerMeshName(layer));
+            var mesh = BubbleWorldData.BuildLayerMesh(cloud, s, e, BubbleWorldData.LayerMeshName(layer),
+                candy: folder == "Assets/Resources/" + BubbleWorldData.CandyFolder || folder == "Assets/Resources/" + BubbleWorldData.NestedCandyFolder);
             Save(mesh, meshFolder + mesh.name + ".asset");
         }
         Save(BubbleWorldData.BuildPanoramaSphere(), meshFolder + BubbleWorldData.PanoramaMeshName + ".asset");

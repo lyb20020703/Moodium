@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="47" result="Passed" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-29 17:11:24Z" end-time="2026-10-29 17:11:31Z" duration="7.5335424">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="616" result="Passed" start-time="2026-10-29 17:11:24Z" end-time="2026-10-29 17:11:31Z" duration="7.533542" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1752" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="607" result="Passed" start-time="2026-10-29 17:11:24Z" end-time="2026-10-29 17:11:31Z" duration="7.528844" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="88786" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1009" name="BubbleSplatMaterialTests" fullname="BubbleSplatMaterialTests" classname="BubbleSplatMaterialTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-29 17:11:24Z" end-time="2026-10-29 17:11:28Z" duration="4.523088" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1013" name="AllBakedWorldsHaveValidMotionChannelsAndBounds" fullname="BubbleSplatMaterialTests.AllBakedWorldsHaveValidMotionChannelsAndBounds" methodname="AllBakedWorldsHaveValidMotionChannelsAndBounds" classname="BubbleSplatMaterialTests" runstate="Runnable" seed="288854906" result="Passed" start-time="2026-10-29 17:11:24Z" end-time="2026-10-29 17:11:28Z" duration="4.215409" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Bubble Motion] Validated 80 mesh assets, 2000000 splats: UV1, float center colors and 0.8 m bounds padding.
+]]></output>
+        </test-case>
+        <test-case id="1012" name="MotionGraphConvertsToMaterialX" fullname="BubbleSplatMaterialTests.MotionGraphConvertsToMaterialX" methodname="MotionGraphConvertsToMaterialX" classname="BubbleSplatMaterialTests" runstate="Runnable" seed="1364735040" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.291029" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Bubble Motion] MaterialX graph conversion completed (device rendering not yet verified).
+]]></output>
+        </test-case>
+        <test-case id="1011" name="NestedWorldFadeDoesNotMutateOuterWorldOrResource" fullname="BubbleSplatMaterialTests.NestedWorldFadeDoesNotMutateOuterWorldOrResource" methodname="NestedWorldFadeDoesNotMutateOuterWorldOrResource" classname="BubbleSplatMaterialTests" runstate="Runnable" seed="1568061647" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.008281" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Bubble Motion] point shader = Moodium/BubbleSplatMotion
+[Bubble Motion] point shader = Moodium/BubbleSplatMotion
+]]></output>
+        </test-case>
+        <test-case id="1010" name="ResourceContainsShaderAndCompleteParameterContract" fullname="BubbleSplatMaterialTests.ResourceContainsShaderAndCompleteParameterContract" methodname="ResourceContainsShaderAndCompleteParameterContract" classname="BubbleSplatMaterialTests" runstate="Runnable" seed="182983896" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.001548" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1014" name="BubbleSplatMotionTests" fullname="BubbleSplatMotionTests" classname="BubbleSplatMotionTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:29Z" duration="1.103082" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1017" name="BakePreservesPointGeometryAndStoresRigidMotionData" fullname="BubbleSplatMotionTests.BakePreservesPointGeometryAndStoresRigidMotionData" classname="BubbleSplatMotionTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.010843" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1015" name="BakePreservesPointGeometryAndStoresRigidMotionData(False)" fullname="BubbleSplatMotionTests.BakePreservesPointGeometryAndStoresRigidMotionData(False)" methodname="BakePreservesPointGeometryAndStoresRigidMotionData" classname="BubbleSplatMotionTests" runstate="Runnable" seed="1554899620" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.010244" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1016" name="BakePreservesPointGeometryAndStoresRigidMotionData(True)" fullname="BubbleSplatMotionTests.BakePreservesPointGeometryAndStoresRigidMotionData(True)" methodname="BakePreservesPointGeometryAndStoresRigidMotionData" classname="BubbleSplatMotionTests" runstate="Runnable" seed="1254268206" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.000150" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1020" name="DualHandsAndBoostStayFiniteAndInsideExpandedBounds" fullname="BubbleSplatMotionTests.DualHandsAndBoostStayFiniteAndInsideExpandedBounds" methodname="DualHandsAndBoostStayFiniteAndInsideExpandedBounds" classname="BubbleSplatMotionTests" runstate="Runnable" seed="920817184" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.005468" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1023" name="GestureDelaysPinchCooldownTrackingLossAndDecay" fullname="BubbleSplatMotionTests.GestureDelaysPinchCooldownTrackingLossAndDecay" methodname="GestureDelaysPinchCooldownTrackingLossAndDecay" classname="BubbleSplatMotionTests" runstate="Runnable" seed="1774389209" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.001357" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1021" name="HandFalloffHasExpectedNearAndRayBoundaries" fullname="BubbleSplatMotionTests.HandFalloffHasExpectedNearAndRayBoundaries" methodname="HandFalloffHasExpectedNearAndRayBoundaries" classname="BubbleSplatMotionTests" runstate="Runnable" seed="1935493317" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.000243" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1026" name="HandoffDisablesHandsAndDecaysFasterThanNormalWithdrawal" fullname="BubbleSplatMotionTests.HandoffDisablesHandsAndDecaysFasterThanNormalWithdrawal" methodname="HandoffDisablesHandsAndDecaysFasterThanNormalWithdrawal" classname="BubbleSplatMotionTests" runstate="Runnable" seed="44114048" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.000341" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1025" name="HandRiseAndPositionSmoothingUseSpecifiedTimeConstants" fullname="BubbleSplatMotionTests.HandRiseAndPositionSmoothingUseSpecifiedTimeConstants" methodname="HandRiseAndPositionSmoothingUseSpecifiedTimeConstants" classname="BubbleSplatMotionTests" runstate="Runnable" seed="438017605" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.000258" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1022" name="LocalCoordinatesIncludeRotationAndPhysicalRadiusScale" fullname="BubbleSplatMotionTests.LocalCoordinatesIncludeRotationAndPhysicalRadiusScale" methodname="LocalCoordinatesIncludeRotationAndPhysicalRadiusScale" classname="BubbleSplatMotionTests" runstate="Runnable" seed="1082385832" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.000587" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1019" name="NoInputsMeansNoDisplacementAndFarWindIsVisible" fullname="BubbleSplatMotionTests.NoInputsMeansNoDisplacementAndFarWindIsVisible" methodname="NoInputsMeansNoDisplacementAndFarWindIsVisible" classname="BubbleSplatMotionTests" runstate="Runnable" seed="862865558" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:28Z" duration="0.004534" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1018" name="SeedNeverIncludesOneAcrossAllWorldPointIndices" fullname="BubbleSplatMotionTests.SeedNeverIncludesOneAcrossAllWorldPointIndices" methodname="SeedNeverIncludesOneAcrossAllWorldPointIndices" classname="BubbleSplatMotionTests" runstate="Runnable" seed="2048734146" result="Passed" start-time="2026-10-29 17:11:28Z" end-time="2026-10-29 17:11:29Z" duration="0.961110" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1024" name="WindLifecycleKeepsHandoffValueAndResetClearsMaterial" fullname="BubbleSplatMotionTests.WindLifecycleKeepsHandoffValueAndResetClearsMaterial" methodname="WindLifecycleKeepsHandoffValueAndResetClearsMaterial" classname="BubbleSplatMotionTests" runstate="Runnable" seed="340320857" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.007640" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Bubble Motion] point shader = Moodium/BubbleSplatMotion
+]]></output>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1027" name="BubbleWorldNestedEntryTests" fullname="BubbleWorldNestedEntryTests" classname="BubbleWorldNestedEntryTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.004718" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1028" name="OuterCloudFadesOnlyBetweenOneAndFourMetres" fullname="BubbleWorldNestedEntryTests.OuterCloudFadesOnlyBetweenOneAndFourMetres" methodname="OuterCloudFadesOnlyBetweenOneAndFourMetres" classname="BubbleWorldNestedEntryTests" runstate="Runnable" seed="1313097715" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.000334" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1029" name="PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" fullname="BubbleWorldNestedEntryTests.PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" methodname="PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" classname="BubbleWorldNestedEntryTests" runstate="Runnable" seed="1596356432" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.003654" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1030" name="BubbleWorldTests" fullname="BubbleWorldTests" classname="BubbleWorldTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:31Z" duration="1.882215" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+]]></output>
+        <test-case id="1037" name="AllWorldsUseCanonicalSourceFrames" fullname="BubbleWorldTests.AllWorldsUseCanonicalSourceFrames" methodname="AllWorldsUseCanonicalSourceFrames" classname="BubbleWorldTests" runstate="Runnable" seed="1956192790" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.000350" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1031" name="BreathingKeepsSkyAtFixedWorldRadius" fullname="BubbleWorldTests.BreathingKeepsSkyAtFixedWorldRadius" methodname="BreathingKeepsSkyAtFixedWorldRadius" classname="BubbleWorldTests" runstate="Runnable" seed="1819857827" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.000090" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1050" name="BubbleAppearsOnlyAtFullEnergy" fullname="BubbleWorldTests.BubbleAppearsOnlyAtFullEnergy" methodname="BubbleAppearsOnlyAtFullEnergy" classname="BubbleWorldTests" runstate="Runnable" seed="725262244" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.000059" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1047" name="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" fullname="BubbleWorldTests.ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" methodname="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" classname="BubbleWorldTests" runstate="Runnable" seed="1883731632" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:29Z" duration="0.000167" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1060" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:30Z" duration="0.889571" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1058" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="476215005" result="Passed" start-time="2026-10-29 17:11:29Z" end-time="2026-10-29 17:11:30Z" duration="0.443635" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1059" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="1541136289" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.445534" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1057" name="EachWorldHasItsOwnResourceFolder" fullname="BubbleWorldTests.EachWorldHasItsOwnResourceFolder" methodname="EachWorldHasItsOwnResourceFolder" classname="BubbleWorldTests" runstate="Runnable" seed="730320104" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000182" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1052" name="FilmFadesOnceTheViewerIsInside" fullname="BubbleWorldTests.FilmFadesOnceTheViewerIsInside" methodname="FilmFadesOnceTheViewerIsInside" classname="BubbleWorldTests" runstate="Runnable" seed="173654847" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000086" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1055" name="FingertipTouchesWithinRadiusPlusPadding" fullname="BubbleWorldTests.FingertipTouchesWithinRadiusPlusPadding" methodname="FingertipTouchesWithinRadiusPlusPadding" classname="BubbleWorldTests" runstate="Runnable" seed="1324540536" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000190" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1041" name="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" fullname="BubbleWorldTests.FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" methodname="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" classname="BubbleWorldTests" runstate="Runnable" seed="1907706748" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000406" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1051" name="GrowthCurvesStartAndEndOnTheDesignedSizes" fullname="BubbleWorldTests.GrowthCurvesStartAndEndOnTheDesignedSizes" methodname="GrowthCurvesStartAndEndOnTheDesignedSizes" classname="BubbleWorldTests" runstate="Runnable" seed="1910949641" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000311" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1048" name="LayerMeshIsOneCentreFacingQuadPerPoint" fullname="BubbleWorldTests.LayerMeshIsOneCentreFacingQuadPerPoint" methodname="LayerMeshIsOneCentreFacingQuadPerPoint" classname="BubbleWorldTests" runstate="Runnable" seed="2031012924" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.001397" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1035" name="LayersCollapseFromFarToNearAndWanderUsesHysteresis" fullname="BubbleWorldTests.LayersCollapseFromFarToNearAndWanderUsesHysteresis" methodname="LayersCollapseFromFarToNearAndWanderUsesHysteresis" classname="BubbleWorldTests" runstate="Runnable" seed="867019587" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000125" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1046" name="LayersCoverEveryPointExactlyOnce" fullname="BubbleWorldTests.LayersCoverEveryPointExactlyOnce" methodname="LayersCoverEveryPointExactlyOnce" classname="BubbleWorldTests" runstate="Runnable" seed="1568103089" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000111" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1053" name="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" fullname="BubbleWorldTests.MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" methodname="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" classname="BubbleWorldTests" runstate="Runnable" seed="1654588060" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:30Z" duration="0.000168" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1040" name="NestedBakedLayersMatchExportedCloud" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:31Z" duration="0.962900" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1038" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="1736569680" result="Passed" start-time="2026-10-29 17:11:30Z" end-time="2026-10-29 17:11:31Z" duration="0.479349" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1039" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="19781887" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.473147" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1043" name="ParsesTheConverterFormat" fullname="BubbleWorldTests.ParsesTheConverterFormat" methodname="ParsesTheConverterFormat" classname="BubbleWorldTests" runstate="Runnable" seed="1742875921" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000465" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1044" name="RejectsWrongMagicVersionOrTruncatedData" fullname="BubbleWorldTests.RejectsWrongMagicVersionOrTruncatedData" methodname="RejectsWrongMagicVersionOrTruncatedData" classname="BubbleWorldTests" runstate="Runnable" seed="762842308" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000152" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1042" name="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" fullname="BubbleWorldTests.RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" methodname="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" classname="BubbleWorldTests" runstate="Runnable" seed="2074052610" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.001379" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1032" name="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" fullname="BubbleWorldTests.RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" methodname="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" classname="BubbleWorldTests" runstate="Runnable" seed="2128142887" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000332" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1056" name="ScanForwardTurnsToTheGaze" fullname="BubbleWorldTests.ScanForwardTurnsToTheGaze" methodname="ScanForwardTurnsToTheGaze" classname="BubbleWorldTests" runstate="Runnable" seed="1951327956" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000253" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1054" name="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" fullname="BubbleWorldTests.ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" methodname="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" classname="BubbleWorldTests" runstate="Runnable" seed="2036226167" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000131" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1063" name="ShippedPointCloudIsValidWhenPresent" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.005564" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1061" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="572637935" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.002232" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1062" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="2058714350" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.002710" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1049" name="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" fullname="BubbleWorldTests.SkySphereFacesInwardAndUsesTheConverterEquirectMapping" methodname="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" classname="BubbleWorldTests" runstate="Runnable" seed="1048645857" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.001038" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1033" name="StopClearsBreathAndWanderAndIsIdempotent" fullname="BubbleWorldTests.StopClearsBreathAndWanderAndIsIdempotent" methodname="StopClearsBreathAndWanderAndIsIdempotent" classname="BubbleWorldTests" runstate="Runnable" seed="1656315845" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000589" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1045" name="SummaryMatchesFullParseWithoutReadingEveryPoint" fullname="BubbleWorldTests.SummaryMatchesFullParseWithoutReadingEveryPoint" methodname="SummaryMatchesFullParseWithoutReadingEveryPoint" classname="BubbleWorldTests" runstate="Runnable" seed="813908606" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000238" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1034" name="SummonArcAndReturnRadiusHaveExactEndpoints" fullname="BubbleWorldTests.SummonArcAndReturnRadiusHaveExactEndpoints" methodname="SummonArcAndReturnRadiusHaveExactEndpoints" classname="BubbleWorldTests" runstate="Runnable" seed="635057902" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000265" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1036" name="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" fullname="BubbleWorldTests.WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" methodname="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" classname="BubbleWorldTests" runstate="Runnable" seed="1305544273" result="Passed" start-time="2026-10-29 17:11:31Z" end-time="2026-10-29 17:11:31Z" duration="0.000112" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -46,7 +46,7 @@ namespace Moodium.CandyWorld
         NatureIvySpatialGrowthController m_NatureIvyGrowth;
         SpatialMeshTouchRipple m_SpatialTouchFeedback;
         CandyHandOpenBurstGesture m_HandOpenBurstGesture;
-        SqueezeProgressVideoController m_SqueezeProgressVideo;
+        ISqueezeProgressDisplay m_SqueezeProgressVideo;
         // Squeeze rescue story: Moodi falls into the bag, the user squeezes it back out.
         MoodiRescueDirector m_Rescue;
         Coroutine m_BindVideoRoutine;
@@ -185,9 +185,9 @@ namespace Moodium.CandyWorld
             m_HandOpenBurstGesture.Configure(m_Energy);
             m_HandOpenBurstGesture.SetGestureEnabled(false);
 
-            m_SqueezeProgressVideo = GetComponent<SqueezeProgressVideoController>();
+            m_SqueezeProgressVideo = GetComponent<SqueezeProgressDisplayRouter>();
             if (m_SqueezeProgressVideo == null)
-                m_SqueezeProgressVideo = gameObject.AddComponent<SqueezeProgressVideoController>();
+                m_SqueezeProgressVideo = gameObject.AddComponent<SqueezeProgressDisplayRouter>();
             var openingVideoConfig = Resources.Load<OpeningVideoSequenceConfig>("MoodiumOpening/OpeningVideoSequenceConfig");
             m_SqueezeProgressVideo.Configure(
                 camera,
@@ -450,6 +450,8 @@ namespace Moodium.CandyWorld
 
         void BeginSqueezeRescue()
         {
+            if(m_SqueezeProgressVideo is SqueezeProgressDisplayRouter router)
+                router.Mesh.HasStory=m_WalkTrailGuidePrefab!=null;
             // Show the jelly dome and video as soon as the calibrated soft model exists, not on the first press.
             if (m_BindVideoRoutine != null) StopCoroutine(m_BindVideoRoutine);
             m_BindVideoRoutine = StartCoroutine(BindSqueezeVideoWhenSoftAppears());

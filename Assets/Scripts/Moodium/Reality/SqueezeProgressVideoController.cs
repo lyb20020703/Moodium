@@ -20,7 +20,7 @@ namespace Moodium.Reality
     /// "pops" before hiding, and Popped reports where Moodi should jump out.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SqueezeProgressVideoController : MonoBehaviour
+    public sealed class SqueezeProgressVideoController : MonoBehaviour, ISqueezeProgressDisplay
     {
         const string SequenceConfigPath = "MoodiumOpening/OpeningVideoSequenceConfig";
         const float TargetTimeTolerance = 0.015f;
