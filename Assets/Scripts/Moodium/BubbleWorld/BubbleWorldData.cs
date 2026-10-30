@@ -31,6 +31,8 @@ namespace Moodium.NatureWorld
         public static string ColorsResource(string folder) => folder + "point_colors";
         public static string RoundColorsResource(string folder) => folder + "point_colors_round";
         public static string PanoramaResource(string folder) => folder + "panorama";
+        /// <summary>64×32 heavily blurred copy of panorama.png: colour only, no photo detail (BubbleWorldController.SkyStyle.Soft).</summary>
+        public static string SoftPanoramaResource(string folder) => folder + "panorama_soft";
         public static string MeshResource(string folder, string meshName) => folder + "Meshes/" + meshName;
         public const int LayerCount = 20;
         public const int RecordSize = 18;

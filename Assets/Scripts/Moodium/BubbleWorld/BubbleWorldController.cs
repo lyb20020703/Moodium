@@ -35,6 +35,23 @@ namespace Moodium.NatureWorld
         BubbleWorldController m_Nested;
         bool m_FromPortal;
         bool m_ExitingHandoff;
+        /// <summary>
+        /// What fills the gaps between points far away.
+        /// Soft: a 64×32 blur of the panorama — only its colours, so it reads as the world's air and never shows as a
+        /// separate photo. Photo: the original panorama. None: no sky; the room shows through the gaps.
+        /// </summary>
+        public enum SkyStyle { Soft, Photo, None }
+
+        [Header("Sky")]
+        [SerializeField] SkyStyle m_SkyStyle = SkyStyle.Soft;
+        [Tooltip("Draw the sky before every point layer (native visionOS sorting group). Without it the sky sphere and " +
+                 "the point shells share the same centre, so RealityKit's distance sort can put the sky in front.")]
+        [SerializeField] bool m_FixedSkyOrder = true;
+        [Header("Hand wake")]
+        [Tooltip("Moving a hand inside the world pulls small points of the scene along (BubbleHandWake).")]
+        [SerializeField] bool m_HandWake = true;
+        public SkyStyle Sky => m_SkyStyle;
+
         [Header("Nested handoff")]
         [SerializeField] float m_OuterFadeStartRadius = 1f;
         [SerializeField] float m_OuterFadeEndRadius = 4f;
@@ -104,6 +121,8 @@ namespace Moodium.NatureWorld
         Material m_HomeMaterial;
         Material m_PointMaterial, m_SkyMaterial, m_SkyFadeMaterial, m_MembraneMaterial;
         MeshRenderer m_SkyRenderer;
+        VisionOSSortingGroup m_WorldSorting;
+        BubbleHandWake m_Wake;
         AudioSource m_Audio;
         BubbleSplatMotion m_Motion;
 
@@ -284,6 +303,7 @@ namespace Moodium.NatureWorld
             m_LayerRestRotations = null;
             if (m_Root != null) Destroy(m_Root);
             m_Root = null; m_WorldRoot = null; m_Membrane = null; m_MembraneCollider = null; m_Sky = null; m_SkyRenderer = null; m_Audio = null;
+            m_WorldSorting = null; m_Wake = null;   // destroyed with m_Root
             foreach (var mesh in m_RuntimeMeshes) if (mesh != null) Destroy(mesh);
             m_RuntimeMeshes.Clear();
             DestroyMaterial(ref m_HomeMaterial);
@@ -470,6 +490,7 @@ namespace Moodium.NatureWorld
         void Update()
         {
             if (m_Motion != null) m_Motion.SetStage(MotionStage(m_Phase));
+            if (m_Wake != null) m_Wake.Active = m_Phase == Phase.Inside && m_WanderFade > .6f;
             CheckEditorMouse();
             if (m_Phase == Phase.Portal)
             {
@@ -534,6 +555,18 @@ namespace Moodium.NatureWorld
 
         public static float SkyScaleForBreath(float breathScale) => SkyMaxRadius / Mathf.Max(.001f, breathScale);
 
+        public const int SkySortOrder = 0, PointLayerSortOrder = 1;
+
+        /// <summary>Texture for the sky sphere. Soft falls back to the photo (with a warning) if panorama_soft is missing.</summary>
+        public static Texture2D SkyTexture(string folder, SkyStyle style, Texture2D panorama)
+        {
+            if (style != SkyStyle.Soft) return panorama;
+            var soft = Resources.Load<Texture2D>(BubbleWorldData.SoftPanoramaResource(folder));
+            if (soft != null) return soft;
+            Debug.LogWarning($"[Bubble World] Missing Resources/{BubbleWorldData.SoftPanoramaResource(folder)}; using the photo panorama.");
+            return panorama;
+        }
+
         public static void ConfigureTransparentPoints(Material material)
         {
             if (material == null) return;
@@ -590,6 +623,9 @@ namespace Moodium.NatureWorld
             m_Nested = host.AddComponent<BubbleWorldController>();
             m_Nested.ConfigureTouchSound(m_TouchSound);
             m_Nested.m_NestedSkyScale = m_NestedSkyScale;
+            m_Nested.m_SkyStyle = m_SkyStyle;
+            m_Nested.m_FixedSkyOrder = m_FixedSkyOrder;
+            m_Nested.m_HandWake = m_HandWake;
             m_Nested.Begin(m_Viewer, folder, 1);
             m_Nested.HomeRequested += () => HomeRequested?.Invoke();
             m_Nested.Wandered += () => Wandered?.Invoke();
@@ -747,24 +783,21 @@ namespace Moodium.NatureWorld
             var final = Target(viewer);
             m_Root.transform.position = final.center;
             m_WorldRoot.localRotation = final.yaw;
+            // Both layers: the small bubble's sky fades out while it swells past the viewer and the sky only comes
+            // back last, far away, after the points (below). The second layer used to fade its full sky in here,
+            // before any of its points had spread out, so its panorama was the first and biggest thing in view.
             m_SkyRenderer.sharedMaterial = m_SkyFadeMaterial;
             for (var t = 0f; t < m_EnvelopSeconds; t += Time.deltaTime)
             {
                 SetRadius(EnvelopRadius(t / m_EnvelopSeconds, m_ApproachRadius, MiniWorldRadius));
-                var skyAlpha = m_FromPortal ? Ease(t / m_EnvelopSeconds) : SkyAlphaWhileEnveloping(m_Radius);
-                if (m_FromPortal) m_Sky.localScale = Vector3.one * (SkyMaxRadius * m_NestedSkyScale * MiniWorldRadius / m_Radius);
+                var skyAlpha = SkyAlphaWhileEnveloping(m_Radius);
                 BubbleWorldData.SetAlpha(m_SkyFadeMaterial, skyAlpha);
-                if (!m_FromPortal && skyAlpha <= 0f && m_Sky.gameObject.activeSelf) m_Sky.gameObject.SetActive(false);
+                if (skyAlpha <= 0f && m_Sky.gameObject.activeSelf) m_Sky.gameObject.SetActive(false);
                 yield return null;
             }
             SetRadius(MiniWorldRadius);
             m_Membrane.gameObject.SetActive(false);
-            if (m_FromPortal)
-            {
-                m_Sky.localScale = Vector3.one * (SkyMaxRadius * m_NestedSkyScale);
-                m_SkyRenderer.sharedMaterial = m_SkyMaterial;
-            }
-            else m_Sky.gameObject.SetActive(false);
+            m_Sky.gameObject.SetActive(false);
 
             // The visible mini world was ready immediately; wait here only when a
             // user has touched unusually quickly, so the full reveal never hitches.
@@ -805,11 +838,13 @@ namespace Moodium.NatureWorld
                 yield return null;
             }
 
-            // Sky: fades in far away and closes the last gaps; then back to the opaque material.
-            m_Sky.localScale = Vector3.one * SkyMaxRadius;
+            // Sky: fades in far away and closes the last gaps; then back to the opaque material. A nested world's sky
+            // sits just inside the outer world's (which is hidden during this reveal) and fades in the same way.
+            m_Sky.localScale = Vector3.one * (m_FromPortal ? SkyMaxRadius * m_NestedSkyScale : SkyMaxRadius);
+            m_SkyRenderer.sharedMaterial = m_SkyFadeMaterial;
             BubbleWorldData.SetAlpha(m_SkyFadeMaterial, 0f);
             m_Sky.gameObject.SetActive(true);
-            for (var t = 0f; !m_FromPortal && t < m_SkyFadeSeconds; t += Time.deltaTime)
+            for (var t = 0f; t < m_SkyFadeSeconds; t += Time.deltaTime)
             {
                 BubbleWorldData.SetAlpha(m_SkyFadeMaterial, Ease(t / m_SkyFadeSeconds));
                 yield return null;
@@ -884,10 +919,11 @@ namespace Moodium.NatureWorld
 
             m_PointMaterial = BubbleSplatMaterial.Create(colors, m_EyeHeight,
                 m_Folder == BubbleWorldData.CandyFolder || m_Folder == BubbleWorldData.NestedCandyFolder);
-            m_SkyMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky", panorama, false, CullMode.Back, Color.white);
+            var skyTexture = SkyTexture(m_Folder, m_SkyStyle, panorama);
+            m_SkyMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky", skyTexture, false, CullMode.Back, Color.white);
             m_SkyMaterial.renderQueue = BackgroundRenderQueue + m_NatureWorldDepth;
             if (m_SkyMaterial.HasProperty("_ZWrite")) m_SkyMaterial.SetFloat("_ZWrite", 0f);
-            m_SkyFadeMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky Fade", panorama, true, CullMode.Back, Color.white);
+            m_SkyFadeMaterial = BubbleWorldData.CreateUnlit("Bubble World Sky Fade", skyTexture, true, CullMode.Back, Color.white);
             m_SkyFadeMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             var tint = m_Folder == BubbleWorldData.CandyFolder ? m_CandyFilmTint : m_NatureFilmTint;
             tint.a = m_MembraneAlpha;
@@ -917,6 +953,26 @@ namespace Moodium.NatureWorld
             m_Sky.localRotation = Quaternion.identity;
             m_SkyRenderer = m_Sky.GetComponent<MeshRenderer>();
             m_Sky.localScale = Vector3.one * (MiniWorldRadius * .99f);
+            // None: the sky object keeps its timing logic but never draws.
+            m_SkyRenderer.enabled = m_SkyStyle != SkyStyle.None;
+            if (m_FixedSkyOrder)
+            {
+                // The sky sphere and every point shell are centred on the scan origin, so RealityKit's per-object
+                // distance sort cannot tell them apart and sometimes drew the (transparent, while inside) sky over
+                // the points. A native group draws the sky first, then the layers. PostPass, as for the UI.
+                m_WorldSorting = m_WorldRoot.gameObject.AddComponent<VisionOSSortingGroup>();
+                m_WorldSorting.DepthPass = VisionOSSortingGroup.DepthPassType.PostPass;
+                m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting
+                    { Renderer = m_Sky.gameObject, Order = SkySortOrder, ApplyToDescendants = false });
+            }
+
+            if (m_HandWake)
+            {
+                var wake = new GameObject("Bubble Hand Wake");
+                wake.transform.SetParent(m_Root.transform, false);
+                m_Wake = wake.AddComponent<BubbleHandWake>();
+                m_Wake.Initialize(bytes, colors, m_EyeHeight, BubbleWorldData.IsCandy(m_Folder), m_WorldRoot, ResolveViewer());
+            }
 
             // The interaction shell belongs to the core warmup, so a user can
             // summon the miniature world while outer point layers keep streaming.
@@ -970,6 +1026,9 @@ namespace Moodium.NatureWorld
                 }
                 var go = CreateRenderer(BubbleWorldData.LayerMeshName(layer), m_WorldRoot, mesh, m_PointMaterial);
                 go.SetActive(layer < m_MiniLayerCount);
+                if (m_WorldSorting != null)
+                    m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting
+                        { Renderer = go, Order = PointLayerSortOrder, ApplyToDescendants = false });
                 m_Layers.Add(go);
                 if (layer + 1 == warmupLayers)
                 {
