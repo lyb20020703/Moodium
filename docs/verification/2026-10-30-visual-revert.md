@@ -8,7 +8,7 @@
 - 其他 UI 有黑底、位置不对；
 - 泡泡世界点云变成锋利的方块。
 
-**这台机器没有 Unity，以下改动没有编译，也没有跑测试。** 第一件事是在 Unity 里打开、编译、跑下面列出的测试，再上真机。
+此处以下为补丁作者的原始变更说明；本地实施与实测结果见文末，已完成 Unity 编译及全套编辑器测试。
 
 ## 1. 按钮：去掉注视 Shader，开场按钮回到第一版液态玻璃
 
@@ -89,3 +89,37 @@
 ## 需要跑的测试
 
 `IntroVideoGateTests`、`UIRefreshTests`、`WorldFix1030Tests`、`MoodiAnimatedTests`、`MoodiBreathingFloatTests`、`StickerWorldSelectionControllerTests`、`RealityWorldModelCarouselTests`、`BubbleSplatMaterialTests`、`BubbleSplatMotionTests`、`MoodiRescue*`、`SensoryBagBranchTests`，然后全套和 `world-fix-1030/remaining-failures.md` 对比，不能新增失败。
+
+
+## 本地实施与验证结果
+
+已将原始补丁单独提交为 `7e4205f`，分支 `codex/visual-revert-1030`。未合并 main、未推送。原补丁能直接编译，本地补充了独立预览入口与日志诊断，没有改动软模型或重新运行升级菜单。
+
+Unity 6000.0.30f1 全套 EditMode：**632 项，593 通过、39 失败**。与 feb0a28 的完整 XML 按测试名称逐项比较，新增失败 0、消失失败 0。[完整结果](visual-revert-1030/full-tests.xml)、[39 项失败清单](visual-revert-1030/remaining-failures.md)。
+
+指定套件结果：IntroVideoGate 18/18、UIRefresh 10/10、WorldFix1030 12/12（含三方向正面误差和 4 cm 尺寸验证）、BubbleSplatMaterial 4/4、BubbleSplatMotion 11/11、MoodiAnimated 14/14、MoodiRescue 8/8、SoftPrefabFit 4/4、CalibratedSensoryBagPresentation 5/5。SensoryBagBranch 5/7；两个旧失败 DefaultConfirmationBypassesFrameAndCompletesOnlyOnce、NoBagMoodConfirmationSkipsRecommendationAndCompletesOnce 与基线一致，分别涉及旧位置期望及编辑模式材质实例化日志。本次没有修改这些期望来消除失败。MoodiBreathingFloat 两项、轮播和贴纸选择相关旧失败也逐项保留。
+
+编辑器诊断调用实际 CreateMoodi / AttachMoodi / 默认点材质创建路径，日志为：
+
+- `[Moodi Rescue] size from bounds 15.2 cm, from eyes 13.7 cm`：这是缩放前测量，随后按眼距归一至 4 cm。
+- `[Moodi Rise] measured Moodi size 3.6 cm -> 4.0 cm (x1.11)`：本预览先按包围盒缩放，再由升起逻辑按眼距校正。
+- `[Bubble Motion] point shader = Universal Render Pipeline/Unlit`。
+
+[编辑器诊断日志](visual-revert-1030/editor-preview.log)。运动测试显式传 motion:true，日志中出现 BubbleSplatMotion 属于该测试路径；默认游戏世界的调用保留 motion:false。
+
+两个世界 0/50/100% 已生成编辑器资产预览：[自然 0%](visual-revert-1030/previews/Nature-0.png)、[50%](visual-revert-1030/previews/Nature-50.png)、[100%](visual-revert-1030/previews/Nature-100.png)；[糖果 0%](visual-revert-1030/previews/Candy-0.png)、[50%](visual-revert-1030/previews/Candy-50.png)、[100%](visual-revert-1030/previews/Candy-100.png)。检查了自然 50% 和糖果 100% 正面效果。它们是资产姿态预览，不代表完整剧情或真机录像。原模型的局部遮挡仍可能使 0% 露出部分头部，不能宣称所有视角只露小芽。
+
+开场按钮通过普通 Canvas Image、默认材质、无 Hover、宽高比及碰撞体不重叠测试；设置按钮移动和轮播材质过滤已按补丁接入。尚未完成运行中开场/轮播的视觉目测，不能以结构测试代替 RealityKit 的视觉验收。
+
+### 真机逐项验收状态
+
+沿用用户此前「暂时无条件真机测试，直接按照方案优化到最后一步」的要求，完成所有本地可执行步骤。下列项目均未真机验证：
+
+1. 开场四按钮命中、无黑底/底板、pressed 换图与流程继续。
+2. 贴纸/无袋模式齿轮可见可点，面板无黑底/闪烁。
+3. 两种选关中 Moodi 的正面、大小。
+4. 两世界完整飞入、跌入、捏合升起、跳出与散步衔接。
+5. RealityKit 圆形柔边点视觉；本版点云静止是包内要求的取舍。
+6. 两世界退出重进无残留。
+
+未追加包内列为后续的圆点运动 Shader、能量环位置或贴纸齿轮布局改动。
