@@ -38,10 +38,6 @@ namespace Moodium.UI
             label.renderer.enabled = false;
             m_Button = gameObject.AddComponent<MoodiumSpatialButton>();
             m_Button.Configure(label, null, pressed, animateTransform: true);
-            var hover = gameObject.AddComponent<VisionOSHoverEffect>();
-            hover.Type = VisionOSHoverEffect.EffectType.Highlight;
-            hover.Color = Color.white;
-            hover.IntensityMultiplier = .4f;
             return m_Button;
         }
 

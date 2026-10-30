@@ -415,7 +415,6 @@ namespace Moodium.Calibration
             var renderer = CreateSprite(objectName, spriteName, m_FrameRoot, order);
             renderer.gameObject.AddComponent<BoxCollider>();
             renderer.gameObject.AddComponent<SensoryBagCalibrationHandle>().Configure(this, kind);
-            renderer.gameObject.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
             m_Visuals[kind] = renderer.transform;
         }
 
@@ -440,7 +439,6 @@ namespace Moodium.Calibration
             go.transform.SetParent(m_FrameRoot, false);
             go.GetComponent<BoxCollider>().size = new Vector3(ElevatorWidth * Unit, ElevatorHeight * Unit, .02f);
             go.AddComponent<SensoryBagCalibrationHandle>().Configure(this, CalibrationHandleKind.Height);
-            go.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
             m_Visuals[CalibrationHandleKind.Height] = go.transform;
 
             var canvas = CreateCanvas(go.transform, "Elevator Visual", ElevatorWidth, ElevatorHeight, 10);
@@ -534,7 +532,6 @@ namespace Moodium.Calibration
             }, typeof(BoxCollider));
             button.transform.SetParent(m_FrameRoot, false);
             button.AddComponent<SensoryBagCalibrationHandle>().Configure(this, CalibrationHandleKind.Frame, action);
-            button.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
 
             if (round)
             {

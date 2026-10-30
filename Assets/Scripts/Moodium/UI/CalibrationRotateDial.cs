@@ -17,7 +17,7 @@ namespace Moodium.UI
             m_Tether=UIRefreshVisuals.Sprite(transform,"Rotation Tether","calib_rot_tether",Vector3.zero,5);
             m_Knob=UIRefreshVisuals.Sprite(transform,"Rotation Knob","calib_rot_knob_idle",Vector3.zero,11);
             m_Knob.gameObject.AddComponent<BoxCollider>().size=new Vector3(.06f,.06f,.01f);
-            m_Knob.gameObject.AddComponent<VisionOSHoverEffect>().Type=VisionOSHoverEffect.EffectType.Highlight;
+            UIRefreshVisuals.GazeHover(m_Knob,"calib_rot_knob_gaze");
             m_Knob.gameObject.AddComponent<SensoryBagCalibrationHandle>().Configure(calibrator,CalibrationHandleKind.Rotate);
             m_Pill=UIRefreshVisuals.Sprite(transform,"Rotation Angle Pill","calib_rot_pill",Vector3.zero,12);
             m_Label=UIRefreshVisuals.Text(transform,"Rotation Angle",font,16,13);m_Label.fontStyle=FontStyles.Bold;
@@ -32,6 +32,7 @@ namespace Moodium.UI
             var facing=forward.sqrMagnitude>.00001f?Quaternion.LookRotation(forward,Vector3.up):Quaternion.identity;
             m_Knob.transform.SetPositionAndRotation(point,facing);
             m_Knob.sprite=UIRefreshVisuals.Load(dragging?(nature?"calib_rot_knob_active_nature":"calib_rot_knob_active_candy"):"calib_rot_knob_idle");
+UIRefreshVisuals.SetGazeTexture(m_Knob,dragging?(nature?"calib_rot_knob_active_nature":"calib_rot_knob_active_candy"):"calib_rot_knob_gaze");
 #if UNITY_EDITOR
             if(!dragging&&Camera.main!=null&&UnityEngine.InputSystem.Mouse.current!=null){var ray=Camera.main.ScreenPointToRay(UnityEngine.InputSystem.Mouse.current.position.ReadValue());if(m_Knob.GetComponent<Collider>().Raycast(ray,out _,20))m_Knob.sprite=UIRefreshVisuals.Load("calib_rot_knob_gaze");}
 #endif

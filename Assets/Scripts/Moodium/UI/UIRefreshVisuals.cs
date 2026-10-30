@@ -54,10 +54,21 @@ namespace Moodium.UI
             t.GetComponent<Renderer>().sortingOrder = order; Register(parent, go, order);
             return t;
         }
-        public static MoodiumSpatialButton Button(SpriteRenderer sprite, Vector2 hit, Action action)
+        public static void GazeHover(SpriteRenderer r,string gazeId)
+        {
+            var source=Resources.Load<Material>("MoodiumUIRefresh/M_SpriteGazeSwap");
+            if(source==null)return;
+            var owner=r.gameObject.AddComponent<GazeMaterialOwner>();owner.Material=new Material(source);r.sharedMaterial=owner.Material;
+            SetGazeTexture(r,gazeId);
+            var hover=r.GetComponent<VisionOSHoverEffect>();if(hover==null)hover=r.gameObject.AddComponent<VisionOSHoverEffect>();
+            hover.Type=VisionOSHoverEffect.EffectType.Shader;
+        }
+        public static void SetGazeTexture(SpriteRenderer r,string id)
+        {var sprite=Load(id);if(sprite!=null&&r.sharedMaterial!=null&&r.sharedMaterial.HasProperty("_GazeTex"))r.sharedMaterial.SetTexture("_GazeTex",sprite.texture);}
+        public static MoodiumSpatialButton Button(SpriteRenderer sprite, Vector2 hit, Action action,string gazeId=null)
         {
             sprite.gameObject.AddComponent<BoxCollider>().size = new Vector3(hit.x, hit.y, .01f);
-            sprite.gameObject.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
+            if(gazeId!=null)GazeHover(sprite,gazeId);
             var b = sprite.gameObject.AddComponent<MoodiumSpatialButton>(); b.Configure(null, null, action); return b;
         }
         public static UIRefreshSpriteButton Gear(Transform parent, Vector3 position, Action pressed)
@@ -66,7 +77,7 @@ namespace Moodium.UI
             root.transform.SetParent(parent, false); root.transform.localPosition = position; UnitScale(root.transform);
             var r = Sprite(root.transform, "Settings Gear", "settings_btn_idle", Vector3.zero, 23);
             var visual = r.gameObject.AddComponent<UIRefreshSpriteButton>(); visual.Configure("settings_btn", pressed);
-            Button(r, new Vector2(.06f,.06f), visual.Press);
+            Button(r, new Vector2(.06f,.06f), visual.Press,"settings_btn_gaze");
             return visual;
         }
         public static float Ease(float t) => 1f - Mathf.Pow(1f - Mathf.Clamp01(t), 3);
@@ -85,7 +96,7 @@ namespace Moodium.UI
         public void ShowPressedFeedback() { if(Application.isPlaying&&!m_Pressed)StartCoroutine(Feedback()); }
         public void Press() { if (m_Pressed) return; if (Application.isPlaying) StartCoroutine(Feedback()); m_Action?.Invoke(); }
         IEnumerator Feedback() { m_Pressed=true; Refresh(); yield return new WaitForSecondsRealtime(.12f); m_Pressed=false; Refresh(); }
-        void Refresh() { if (m_Prefix != null) GetComponent<SpriteRenderer>().sprite=UIRefreshVisuals.Load(m_Prefix + (m_Pressed ? "_pressed" : m_Open ? "_open" : m_Hover ? "_gaze" : "_idle")); }
+        void Refresh() { if(m_Prefix!=null)UIRefreshVisuals.SetGazeTexture(GetComponent<SpriteRenderer>(),m_Prefix+(m_Pressed?"_pressed":m_Open?"_open":"_gaze")); if (m_Prefix != null) GetComponent<SpriteRenderer>().sprite=UIRefreshVisuals.Load(m_Prefix + (m_Pressed ? "_pressed" : m_Open ? "_open" : m_Hover ? "_gaze" : "_idle")); }
         void OnDisable() { StopAllCoroutines(); m_Pressed=m_Hover=false; Refresh(); }
     }
 }

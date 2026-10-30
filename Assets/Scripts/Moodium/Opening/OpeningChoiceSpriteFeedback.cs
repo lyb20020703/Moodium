@@ -6,7 +6,7 @@ namespace Moodium.Opening
     {
         string m_Id; bool m_Pressed;
         public void Configure(string id){m_Id=id;Refresh(false);}
-        public void SetPressed(){m_Pressed=true;Refresh(false);}
+        public void SetPressed(){m_Pressed=true;Refresh(false);UIRefreshVisuals.SetGazeTexture(GetComponent<SpriteRenderer>(),"MoodiumOpening/opening_btn_"+m_Id+"_pressed");}
         void Refresh(bool hover)=>GetComponent<SpriteRenderer>().sprite=UIRefreshVisuals.Load("MoodiumOpening/opening_btn_"+m_Id+(m_Pressed?"_pressed":hover?"_gaze":"_idle"));
 #if UNITY_EDITOR
         void Update()

@@ -46,6 +46,7 @@ namespace Moodium.Opening
             item.transform.SetParent(transform, false);
             var text = item.AddComponent<TextMeshProUGUI>();
             text.text = value;
+            text.raycastTarget=false;
             text.font = font;
             text.fontSize = size;
             text.alignment = TextAlignmentOptions.Center;
@@ -72,7 +73,7 @@ namespace Moodium.Opening
             var button=item.AddComponent<Button>();button.transition=Selectable.Transition.None;
             button.onClick.AddListener(()=>spatialButton.OnPointerClick(null));
             item.AddComponent<BoxCollider>().size=new Vector3(.20f,.08f,.01f);
-            item.AddComponent<Unity.PolySpatial.VisionOSHoverEffect>().Type=Unity.PolySpatial.VisionOSHoverEffect.EffectType.Highlight;
+            Moodium.UI.UIRefreshVisuals.GazeHover(renderer,"MoodiumOpening/opening_btn_"+assetId+"_gaze");
             return item;
         }
 

@@ -33,7 +33,6 @@ namespace Moodium.Flow
             collider.size = new Vector3(width, .045f, .025f);
             var button = label.gameObject.AddComponent<MoodiumSpatialButton>();
             button.Configure(label, null, pressed);
-            label.gameObject.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
             return button;
         }
 

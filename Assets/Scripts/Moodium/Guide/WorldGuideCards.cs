@@ -321,7 +321,6 @@ namespace Moodium.Guide
             {
                 if(m_Root!=null&&!m_Closing&&m_Transition==null&&!m_Swiping&&m_Alpha>.6f)onPressed();
             });
-            renderer.gameObject.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
             return renderer;
         }
 

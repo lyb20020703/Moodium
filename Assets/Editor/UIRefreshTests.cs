@@ -71,6 +71,6 @@ public sealed class UIRefreshTests
     {
         root.AddComponent<RectTransform>();var choice=root.AddComponent<OpeningVideoHardwareChoice>();choice.Configure(null,null,true);
         var buttons=root.GetComponentsInChildren<OpeningVideoSpatialButton>();Assert.That(buttons.Length,Is.EqualTo(2));
-        foreach(var b in buttons){Assert.That(b.GetComponent<SpriteRenderer>().sprite.name,Does.Contain("_en_idle"));Assert.That(b.GetComponent<BoxCollider>().size,Is.EqualTo(new Vector3(.178f,.061f,.01f)));}
+        foreach(var b in buttons){Assert.That(b.GetComponent<SpriteRenderer>().sprite.name,Does.Contain("_en_idle"));Assert.That(b.GetComponent<BoxCollider>().size,Is.EqualTo(new Vector3(.20f,.08f,.01f)));}
     }
 }

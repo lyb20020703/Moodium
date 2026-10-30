@@ -408,10 +408,6 @@ namespace Moodium.UI
             // Knob collider with the system gaze highlight.
             var knobCollider = knobRenderer.gameObject.AddComponent<SphereCollider>();
             knobCollider.radius = 0.5f;
-            var hover = knobRenderer.gameObject.AddComponent<VisionOSHoverEffect>();
-            hover.Type = VisionOSHoverEffect.EffectType.Highlight;
-            hover.Color = Color.white;
-            hover.IntensityMultiplier = 0.6f;
 
             m_Audio = gameObject.AddComponent<AudioSource>();
             m_Audio.playOnAwake = false;

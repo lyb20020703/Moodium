@@ -750,7 +750,6 @@ namespace Moodium.CandyWorld
             var collider = root.GetComponent<BoxCollider>();
             collider.size = new Vector3(CircleSize + HitPadding * 2f, CircleSize + HitPadding * 2f, 24f);
             collider.enabled = false;
-            root.AddComponent<VisionOSHoverEffect>().Type = VisionOSHoverEffect.EffectType.Highlight;
             icon = CreateImage("Icon", root.transform, Vector2.zero, new Vector2(30f, 30f), null, Color.white);
             icon.preserveAspect = true;
             return root;
