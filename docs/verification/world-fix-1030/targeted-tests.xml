@@ -1,0 +1,774 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="107" result="Passed" total="107" passed="107" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:58Z" duration="2.8768621">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="628" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:58Z" duration="2.876862" total="107" passed="107" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1769" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="619" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:58Z" duration="2.868565" total="107" passed="107" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="78275" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1030" name="BubbleWorldTests" fullname="BubbleWorldTests" classname="BubbleWorldTests" runstate="Runnable" testcasecount="30" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:57Z" duration="2.213539" total="30" passed="30" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1037" name="AllWorldsUseCanonicalSourceFrames" fullname="BubbleWorldTests.AllWorldsUseCanonicalSourceFrames" methodname="AllWorldsUseCanonicalSourceFrames" classname="BubbleWorldTests" runstate="Runnable" seed="528354253" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:55Z" duration="0.008162" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1031" name="BreathingKeepsSkyAtFixedWorldRadius" fullname="BubbleWorldTests.BreathingKeepsSkyAtFixedWorldRadius" methodname="BreathingKeepsSkyAtFixedWorldRadius" classname="BubbleWorldTests" runstate="Runnable" seed="281527796" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:55Z" duration="0.001999" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1050" name="BubbleAppearsOnlyAtFullEnergy" fullname="BubbleWorldTests.BubbleAppearsOnlyAtFullEnergy" methodname="BubbleAppearsOnlyAtFullEnergy" classname="BubbleWorldTests" runstate="Runnable" seed="2046984415" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:55Z" duration="0.000263" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1047" name="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" fullname="BubbleWorldTests.ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" methodname="ColourUvHitsTheTexelCentreWithRowZeroAtTheTop" classname="BubbleWorldTests" runstate="Runnable" seed="541471610" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:55Z" duration="0.000389" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1060" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:56Z" duration="1.001974" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1058" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="567204350" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:55Z" duration="0.513554" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1059" name="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.DeviceMeshesAreBakedAndColourAtlasUsesExactSampling(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="DeviceMeshesAreBakedAndColourAtlasUsesExactSampling" classname="BubbleWorldTests" runstate="Runnable" seed="1873800879" result="Passed" start-time="2026-10-30 05:20:55Z" end-time="2026-10-30 05:20:56Z" duration="0.486815" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1057" name="EachWorldHasItsOwnResourceFolder" fullname="BubbleWorldTests.EachWorldHasItsOwnResourceFolder" methodname="EachWorldHasItsOwnResourceFolder" classname="BubbleWorldTests" runstate="Runnable" seed="1014595487" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000204" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1052" name="FilmFadesOnceTheViewerIsInside" fullname="BubbleWorldTests.FilmFadesOnceTheViewerIsInside" methodname="FilmFadesOnceTheViewerIsInside" classname="BubbleWorldTests" runstate="Runnable" seed="962625285" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000137" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1055" name="FingertipTouchesWithinRadiusPlusPadding" fullname="BubbleWorldTests.FingertipTouchesWithinRadiusPlusPadding" methodname="FingertipTouchesWithinRadiusPlusPadding" classname="BubbleWorldTests" runstate="Runnable" seed="867209906" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000215" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1041" name="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" fullname="BubbleWorldTests.FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" methodname="FullProgressDoesNotStartASummonAndInvalidLeaveDoesNotEmit" classname="BubbleWorldTests" runstate="Runnable" seed="142792223" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.001006" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1051" name="GrowthCurvesStartAndEndOnTheDesignedSizes" fullname="BubbleWorldTests.GrowthCurvesStartAndEndOnTheDesignedSizes" methodname="GrowthCurvesStartAndEndOnTheDesignedSizes" classname="BubbleWorldTests" runstate="Runnable" seed="1005553654" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000364" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1048" name="LayerMeshIsOneCentreFacingQuadPerPoint" fullname="BubbleWorldTests.LayerMeshIsOneCentreFacingQuadPerPoint" methodname="LayerMeshIsOneCentreFacingQuadPerPoint" classname="BubbleWorldTests" runstate="Runnable" seed="101373234" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.003879" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1035" name="LayersCollapseFromFarToNearAndWanderUsesHysteresis" fullname="BubbleWorldTests.LayersCollapseFromFarToNearAndWanderUsesHysteresis" methodname="LayersCollapseFromFarToNearAndWanderUsesHysteresis" classname="BubbleWorldTests" runstate="Runnable" seed="2073516826" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000199" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1046" name="LayersCoverEveryPointExactlyOnce" fullname="BubbleWorldTests.LayersCoverEveryPointExactlyOnce" methodname="LayersCoverEveryPointExactlyOnce" classname="BubbleWorldTests" runstate="Runnable" seed="53380162" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000210" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1053" name="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" fullname="BubbleWorldTests.MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" methodname="MiniBubbleKeepsOnlyLayersThatFitAndItsSkyFadesWhileSwelling" classname="BubbleWorldTests" runstate="Runnable" seed="370775901" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.000164" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1040" name="NestedBakedLayersMatchExportedCloud" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:57Z" duration="1.167112" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1038" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/NestedNature/&quot;,0.369f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="1253747411" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:56Z" duration="0.512987" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1039" name="NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" fullname="BubbleWorldTests.NestedBakedLayersMatchExportedCloud(&quot;MoodiumBubbleWorld/Candy/Nested/&quot;,0.56f)" methodname="NestedBakedLayersMatchExportedCloud" classname="BubbleWorldTests" runstate="Runnable" seed="1546834869" result="Passed" start-time="2026-10-30 05:20:56Z" end-time="2026-10-30 05:20:57Z" duration="0.542254" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1043" name="ParsesTheConverterFormat" fullname="BubbleWorldTests.ParsesTheConverterFormat" methodname="ParsesTheConverterFormat" classname="BubbleWorldTests" runstate="Runnable" seed="738423662" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000533" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1044" name="RejectsWrongMagicVersionOrTruncatedData" fullname="BubbleWorldTests.RejectsWrongMagicVersionOrTruncatedData" methodname="RejectsWrongMagicVersionOrTruncatedData" classname="BubbleWorldTests" runstate="Runnable" seed="1510480481" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000158" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1042" name="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" fullname="BubbleWorldTests.RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" methodname="RoundAtlasKeepsPointColoursAndFadesEdgesWithoutNeighbourBleed" classname="BubbleWorldTests" runstate="Runnable" seed="1453405876" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001536" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1032" name="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" fullname="BubbleWorldTests.RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" methodname="RoundPointFadeUsesActualAlphaBlendingWithoutDepthOcclusion" classname="BubbleWorldTests" runstate="Runnable" seed="963843694" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000398" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1056" name="ScanForwardTurnsToTheGaze" fullname="BubbleWorldTests.ScanForwardTurnsToTheGaze" methodname="ScanForwardTurnsToTheGaze" classname="BubbleWorldTests" runstate="Runnable" seed="33014773" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000409" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1054" name="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" fullname="BubbleWorldTests.ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" methodname="ScanGroundLandsOnTheRealFloorWhenHeadHeightIsPlausible" classname="BubbleWorldTests" runstate="Runnable" seed="1819839963" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000457" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1063" name="ShippedPointCloudIsValidWhenPresent" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.008081" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1061" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="1375631784" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003823" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1062" name="ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" fullname="BubbleWorldTests.ShippedPointCloudIsValidWhenPresent(&quot;MoodiumBubbleWorld/Candy/&quot;)" methodname="ShippedPointCloudIsValidWhenPresent" classname="BubbleWorldTests" runstate="Runnable" seed="1418600081" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003351" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1049" name="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" fullname="BubbleWorldTests.SkySphereFacesInwardAndUsesTheConverterEquirectMapping" methodname="SkySphereFacesInwardAndUsesTheConverterEquirectMapping" classname="BubbleWorldTests" runstate="Runnable" seed="867270066" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001019" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1033" name="StopClearsBreathAndWanderAndIsIdempotent" fullname="BubbleWorldTests.StopClearsBreathAndWanderAndIsIdempotent" methodname="StopClearsBreathAndWanderAndIsIdempotent" classname="BubbleWorldTests" runstate="Runnable" seed="854509389" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000593" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1045" name="SummaryMatchesFullParseWithoutReadingEveryPoint" fullname="BubbleWorldTests.SummaryMatchesFullParseWithoutReadingEveryPoint" methodname="SummaryMatchesFullParseWithoutReadingEveryPoint" classname="BubbleWorldTests" runstate="Runnable" seed="2119300420" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000220" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1034" name="SummonArcAndReturnRadiusHaveExactEndpoints" fullname="BubbleWorldTests.SummonArcAndReturnRadiusHaveExactEndpoints" methodname="SummonArcAndReturnRadiusHaveExactEndpoints" classname="BubbleWorldTests" runstate="Runnable" seed="659111741" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000253" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1036" name="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" fullname="BubbleWorldTests.WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" methodname="WarmupBuildsOnlyTheMiniWorldBeforeOuterLayers" classname="BubbleWorldTests" runstate="Runnable" seed="136067660" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000107" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1064" name="CalibratedSensoryBagPresentationTests" fullname="CalibratedSensoryBagPresentationTests" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.007748" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+]]></output>
+        <test-case id="1065" name="Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" fullname="CalibratedSensoryBagPresentationTests.Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" methodname="Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="326043878" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.004971" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1069" name="VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" fullname="CalibratedSensoryBagPresentationTests.VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" methodname="VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="2095354205" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000264" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1067" name="VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" fullname="CalibratedSensoryBagPresentationTests.VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" methodname="VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1809075446" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000169" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1068" name="VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" fullname="CalibratedSensoryBagPresentationTests.VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" methodname="VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1433439865" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000099" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1066" name="VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" fullname="CalibratedSensoryBagPresentationTests.VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" methodname="VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1262514378" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000843" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1165" name="DualTrackingRealityFlowTests" fullname="DualTrackingRealityFlowTests" classname="DualTrackingRealityFlowTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.178788" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1167" name="ImageTrackedCapsuleIncreasesSharedCandyEnergy" fullname="DualTrackingRealityFlowTests.ImageTrackedCapsuleIncreasesSharedCandyEnergy" methodname="ImageTrackedCapsuleIncreasesSharedCandyEnergy" classname="DualTrackingRealityFlowTests" runstate="Runnable" seed="506923986" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.177426" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Candy Burst] Cleared 0 Reality Enhancement candy instances.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy Progress] Environment journey started at natural reality state.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy World] Reality Enhancement Mode experience started.
+Chocolate Capsule Pinched
+[Moodi Emergence] candy display = mesh
+[Candy Energy] 5/100
+[Candy Burst] Chocolate Capsule source or prefab list is not ready.
+Chocolate Crack Animation Start
+]]></output>
+        </test-case>
+        <test-case id="1166" name="RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" fullname="DualTrackingRealityFlowTests.RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" methodname="RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" classname="DualTrackingRealityFlowTests" runstate="Runnable" seed="2140715590" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000745" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1294" name="MoodiAnimatedTests" fullname="MoodiAnimatedTests" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="14" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.151401" total="14" passed="14" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1308" name="ClipNames_DropTheBlenderPrefix" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001048" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1305" name="ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Idle&quot;,&quot;Idle&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Idle&quot;,&quot;Idle&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="947664178" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000251" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1306" name="ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Moodi_Rig|Touched&quot;,&quot;Touched&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Moodi_Rig|Moodi_Rig|Touched&quot;,&quot;Touched&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="105233867" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000022" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1307" name="ClipNames_DropTheBlenderPrefix(&quot;Wave&quot;,&quot;Wave&quot;)" fullname="MoodiAnimatedTests.ClipNames_DropTheBlenderPrefix(&quot;Wave&quot;,&quot;Wave&quot;)" methodname="ClipNames_DropTheBlenderPrefix" classname="MoodiAnimatedTests" runstate="Runnable" seed="1512803957" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000021" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1302" name="ColdPlacementIsNotInterpretedAsWalking" fullname="MoodiAnimatedTests.ColdPlacementIsNotInterpretedAsWalking" methodname="ColdPlacementIsNotInterpretedAsWalking" classname="MoodiAnimatedTests" runstate="Runnable" seed="875481124" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.002672" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1303" name="LatestTouchedReactionDoesNotLeaveAPendingWave" fullname="MoodiAnimatedTests.LatestTouchedReactionDoesNotLeaveAPendingWave" methodname="LatestTouchedReactionDoesNotLeaveAPendingWave" classname="MoodiAnimatedTests" runstate="Runnable" seed="1568115107" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.002308" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1299" name="LegacySelectionDoesNotWrapOrHijackRiggedCompanion" fullname="MoodiAnimatedTests.LegacySelectionDoesNotWrapOrHijackRiggedCompanion" methodname="LegacySelectionDoesNotWrapOrHijackRiggedCompanion" classname="MoodiAnimatedTests" runstate="Runnable" seed="1664508473" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000753" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Selection Moodi] No Animator was found in the world-entry UI prefab.
+]]></output>
+        </test-case>
+        <test-case id="1300" name="MenuCommandsHaveVoidReturnTypes" fullname="MoodiAnimatedTests.MenuCommandsHaveVoidReturnTypes" methodname="MenuCommandsHaveVoidReturnTypes" classname="MoodiAnimatedTests" runstate="Runnable" seed="2033555537" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000123" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1301" name="RebuildingControllerPreservesAssetGuid" fullname="MoodiAnimatedTests.RebuildingControllerPreservesAssetGuid" methodname="RebuildingControllerPreservesAssetGuid" classname="MoodiAnimatedTests" runstate="Runnable" seed="547649169" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.128552" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodi Setup] Animator controller written to Assets/__MoodiAnimatedTest_76d98c26441b430ba78ac7b4c4b06f07.controller
+]]></output>
+        </test-case>
+        <test-case id="1304" name="TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" fullname="MoodiAnimatedTests.TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" methodname="TouchCooldownAndVisualTurningNeverMoveTheGuideRoot" classname="MoodiAnimatedTests" runstate="Runnable" seed="757413395" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001350" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1298" name="UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" fullname="MoodiAnimatedTests.UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" methodname="UpgradedPrefabKeepsOriginalIdentityAndStaticBackup" classname="MoodiAnimatedTests" runstate="Runnable" seed="924444098" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001646" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1297" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.004403" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1295" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(1.0f)" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(1.0f)" methodname="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" seed="1295015721" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001256" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1296" name="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(0.0f)" fullname="MoodiAnimatedTests.WalkingGuideFacesAssignedViewerWhileMovingAndWaiting(0.0f)" methodname="WalkingGuideFacesAssignedViewerWhileMovingAndWaiting" classname="MoodiAnimatedTests" runstate="Runnable" seed="2089591105" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000384" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1310" name="YawStep_IgnoresTinyAndVerticalDifferences" fullname="MoodiAnimatedTests.YawStep_IgnoresTinyAndVerticalDifferences" methodname="YawStep_IgnoresTinyAndVerticalDifferences" classname="MoodiAnimatedTests" runstate="Runnable" seed="1714942780" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000159" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1309" name="YawStep_TurnsTheShortWayAndIsLimited" fullname="MoodiAnimatedTests.YawStep_TurnsTheShortWayAndIsLimited" methodname="YawStep_TurnsTheShortWayAndIsLimited" classname="MoodiAnimatedTests" runstate="Runnable" seed="170601434" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000111" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1343" name="MoodiRescueTests" fullname="MoodiRescueTests" classname="MoodiRescueTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003383" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1349" name="CheersNeedSteadyPressingAndAGap" fullname="MoodiRescueTests.CheersNeedSteadyPressingAndAGap" methodname="CheersNeedSteadyPressingAndAGap" classname="MoodiRescueTests" runstate="Runnable" seed="655521168" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000119" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1346" name="DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" fullname="MoodiRescueTests.DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" methodname="DomeIsShorterAndWiderWhenPressedAndTallerWhenSpringingBack" classname="MoodiRescueTests" runstate="Runnable" seed="970616883" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000187" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1351" name="JumpArcStartsAndEndsOnItsPoints" fullname="MoodiRescueTests.JumpArcStartsAndEndsOnItsPoints" methodname="JumpArcStartsAndEndsOnItsPoints" classname="MoodiRescueTests" runstate="Runnable" seed="997385726" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000230" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1350" name="NudgeOnlyWhenTheUserStopsMidway" fullname="MoodiRescueTests.NudgeOnlyWhenTheUserStopsMidway" methodname="NudgeOnlyWhenTheUserStopsMidway" classname="MoodiRescueTests" runstate="Runnable" seed="2102857244" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000125" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1344" name="PressingSquashesQuicklyWithoutWobble" fullname="MoodiRescueTests.PressingSquashesQuicklyWithoutWobble" methodname="PressingSquashesQuicklyWithoutWobble" classname="MoodiRescueTests" runstate="Runnable" seed="716947585" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000159" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1345" name="ReleasingSpringsBackTallerThenSettles" fullname="MoodiRescueTests.ReleasingSpringsBackTallerThenSettles" methodname="ReleasingSpringsBackTallerThenSettles" classname="MoodiRescueTests" runstate="Runnable" seed="1676472024" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000095" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1348" name="StagesMapToTheirLines" fullname="MoodiRescueTests.StagesMapToTheirLines" methodname="StagesMapToTheirLines" classname="MoodiRescueTests" runstate="Runnable" seed="371087170" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000103" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1347" name="VoiceIsMuffledInsideAndClearNearTheEnd" fullname="MoodiRescueTests.VoiceIsMuffledInsideAndClearNearTheEnd" methodname="VoiceIsMuffledInsideAndClearNearTheEnd" classname="MoodiRescueTests" runstate="Runnable" seed="175497039" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000104" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1493" name="PalmPressWorldSpaceContactTests" fullname="PalmPressWorldSpaceContactTests" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.026694" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1498" name="DetachedTrackedCapsuleStillIncreasesCandyEnergy" fullname="PalmPressWorldSpaceContactTests.DetachedTrackedCapsuleStillIncreasesCandyEnergy" methodname="DetachedTrackedCapsuleStillIncreasesCandyEnergy" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="33284089" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.021788" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Candy Burst] Cleared 0 Reality Enhancement candy instances.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy Progress] Environment journey started at natural reality state.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy World] Reality Enhancement Mode experience started.
+Chocolate Capsule Pinched
+[Moodi Emergence] candy display = mesh
+[Candy Energy] 5/100
+[Candy Burst] Chocolate Capsule source or prefab list is not ready.
+Chocolate Crack Animation Start
+]]></output>
+        </test-case>
+        <test-case id="1496" name="PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" fullname="PalmPressWorldSpaceContactTests.PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" methodname="PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="664076791" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.002025" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1495" name="PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" fullname="PalmPressWorldSpaceContactTests.PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" methodname="PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="680618315" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000963" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1497" name="TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" fullname="PalmPressWorldSpaceContactTests.TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" methodname="TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="856623604" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000464" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1494" name="TrackingPoseIsConvertedThroughXROrigin" fullname="PalmPressWorldSpaceContactTests.TrackingPoseIsConvertedThroughXROrigin" methodname="TrackingPoseIsConvertedThroughXROrigin" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="721206189" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000456" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1594" name="SoftPrefabFitTests" fullname="SoftPrefabFitTests" classname="SoftPrefabFitTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.009255" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1599" name="MeshAndColliderFillCalibration" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.007900" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1595" name="MeshAndColliderFillCalibration(&quot;Candy&quot;,0.4f,0.25f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Candy&quot;,0.4f,0.25f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="1272303941" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003850" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1596" name="MeshAndColliderFillCalibration(&quot;Nature&quot;,0.4f,0.25f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Nature&quot;,0.4f,0.25f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="2059479433" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.002974" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1597" name="MeshAndColliderFillCalibration(&quot;Candy&quot;,0.3f,0.18f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Candy&quot;,0.3f,0.18f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="1443865534" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000209" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1598" name="MeshAndColliderFillCalibration(&quot;Nature&quot;,0.3f,0.18f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Nature&quot;,0.3f,0.18f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="343212550" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000208" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+      </test-suite>
+      <test-suite type="TestFixture" id="1606" name="SqueezeProgressVideoControllerTests" fullname="SqueezeProgressVideoControllerTests" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.010032" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1620" name="CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" fullname="SqueezeProgressVideoControllerTests.CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" methodname="CircularVideoUvCenterCropsAWideClipWithoutStretchingIt" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1255715676" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000246" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1616" name="HasReachedTarget_UsesSmallToleranceBeforePausing" fullname="SqueezeProgressVideoControllerTests.HasReachedTarget_UsesSmallToleranceBeforePausing" methodname="HasReachedTarget_UsesSmallToleranceBeforePausing" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="2093716966" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000088" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1615" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001535" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1610" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.0f,12.0d,0.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.0f,12.0d,0.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="84314923" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000410" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1611" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.25f,12.0d,3.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.25f,12.0d,3.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="642050447" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000022" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1612" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.5f,12.0d,6.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(0.5f,12.0d,6.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="2102949575" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000020" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1613" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.0f,12.0d,12.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.0f,12.0d,12.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1132512008" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000020" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1614" name="ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.5f,12.0d,12.0d)" fullname="SqueezeProgressVideoControllerTests.ProgressToVideoTime_ClampsAndMapsNormalizedProgress(1.5f,12.0d,12.0d)" methodname="ProgressToVideoTime_ClampsAndMapsNormalizedProgress" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1112302191" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000020" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-suite type="ParameterizedMethod" id="1609" name="SqueezeVideoDisablesEmbeddedAudio" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003834" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1607" name="SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/CandySqueezeAlpha.mp4&quot;)" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/CandySqueezeAlpha.mp4&quot;)" methodname="SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="925449350" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003045" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1608" name="SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/newnaturesqueeze.mp4&quot;)" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoDisablesEmbeddedAudio(&quot;Assets/Video/newnaturesqueeze.mp4&quot;)" methodname="SqueezeVideoDisablesEmbeddedAudio" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="239686845" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000313" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1619" name="SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" methodname="SqueezeVideoPlacementPrefersTheLiveMainCameraOverTheCachedCamera" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="752359578" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000181" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1618" name="SqueezeVideoUsesAForegroundRenderQueue" fullname="SqueezeProgressVideoControllerTests.SqueezeVideoUsesAForegroundRenderQueue" methodname="SqueezeVideoUsesAForegroundRenderQueue" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="731225410" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000051" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1623" name="SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" fullname="SqueezeProgressVideoControllerTests.SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" methodname="SurfacePositionAllowsANegativeOffsetToLowerTheVideoAndDomeIntoTheSoft" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1148584960" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000181" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1622" name="SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" fullname="SqueezeProgressVideoControllerTests.SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" methodname="SurfacePositionUsesTrackingCenterAndPlacesVideoAboveTheSoftModel" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1079753188" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000104" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1621" name="SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" fullname="SqueezeProgressVideoControllerTests.SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" methodname="SurfaceRotationPlacesTheCircularVideoPlaneAgainstTheTrackedSurface" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="384074540" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000274" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1617" name="UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" fullname="SqueezeProgressVideoControllerTests.UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" methodname="UprightFacingRotation_IgnoresCameraPitchAndKeepsVideoVertical" classname="SqueezeProgressVideoControllerTests" runstate="Runnable" seed="1324933716" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000378" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1675" name="UIRefreshTests" fullname="UIRefreshTests" classname="UIRefreshTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.091030" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1676" name="All51SpritesLoadAtDesignScale" fullname="UIRefreshTests.All51SpritesLoadAtDesignScale" methodname="All51SpritesLoadAtDesignScale" classname="UIRefreshTests" runstate="Runnable" seed="1525333404" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.026965" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1677" name="EnergyBoundariesAndRenderedState" fullname="UIRefreshTests.EnergyBoundariesAndRenderedState" methodname="EnergyBoundariesAndRenderedState" classname="UIRefreshTests" runstate="Runnable" seed="911615033" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.011982" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1686" name="OpeningUsesSpritesAtPhysicalHitSize" fullname="UIRefreshTests.OpeningUsesSpritesAtPhysicalHitSize" methodname="OpeningUsesSpritesAtPhysicalHitSize" classname="UIRefreshTests" runstate="Runnable" seed="1616439229" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.004736" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1685" name="RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" fullname="UIRefreshTests.RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" methodname="RotationDragUsesExistingCentreAndSnapsBackWithoutResizing" classname="UIRefreshTests" runstate="Runnable" seed="907388673" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.041023" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[The character with Unicode value \u8FB9 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u6846 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8981 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u8D34 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u5E73 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u684C was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u9762 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Title].
+The character with Unicode value \u786E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u8BA4 was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u91CD was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+The character with Unicode value \u7F6E was not found in the [LiberationSans SDF] font asset or any potential fallbacks. It was replaced by Unicode character \u25A1 in text object [Label].
+[Sensory Bag Calibration] Started test: 0.400m × 0.250m, offset=(0.00, 0.00).
+]]></output>
+        </test-case>
+        <test-case id="1684" name="RotationFormat" fullname="UIRefreshTests.RotationFormat" methodname="RotationFormat" classname="UIRefreshTests" runstate="Runnable" seed="892063357" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000193" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1683" name="RotationSnap" fullname="UIRefreshTests.RotationSnap" classname="UIRefreshTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001733" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1679" name="RotationSnap(2.9f,0.0f)" fullname="UIRefreshTests.RotationSnap(2.9f,0.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="222932663" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000140" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1680" name="RotationSnap(3.1f,3.1f)" fullname="UIRefreshTests.RotationSnap(3.1f,3.1f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="1283374071" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000055" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1681" name="RotationSnap(-2.0f,0.0f)" fullname="UIRefreshTests.RotationSnap(-2.0f,0.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="742822121" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000050" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1682" name="RotationSnap(370.0f,10.0f)" fullname="UIRefreshTests.RotationSnap(370.0f,10.0f)" methodname="RotationSnap" classname="UIRefreshTests" runstate="Runnable" seed="1986787155" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000048" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1678" name="SettingsSelectsSemanticValuesAndChangesSprites" fullname="UIRefreshTests.SettingsSelectsSemanticValuesAndChangesSprites" methodname="SettingsSelectsSemanticValuesAndChangesSprites" classname="UIRefreshTests" runstate="Runnable" seed="1759273079" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.002489" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1690" name="WalkTrailGuideControllerTests" fullname="WalkTrailGuideControllerTests" classname="WalkTrailGuideControllerTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003566" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1694" name="CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" fullname="WalkTrailGuideControllerTests.CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" methodname="CompanionFollowsViewerInsteadOfReturningToAFixedBagPosition" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="14074171" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000486" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1695" name="GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" fullname="WalkTrailGuideControllerTests.GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" methodname="GuideAdvancesWithoutViewerMovementButWaitsWhenTooFarAhead" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="1871374119" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000133" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1693" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000764" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1691" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight(0.0f,1.65f)" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight(0.0f,1.65f)" methodname="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="1184753131" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000218" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1692" name="GuideTracksTargetHorizontallyButStaysAtCompanionHeight(-0.3f,1.2f)" fullname="WalkTrailGuideControllerTests.GuideTracksTargetHorizontallyButStaysAtCompanionHeight(-0.3f,1.2f)" methodname="GuideTracksTargetHorizontallyButStaysAtCompanionHeight" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="1495018112" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000025" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1697" name="MelodyClimbsThenLoopsFromFourthNote" fullname="WalkTrailGuideControllerTests.MelodyClimbsThenLoopsFromFourthNote" methodname="MelodyClimbsThenLoopsFromFourthNote" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="363410773" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000079" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1696" name="WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" fullname="WalkTrailGuideControllerTests.WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" methodname="WalkingInvitationWaitsTwentySecondsWithoutPalmCycle" classname="WalkTrailGuideControllerTests" runstate="Runnable" seed="445245867" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000079" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1708" name="WorldFix1030Tests" fullname="WorldFix1030Tests" classname="WorldFix1030Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:58Z" duration="0.131652" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1712" name="DisabledRiseRoutesToVideo" fullname="WorldFix1030Tests.DisabledRiseRoutesToVideo" methodname="DisabledRiseRoutesToVideo" classname="WorldFix1030Tests" runstate="Runnable" seed="237509280" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.001806" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Moodium Squeeze Video] Missing Candy squeeze video clip.
+[Moodi Emergence] Rise disabled or resources unavailable; using video fallback.
+[Moodi Emergence] candy display = video
+]]></output>
+        </test-case>
+        <test-case id="1718" name="GazeUsesShaderAndOwnsTransparentTexture" fullname="WorldFix1030Tests.GazeUsesShaderAndOwnsTransparentTexture" methodname="GazeUsesShaderAndOwnsTransparentTexture" classname="WorldFix1030Tests" runstate="Runnable" seed="2097303037" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000289" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1717" name="MissingEmergeStateIsNotSupported" fullname="WorldFix1030Tests.MissingEmergeStateIsNotSupported" methodname="MissingEmergeStateIsNotSupported" classname="WorldFix1030Tests" runstate="Runnable" seed="873531773" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000105" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1711" name="OpeningHitboxesClearVideoAndDragHandle" fullname="WorldFix1030Tests.OpeningHitboxesClearVideoAndDragHandle" classname="WorldFix1030Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.004352" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1709" name="OpeningHitboxesClearVideoAndDragHandle(False)" fullname="WorldFix1030Tests.OpeningHitboxesClearVideoAndDragHandle(False)" methodname="OpeningHitboxesClearVideoAndDragHandle" classname="WorldFix1030Tests" runstate="Runnable" seed="1392215675" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.003076" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1710" name="OpeningHitboxesClearVideoAndDragHandle(True)" fullname="WorldFix1030Tests.OpeningHitboxesClearVideoAndDragHandle(True)" methodname="OpeningHitboxesClearVideoAndDragHandle" classname="WorldFix1030Tests" runstate="Runnable" seed="1685763793" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000428" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1716" name="ProgressNeverReversesOrCompletesInUnderThreeSeconds" fullname="WorldFix1030Tests.ProgressNeverReversesOrCompletesInUnderThreeSeconds" methodname="ProgressNeverReversesOrCompletesInUnderThreeSeconds" classname="WorldFix1030Tests" runstate="Runnable" seed="190167456" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.000169" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1715" name="RisePreservesParentAndAlignsRigAtSurface" fullname="WorldFix1030Tests.RisePreservesParentAndAlignsRigAtSurface" classname="WorldFix1030Tests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:58Z" duration="0.124400" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1713" name="RisePreservesParentAndAlignsRigAtSurface(&quot;Nature&quot;)" fullname="WorldFix1030Tests.RisePreservesParentAndAlignsRigAtSurface(&quot;Nature&quot;)" methodname="RisePreservesParentAndAlignsRigAtSurface" classname="WorldFix1030Tests" runstate="Runnable" seed="1213060753" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:57Z" duration="0.068515" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1714" name="RisePreservesParentAndAlignsRigAtSurface(&quot;Candy&quot;)" fullname="WorldFix1030Tests.RisePreservesParentAndAlignsRigAtSurface(&quot;Candy&quot;)" methodname="RisePreservesParentAndAlignsRigAtSurface" classname="WorldFix1030Tests" runstate="Runnable" seed="369683426" result="Passed" start-time="2026-10-30 05:20:57Z" end-time="2026-10-30 05:20:58Z" duration="0.052353" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+            <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+          </test-case>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
