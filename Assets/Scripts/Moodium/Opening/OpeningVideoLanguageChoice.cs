@@ -62,14 +62,14 @@ namespace Moodium.Opening
             var display=transform.parent;
             item.transform.position=display!=null
                 // Keep the buttons just inside the video's bottom edge, clear of the window move bar.
-                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.1f:.1f)+display.up*.04f-display.forward*.003f
-                : transform.position+transform.right*(position.x<0?-.1f:.1f);
+                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.13f:.13f)+display.up*.06f-display.forward*.03f
+                : transform.position+transform.right*(position.x<0?-.13f:.13f);
             var feedback=item.AddComponent<OpeningChoiceSpriteFeedback>();feedback.Configure(assetId);
             var spatialButton=item.AddComponent<OpeningVideoSpatialButton>();
             spatialButton.Configure(touchId=>{if(HasSelection)return;feedback.SetPressed();SelectFromPress(value, touchId);});
             var button=item.AddComponent<Button>();button.transition=Selectable.Transition.None;
             button.onClick.AddListener(()=>spatialButton.OnPointerClick(null));
-            item.AddComponent<BoxCollider>().size=new Vector3(.178f,.061f,.01f);
+            item.AddComponent<BoxCollider>().size=new Vector3(.20f,.08f,.01f);
             item.AddComponent<Unity.PolySpatial.VisionOSHoverEffect>().Type=Unity.PolySpatial.VisionOSHoverEffect.EffectType.Highlight;
             return item;
         }

@@ -310,6 +310,7 @@ namespace Moodium.Opening
                     if (!videoInteraction.Activated)
                         Debug.Log("[Moodium Opening] Intro video auto-activated after 30 seconds without interaction.");
                     gate.Activate();
+                    videoCollider.enabled=false;
                     leftGuide?.SetActive(false);
                     rightGuide?.SetActive(false);
                     prompt?.SetActive(false);
