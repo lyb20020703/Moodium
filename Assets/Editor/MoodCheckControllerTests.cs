@@ -1,3 +1,4 @@
+using System.Linq;
 using Moodium.MoodCheck;
 using NUnit.Framework;
 using TMPro;
@@ -162,7 +163,7 @@ public sealed class MoodCheckControllerTests
         int OrderOf(string path)
         {
             var go = panel.Find(path).gameObject;
-            var index = group.Renderers.FindIndex(r => r.Renderer == go);
+            var index = group.Renderers.ToList().FindIndex(r => r.Renderer == go);
             Assert.That(index, Is.GreaterThanOrEqualTo(0), path + " is not in the sorting group");
             return group.Renderers[index].Order;
         }
@@ -171,7 +172,7 @@ public sealed class MoodCheckControllerTests
         foreach (var label in panel.GetComponentsInChildren<TMP_Text>(true))
         {
             if (!label.GetComponent<Renderer>().enabled) continue;
-            Assert.That(group.Renderers.Exists(r => r.Renderer == label.gameObject), Is.True, label.name);
+            Assert.That(group.Renderers.Any(r => r.Renderer == label.gameObject), Is.True, label.name);
         }
         foreach (var sub in panel.GetComponentsInChildren<TMP_SubMesh>(true))
             Assert.That(MoodCheckController.NativeSortOrder(sub.GetComponent<Renderer>()),

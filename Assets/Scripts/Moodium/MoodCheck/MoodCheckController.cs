@@ -466,8 +466,8 @@ namespace Moodium.MoodCheck
                     // The panel is also used over white recommendation cards. A thick dark
                     // TMP outline/underlay becomes a black rectangle on visionOS, so keep all
                     // labels clean and let the panel glass provide contrast.
-                    label.outlineWidth = 0f;
-                    label.outlineColor = Color.clear;
+                    label.fontSharedMaterial.SetFloat("_OutlineWidth", 0f);
+                    label.fontSharedMaterial.SetColor("_OutlineColor", Color.clear);
                     label.fontSharedMaterial.SetColor("_UnderlayColor", Color.clear);
                     label.fontSharedMaterial.SetFloat("_UnderlayDilate", 0f);
                     label.fontSharedMaterial.SetFloat("_UnderlaySoftness", 0f);

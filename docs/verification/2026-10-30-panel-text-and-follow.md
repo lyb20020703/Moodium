@@ -83,3 +83,23 @@
 | `WorldGuideLifecycleTests.ExplorePageIsTheCardOnlyWithoutTheOldRingHint` | 打开带"自由探索"页的教学卡（中、英），卡片上没有任何 TMP 文字 |
 | `MoodCheckControllerTests.PanelHasANativeSortingGroupWithTextAboveGlass` | 面板有 PostPass 排序组；文字顺序高于玻璃和表盘；每个可见文字都登记了；备用字体子网格和文字同序 |
 | `MoodiumWindowHandleTests`（新文件） | 面板在视频前 0.3 m、朝向一致；拖动并转向后面板相对视频的位置朝向不变（视频不等比缩放）；视频不能被拉到 0.85 m 以内；销毁的跟随物体被移除 |
+
+
+## 本地实施和验证（2026-10-30）
+
+在原工程 `/Users/yibei/Desktop/appcontest2026/Moodium` 从 6be2e21 新建 codex/panel-text-follow-1030 分支，原样应用补丁提交 326dd2f。未恢复点云运动或藤蔓补丁，未改软模型、按钮、Moodi 或全局 PolySpatial 配置。未合并、未推送。
+
+Unity 6000.0.30f1 在独立验证副本运行测试，避免争用原工程编辑器。修复两类实际问题：
+
+1. 输入测试使用 ObservableList 不支持的 FindIndex/Exists，改为 ToList().FindIndex / LINQ Any，断言含义不变。
+2. 新增排序测试暴露旧 ApplyLanguage 的 TMP outlineColor setter 在编辑模式隐式调用 renderer.material 并报泄漏错误。改为直接在 MoodTextMaterial 已为每个标签独立创建的 fontSharedMaterial 上设置 _OutlineWidth=0、_OutlineColor=clear，不新增描边、阴影或底板，也不改共享字体资源。
+
+Unity 生成的新测试 .meta 已复制回原工程并提交。
+
+全套结果：**639 项，610 通过、29 失败**。与 6be2e21 的完整测试清单逐项比较，新增失败 0，10 项旧失败本轮消失。[完整 XML](panel-text-follow-1030/full-tests.xml)、[逐项失败对比](panel-text-follow-1030/failure-comparison.md)。没有更改旧测试期望来凑结果。
+
+指定套件：WorldGuideCards 8/8、GuideHelp 8/8、WorldGuideLifecycle 10/10、MoodCheckController 8/8、MoodCheckUISetup 6/6、MoodiumWindowHandle 4/4。MoodCheckFlowIntegration 3/4、SensoryBagBranch 6/7；剩余分别为既有 ExitWithPreSampleOpensPostAndSkipClosesVisit 和 DefaultConfirmationBypassesFrameAndCompletesOnlyOnce，已在清单列明。
+
+本轮新增断言验证：中英文探索卡不含旧 TMP 光环提示；心情面板使用 PostPass 排序组，文字高于玻璃且备用字体子网格同序；视频不等比缩放时面板跟随位姿不变；拖动视频会转向并带动面板；最小水平距离 0.85 m；销毁的 follower 会移除。设置面板通过同一 follower 机制接入。
+
+当前已完成代码、资源元数据、编译与自动化测试；尚未进行运行中编辑器的完整交互目测，亦未真机验收。特别是“文字黑底消失”仍是待设备确认的视觉结果，不能仅凭排序组测试断言修复成功。真机待验：100% 教学卡内容；视频/模型邻近时心情文字；拖动中两面板跟随且不穿插；最小拖动距离；推荐卡显示与按键。若仍黑块，按输入说明记录邻近物体及截图，未擅自切换 PrePass。
