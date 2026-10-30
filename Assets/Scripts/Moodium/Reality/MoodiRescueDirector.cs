@@ -375,6 +375,23 @@ namespace Moodium.Reality
             var bounds = new Bounds(m_Visual.transform.position, Vector3.zero);
             foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
             var size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+            // The v2 rig's skinned-mesh bounds are not reliable before the first skinning pass; when the eye
+            // bones exist, measure Moodi from them instead (rest pose: eye span 0.678, largest side 1.904).
+            Transform eyeL = null, eyeR = null;
+            foreach (var t in m_Visual.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == "Eye_L") eyeL = t;
+                else if (t.name == "Eye_R") eyeR = t;
+            }
+            if (eyeL != null && eyeR != null)
+            {
+                var span = Vector3.Distance(eyeL.position, eyeR.position);
+                if (span > 1e-6f)
+                {
+                    Debug.Log($"[Moodi Rescue] size from bounds {size * 100f:F1} cm, from eyes {span / .678f * 1.904f * 100f:F1} cm");
+                    size = span / .678f * 1.904f;
+                }
+            }
             if (size > .0001f) m_Visual.transform.localScale *= m_MoodiSize / size;
             m_VisualScale = m_Visual.transform.localScale;
             m_Animator = m_Visual.GetComponent<MoodiCompanionAnimator>();

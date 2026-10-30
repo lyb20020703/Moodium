@@ -197,6 +197,13 @@ public static class MoodiAnimatedSetup
                 return;
             }
             var old = root.transform.Find(RiggedChildName);
+            // Re-running the setup must not move the model: on the v2 rig the computed alignment came out
+            // 180° turned, 39% larger and 6 cm higher (Moodi showed its back in the world selection UI).
+            // Keep an existing, already-approved transform; compute one only for a first-time upgrade.
+            var keep = old != null;
+            var keptPosition = keep ? old.localPosition : Vector3.zero;
+            var keptRotation = keep ? old.localRotation : Quaternion.identity;
+            var keptScale = keep ? old.localScale : Vector3.one;
             if (old != null) Object.DestroyImmediate(old.gameObject);
 
             // Units of the prefab root per Blender unit, from the static mesh width (X maps to X).
@@ -229,6 +236,12 @@ public static class MoodiAnimatedSetup
             // Position: the Body bone lands on the static body bottom.
             var tgtBody = BlenderToRoot(BlenderBodyBottom) * unitsPerBlender;
             rigged.transform.localPosition += tgtBody - InRoot(body);
+            if (keep)
+            {
+                rigged.transform.localPosition = keptPosition;
+                rigged.transform.localRotation = keptRotation;
+                rigged.transform.localScale = keptScale;
+            }
 
             var smr = rigged.GetComponentInChildren<SkinnedMeshRenderer>(true);
             var staticRenderer = staticChild.GetComponentInChildren<Renderer>(true);

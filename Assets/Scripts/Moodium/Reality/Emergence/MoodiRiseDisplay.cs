@@ -11,6 +11,10 @@ namespace Moodium.Reality
     {
         [SerializeField] float m_SmoothTime=.25f, m_MaxSpeed=.3f, m_PopThreshold=.995f;
         [SerializeField] float m_ReboundLift=.07f, m_SurfaceRadius=.015f, m_RiseScale=1f, m_AttachDuration=.12f, m_DetachDuration=.3f;
+        // Moodi's largest side while rising, in metres (same 4 cm as the rescue Moodi). Measured from the eye
+        // bones, because renderer bounds of the v2 skinned mesh are not reliable for sizing.
+        [SerializeField, Range(.02f,.08f)] float m_RiseSize=.04f;
+        const float EyeSpanRig=.678f, LargestSideRig=1.904f;   // Moodi_Rig rest pose (Blender), Eye_L-Eye_R and largest side
         [SerializeField] Vector2 m_SpotOffset;
         [SerializeField] float m_BlinkClose=.1f, m_BlinkOpen=.1f, m_ClosedScale=.08f;
         Transform anchor, rig, visual, rescueRoot, stem;
@@ -132,15 +136,43 @@ namespace Moodium.Reality
             visual=companion!=null?companion.transform:moodi.transform.parent;
             rescueRoot=visual.parent;
             originalPosition=visual.localPosition;originalScale=visual.localScale;originalRotation=visual.localRotation;
-            visual.localScale=originalScale*m_RiseScale;
-            TryGetDomeCenter(out var center,out _);
+            eyes=new[]{rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Eye_L"),rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Eye_R")};
+            visual.localScale=originalScale*SizeCorrection()*m_RiseScale;
+            TryGetDomeCenter(out var center,out var up);
             rescueRoot.SetPositionAndRotation(center,anchor.rotation*anchorLocalRotation);
+            FaceViewer(up);
+            anchorLocalRotation=Quaternion.Inverse(anchor.rotation)*rescueRoot.rotation;
             alignedPosition=originalPosition-rescueRoot.InverseTransformVector(rig.position-rescueRoot.position);
             attachedAt=Time.time;
-            eyes=new[]{rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Eye_L"),rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Eye_R")};
             eyeScales=eyes.Select(t=>t!=null?t.localScale:Vector3.one).ToArray();
             attached=true; moodi.SetBool("Emerging",false);moodi.SetBool("Peeking",false);moodi.CrossFadeInFixedTime("FallIn",.1f,0,0);
             stem=rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Sprout_Stem");
+        }
+        // The companion turns its animated model (not its root) to face the viewer while it flies in, and
+        // the model's authored front axis is not the root's +Z. So measure where the face actually points
+        // (eyes relative to the upper body, like MoodiCompanionAnimator.FindFaceDirection) and yaw the
+        // rescue root about the surface normal until that face points at the viewer.
+        void FaceViewer(Vector3 up)
+        {
+            var upper=rig.GetComponentsInChildren<Transform>(true).FirstOrDefault(t=>t.name=="Body_Upper");
+            if(eyes==null||eyes[0]==null||eyes[1]==null||upper==null)return;
+            var face=Vector3.ProjectOnPlane((eyes[0].position+eyes[1].position)*.5f-upper.position,up);
+            var camera=viewer!=null?viewer:Camera.main;
+            if(camera==null||face.sqrMagnitude<1e-10f)return;
+            var toward=Vector3.ProjectOnPlane(camera.transform.position-rescueRoot.position,up);
+            if(toward.sqrMagnitude<1e-8f)return;
+            rescueRoot.rotation=Quaternion.AngleAxis(Vector3.SignedAngle(face,toward,up),up)*rescueRoot.rotation;
+        }
+        // Scale factor that makes Moodi's largest side m_RiseSize, measured from the eye span.
+        float SizeCorrection()
+        {
+            if(eyes==null||eyes[0]==null||eyes[1]==null)return 1f;
+            var span=Vector3.Distance(eyes[0].position,eyes[1].position);
+            if(span<1e-6f)return 1f;
+            var largest=span/EyeSpanRig*LargestSideRig;
+            var k=m_RiseSize/largest;
+            Debug.Log($"[Moodi Rise] measured Moodi size {largest*100f:F1} cm -> {m_RiseSize*100f:F1} cm (x{k:F2})");
+            return k;
         }
         public void DetachMoodi(bool immediate=false)
         {

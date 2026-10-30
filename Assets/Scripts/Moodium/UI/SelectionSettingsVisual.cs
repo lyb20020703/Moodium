@@ -19,7 +19,7 @@ namespace Moodium.UI
             m_Panel=UIRefreshVisuals.Sprite(m_Content,"Settings Panel",english?"settings_panel_en":"settings_panel_zh",Vector3.zero,20);
             var closeSprite=UIRefreshVisuals.Sprite(m_Content,"Settings Close","settings_close",MoodiumUIRefreshLayout.SettingsClose,23);
             UIRefreshVisuals.Button(closeSprite,Vector2.one*(44*MoodiumUIRefreshLayout.DesignPxToMeters),Close);
-            var gear=UIRefreshVisuals.Gear(transform,new Vector3(0,-MoodiumUIRefreshLayout.SettingsPanelAboveKey,0),Close);gear.SetOpen(true);gear.ShowPressedFeedback();
+            var gear=UIRefreshVisuals.Gear(transform,new Vector3(0,-MoodiumUIRefreshLayout.SettingsPanelAboveKey,-.002f),Close);gear.SetOpen(true);gear.ShowPressedFeedback();
             for(int row=0;row<2;row++)
             {
                 var centre=row==0?MoodiumUIRefreshLayout.SettingsLanguageTrack:MoodiumUIRefreshLayout.SettingsBagTrack;

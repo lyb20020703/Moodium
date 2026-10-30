@@ -137,7 +137,7 @@ public sealed class BubbleSplatMotionTests
     public void WindLifecycleKeepsHandoffValueAndResetClearsMaterial()
     {
         var go = new GameObject("wind lifecycle");
-        var material = BubbleSplatMaterial.Create(null, 1.3f, false);
+        var material = BubbleSplatMaterial.Create(null, 1.3f, false, true);
         try
         {
             var motion = go.AddComponent<BubbleSplatMotion>(); motion.Initialize(material, go.transform, null);

@@ -67,10 +67,11 @@ public sealed class UIRefreshTests
         Assert.That(calibrator.RotationDegrees,Is.Zero.Within(.001));calibrator.EndPointerDrag(1);
     }
 
-    [Test] public void OpeningUsesSpritesAtPhysicalHitSize()
+    [Test] public void SpriteButtonsHaveNoHoverPlateOrCustomMaterial()
     {
-        root.AddComponent<RectTransform>();var choice=root.AddComponent<OpeningVideoHardwareChoice>();choice.Configure(null,null,true);
-        var buttons=root.GetComponentsInChildren<OpeningVideoSpatialButton>();Assert.That(buttons.Length,Is.EqualTo(2));
-        foreach(var b in buttons){Assert.That(b.GetComponent<SpriteRenderer>().sprite.name,Does.Contain("_en_idle"));Assert.That(b.GetComponent<BoxCollider>().size,Is.EqualTo(new Vector3(.20f,.08f,.01f)));}
+        var gear=UIRefreshVisuals.Gear(root.transform,Vector3.zero,null);
+        var r=gear.GetComponent<SpriteRenderer>();
+        Assert.That(gear.GetComponent<Unity.PolySpatial.VisionOSHoverEffect>(),Is.Null);
+        Assert.That(r.sharedMaterial==null||r.sharedMaterial.shader.name.Contains("Sprite"),Is.True,r.sharedMaterial!=null?r.sharedMaterial.shader.name:"none");
     }
 }

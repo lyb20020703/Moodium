@@ -12,23 +12,6 @@ using UnityEngine;
 /// Produces ordinary editable built-in nodes, never Custom Function/HLSL nodes.</summary>
 public static class BubbleSplatGraphBuilder
 {
-    public static void BuildGazeSwap()
-    {
-        var b=new Builder();
-        var idle=b.Property("Texture2D","_MainTex");var gaze=b.Property("Texture2D","_GazeTex");
-        var a=b.Node("SampleTexture2DNode");b.Connect(idle,a,1);
-        var c=b.Node("SampleTexture2DNode");b.Connect(gaze,c,1);
-        var hover=b.Node("MaterialX.PolySpatialHoverStateNode");
-        var blend=b.Op("LerpNode",3,new E(a,0),new E(c,0),new E(hover,0));
-        var color=blend*new E(b.Node("VertexColorNode"),0);
-        b.Outputs(("BaseColor",b.XYZ(color)),("Alpha",b.W(color)),("AlphaClipThreshold",(E)0));
-        const string folder="Assets/Resources/MoodiumUIRefresh/";
-        b.Save(folder+"SpriteGazeSwap.shadergraph");
-        var shader=AssetDatabase.LoadAssetAtPath<Shader>(folder+"SpriteGazeSwap.shadergraph");
-        var mat=AssetDatabase.LoadAssetAtPath<Material>(folder+"M_SpriteGazeSwap.mat");
-        if(mat==null){mat=new Material(shader);AssetDatabase.CreateAsset(mat,folder+"M_SpriteGazeSwap.mat");}else mat.shader=shader;
-        AssetDatabase.SaveAssets();
-    }
     const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
     const string Prefix = "UnityEditor.ShaderGraph.";
     const string Folder = "Assets/Shaders/";

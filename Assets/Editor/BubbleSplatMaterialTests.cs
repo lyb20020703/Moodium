@@ -24,8 +24,8 @@ public sealed class BubbleSplatMaterialTests
         var source = Resources.Load<Material>(BubbleSplatMaterial.ResourcePath);
         var original = source.GetColor("_BaseColor");
         var texture = new Texture2D(2, 2);
-        var outer = BubbleSplatMaterial.Create(texture, 1.5f, false);
-        var inner = BubbleSplatMaterial.Create(texture, 1.7f, true);
+        var outer = BubbleSplatMaterial.Create(texture, 1.5f, false, true);
+        var inner = BubbleSplatMaterial.Create(texture, 1.7f, true, true);
         try
         {
             outer.SetColor("_BaseColor", new Color(.2f, .4f, .6f, 1f));

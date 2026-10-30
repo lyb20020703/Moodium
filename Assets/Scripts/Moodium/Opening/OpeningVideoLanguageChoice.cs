@@ -19,7 +19,6 @@ namespace Moodium.Opening
 
         public void Configure(TMP_FontAsset font, Sprite roundedSprite)
         {
-            gameObject.AddComponent<Unity.PolySpatial.VisionOSSortingGroup>();
             var canvas = gameObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.worldCamera = Camera.main;
@@ -32,8 +31,8 @@ namespace Moodium.Opening
             var question = CreateText("Language Question", "你更希望 Moodi 用哪种语言陪你探索？\nWhich language would you like Moodi to use?", font, 36f);
             question.rectTransform.anchoredPosition = new Vector2(0f, 260f);
             question.rectTransform.sizeDelta = new Vector2(860f, 115f);
-            m_Chinese = CreateButton("Language Button - Chinese", new Vector2(-179f, -160f), "中文", "lang_zh");
-            m_English = CreateButton("Language Button - English", new Vector2(179f, -160f), "English", "lang_en");
+            m_Chinese = CreateButton("Language Button - Chinese", new Vector2(-165f, -160f), "中文", "lang_zh");
+            m_English = CreateButton("Language Button - English", new Vector2(165f, -160f), "English", "lang_en");
         }
 
         public void SelectChineseWhenTimedOut() => SelectAutomatically("中文");
@@ -55,23 +54,35 @@ namespace Moodium.Opening
             return text;
         }
 
+        // Restored from f8ab1d9 (the first liquid-glass version): a plain world-space canvas Image,
+        // no hover effect and no custom material, so nothing but the button art is ever drawn.
+        // The art is a 498x282 canvas (capsule 330x114 + soft shadow). Keep that aspect ratio so the
+        // capsule and its text are not squashed: 330x187 shows the capsule at 219x76 canvas units.
         GameObject CreateButton(string name, Vector2 position, string value, string assetId)
         {
-            var renderer=Moodium.UI.UIRefreshVisuals.Sprite(transform,name,"MoodiumOpening/opening_btn_"+assetId+"_idle",Vector3.zero,10);
-            var item=renderer.gameObject;
-            Moodium.UI.UIRefreshVisuals.UnitScale(item.transform);
-            var display=transform.parent;
-            item.transform.position=display!=null
-                // Keep the buttons just inside the video's bottom edge, clear of the window move bar.
-                ? display.TransformPoint(new Vector3(0,-.5f,0))+display.right*(position.x<0?-.13f:.13f)+display.up*.06f-display.forward*.03f
-                : transform.position+transform.right*(position.x<0?-.13f:.13f);
-            var feedback=item.AddComponent<OpeningChoiceSpriteFeedback>();feedback.Configure(assetId);
-            var spatialButton=item.AddComponent<OpeningVideoSpatialButton>();
-            spatialButton.Configure(touchId=>{if(HasSelection)return;feedback.SetPressed();SelectFromPress(value, touchId);});
-            var button=item.AddComponent<Button>();button.transition=Selectable.Transition.None;
-            button.onClick.AddListener(()=>spatialButton.OnPointerClick(null));
-            item.AddComponent<BoxCollider>().size=new Vector3(.20f,.08f,.01f);
-            Moodium.UI.UIRefreshVisuals.GazeHover(renderer,"MoodiumOpening/opening_btn_"+assetId+"_gaze");
+            var item = new GameObject(name, typeof(RectTransform));
+            item.transform.SetParent(transform, false);
+            var rect = item.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(330f, 187f);
+            rect.anchoredPosition = position;
+            var image = item.AddComponent<Image>();
+            image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_idle");
+            image.type = Image.Type.Simple;
+            var spatialButton = item.AddComponent<OpeningVideoSpatialButton>();
+            spatialButton.Configure(touchId =>
+            {
+                if (HasSelection) return;
+                image.sprite = Resources.Load<Sprite>("MoodiumOpening/opening_btn_" + assetId + "_pressed");
+                SelectFromPress(value, touchId);
+            });
+            var button = item.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => spatialButton.OnPointerClick(null));
+            var collider = item.AddComponent<BoxCollider>();
+            collider.isTrigger = false;
+            // Covers the visible capsule (219x76) with a little margin, not the transparent shadow.
+            collider.size = new Vector3(240f, 96f, 2f);
             return item;
         }
 

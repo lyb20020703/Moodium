@@ -35,7 +35,7 @@ public static class BubbleSplatRenderValidation
         }
         var texture = BubbleWorldData.BuildRoundAtlas(cloud);
         var mesh = BubbleWorldData.BuildLayerMesh(cloud, 0, cloud.Count, "GPU validation splats");
-        var motion = BubbleSplatMaterial.Create(texture, 1.3f, false);
+        var motion = BubbleSplatMaterial.Create(texture, 1.3f, false, true);
         var legacy = BubbleWorldData.CreateUnlit("static baseline", texture, true, CullMode.Off, Color.white);
         BubbleWorldData.ConfigureRoundPoints(legacy); BubbleWorldController.ConfigureTransparentPoints(legacy);
         var points = new GameObject("Validation Splats"); SceneManager.MoveGameObjectToScene(points, scene);
@@ -80,7 +80,7 @@ public static class BubbleSplatRenderValidation
                          BubbleWorldData.NestedNatureFolder, BubbleWorldData.NestedCandyFolder })
             {
                 var root = new GameObject("World capture"); SceneManager.MoveGameObjectToScene(root, scene);
-                var worldMaterial = BubbleSplatMaterial.Create(Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder)), 1.3f, BubbleWorldData.IsCandy(folder));
+                var worldMaterial = BubbleSplatMaterial.Create(Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder)), 1.3f, BubbleWorldData.IsCandy(folder), true);
                 try
                 {
                     for (var layer = 0; layer < BubbleWorldData.LayerCount; layer++)

@@ -15,7 +15,7 @@ namespace Moodium.Flow
     {
         [Header("World-locked placement")]
         [SerializeField] float m_Distance = .75f;
-        [SerializeField] float m_DropBelowEyes = .12f;
+        [SerializeField] float m_DropBelowEyes = .08f;
         [SerializeField] float m_RecenterAngle = 50;
         [Header("Carousel")]
         [SerializeField] float m_ItemSpacing = .58f;
@@ -119,6 +119,9 @@ namespace Moodium.Flow
                     foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
                     {
                         if (renderer is SpriteRenderer sprite) { sprites[i].Add((sprite, sprite.color)); continue; }
+                        // Moodi stays opaque: switching its skinned mesh to transparent (ZWrite off) makes its
+                        // eyes and inner faces show through under RealityKit.
+                        if (renderer.GetComponentInParent<Moodium.Characters.MoodiCompanionAnimator>(true) != null) continue;
                         var copies = renderer.sharedMaterials;
                         for (var j = 0; j < copies.Length; j++)
                         {
@@ -149,12 +152,14 @@ namespace Moodium.Flow
             SensoryBagBranchUI.Button(root, "Previous World", "‹", new Vector3(-.70f, 0, -.04f), font, () => SelectIndex(0), .07f);
             SensoryBagBranchUI.Button(root, "Next World", "›", new Vector3(.70f, 0, -.04f), font, () => SelectIndex(1), .07f);
             var mood = new GameObject("Mood Check Entry"); mood.transform.SetParent(root, false);
-            mood.transform.localPosition = new Vector3(0, -.30f, -.08f);
+            mood.transform.localPosition = new Vector3(0, -.27f, -.08f);
             moodChip = mood.AddComponent<MoodEntryChip>();
             moodChip.Initialize(null, font, () => { if (CanInteract) MoodCheckRequested?.Invoke(); });
             moodChip.AllowIdleHint = false;
             moodChip.SetContent(english, summary);
-            SettingsAnchor = Moodium.UI.UIRefreshVisuals.Gear(root, new Vector3(0, -.39f, -.08f),
+            // Beside the mood chip (chip spans x ±0.16), not below it: at y -0.39 the gear sat ~37° below the
+            // eye line, outside the comfortable gaze range, so it could neither be seen nor tapped.
+            SettingsAnchor = Moodium.UI.UIRefreshVisuals.Gear(root, new Vector3(.215f, -.27f, -.08f),
                 () => { if (CanInteract) OwnershipSwitchRequested?.Invoke(); }).transform.parent;
             root.gameObject.AddComponent<SensoryBagDirectTouchInput>();
             ApplyLayout();

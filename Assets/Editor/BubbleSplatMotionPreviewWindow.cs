@@ -47,7 +47,7 @@ public sealed class BubbleSplatMotionPreviewWindow : EditorWindow
         if (skyMaterial != null) DestroyImmediate(skyMaterial);
         root = new GameObject("GPU Motion Sandbox"); SceneManager.MoveGameObjectToScene(root, scene);
         var folder = Folders[selected];
-        material = BubbleSplatMaterial.Create(Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder)), 1.3f, BubbleWorldData.IsCandy(folder));
+        material = BubbleSplatMaterial.Create(Resources.Load<Texture2D>(BubbleWorldData.RoundColorsResource(folder)), 1.3f, BubbleWorldData.IsCandy(folder), true);
         for (var i = 0; i < BubbleWorldData.LayerCount; i++)
         {
             var layer = new GameObject("Layer " + i); layer.transform.SetParent(root.transform, false);
