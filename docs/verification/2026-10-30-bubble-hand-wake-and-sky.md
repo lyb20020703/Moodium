@@ -83,3 +83,18 @@
 - 如果真机上尾迹点太大或太多，调 `SizeMetres`、`MaxPerSecondPerHand`；如果太"跟手"，调小 `Carry`。
 - 如果加了排序组后，点云在真机上看起来和以前不一样（不应该会），把 `m_FixedSkyOrder` 关掉对比。
 - 第二层近处的错位（拍摄高度低）没有改。要彻底解决，需要重新导出、抬高第二层的视点，这要用户决定。
+
+
+## 本地实施与验证（2026-10-30）
+
+在原 Unity 工程 `/Users/yibei/Desktop/appcontest2026/Moodium`，从已推送的面板修复 b989058 新开 codex/bubble-hand-wake-1030。输入补丁原样应用并提交为 219ba95，保留面板文字排序与移动跟随修改。未恢复 GPU 扰动，未修改世界点大小或重新烘焙点云，未应用藤蔓补丁。未合并、未推送。
+
+Unity 6000.0.30f1 在独立验证副本编译并运行全套 EditMode，原工程已有代码与资源修改。新增脚本由 Unity 生成的 .meta 已复制回原工程。
+
+全套 **650 项，621 通过、29 失败**。与 panel-text-follow-1030 的 XML 按测试名比较，新增失败 0、消失失败 0。[完整 XML](bubble-hand-wake-1030/full-tests.xml)、[29 项旧失败](bubble-hand-wake-1030/remaining-failures.md)。
+
+BubbleHandWakeTests 8/8、BubbleWorldSkyTests 3/3、BubbleWorldTests 30/30、BubbleWorldNestedEntryTests 2/2、BubbleSplat* 15/15。测试覆盖查找方向、最近点选择、借用邻格、坏数据、生成速率和缩小消失、颜色块 UV、容量覆盖；四个 Soft 贴图的尺寸/mipmap/wrap、风格选择、默认 Soft 和天空先画排序。尾迹测试通过 SpawnAt 验证实际网格生成与消失。未改变旧测试期望来获取通过。
+
+这轮没有完整运行中编辑器交互目测或真机手追踪验证；不能将数学、网格与资源测试视为设备视觉通过。以下均待真机逐项确认：四个泡泡世界的挥手尾迹、背景颜色一致性、圆点外观、慢移不生成、非 Inside 阶段无尾迹；两层点云先/天空后、Soft 无照片细节、背景不抢到点云前方；退出重进清理、实际帧率和 lookup 日志。原始包中的预览图是离线示意，未当作本工程实际效果截图。
+
+当前默认 SkyStyle.Soft，保留 Photo / None 比较选项，嵌套层继承；m_HandWake 和 m_FixedSkyOrder 可用于后续设备对比。未擅自改材质为 Shader Graph 或粒子系统。
