@@ -49,3 +49,20 @@
 python tools/convert_gaussian_to_bubble_world.py <Nature_Layer2>/b792f7bb25e24fbe792219ac5b03b953.ply <out> --frame-json docs/verification/second-layer-horizon/NestedNature.refined.frame.json --verify-panorama Assets/Resources/MoodiumBubbleWorld/NestedNature/panorama.png
 python tools/convert_gaussian_to_bubble_world.py <Candy_Layer2>/b7dbd00c3878b09ecbf9d2f3e1851e7f.ply <out> --frame-json docs/verification/second-layer-horizon/Candy-Nested.frame.json --verify-panorama Assets/Resources/MoodiumBubbleWorld/Candy/Nested/panorama.png
 ```
+
+
+## Unity 实施与验证
+
+在原工程从 f47713a 创建 codex/nested-footprint-1030，原样应用数据和导出脚本补丁，提交 e99395e。第一层数据及网格未改。
+
+在独立验证副本运行 Unity 6000.0.30f1 的 BubbleWorldBaker.BakeBothNested，成功烘焙两个第二层，各 500000 点、20 层；自然微缩泡泡使用 14 层，糖果 12 层。生成的 40 个点层网格和两张 round 颜色图已同步回原工程。球面网格未产生内容差异。未重新运行第一层烘焙。
+
+注意：补丁预生成的 round 颜色图和 Unity 烘焙输出不仅 PNG 文件字节不同，解码比较也不一致。本次采用项目现有 BuildRoundAtlas 从新 points.bytes 直接生成、并用于测试的 Unity 输出，没有声称与输入 PNG 完全相同；该颜色差异仍需视觉核验。未改动原 panorama、配准矩阵或运行时朝向代码。
+
+全套 669 项：**640 通过、29 失败**。相对 f47713a XML 逐项比较，新增失败 0、消失失败 0。[完整结果](nested-footprint-1030/full-tests.xml)、[旧失败清单](nested-footprint-1030/remaining-failures.md)、[烘焙日志](nested-footprint-1030/bake.log)。
+
+NestedFootprintTests 4/4，包含两世界的中位视角 ≤ 第一层 1.25 倍及烘焙网格与新数据一致；BubbleWorldTests 30/30、NestedEntry 2/2、Sky 3/3、HandWake 8/8。测试使用实际重新烘焙后的资源。未调整旧测试期望。
+
+验证副本起初包配置缺少依赖，随后同步原工程 Packages；一次 Git 包拉取网络失败，重试恢复后才完成上述烘焙和全套验证。没有修改原工程依赖配置。原工程既有 FBX 改动未纳入本次提交。
+
+真机视觉未验收：第二层点的细度、地平线/入口不变、颜色图一致性和缝隙中的 Soft 天空观感仍待确认；输入包 preview 是离线示意，未当作设备验收截图。当前分支未合并、未推送。
