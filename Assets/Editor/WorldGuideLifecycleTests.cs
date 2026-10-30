@@ -98,4 +98,18 @@ public sealed class WorldGuideLifecycleTests
         Assert.That(shared.Contains(name),Is.False);
         Assert.That(((System.Collections.IDictionary)Field("m_Loaded")).Count,Is.Zero);
     }
+    [TestCase(false)] [TestCase(true)]
+    public void ExplorePageIsTheCardOnlyWithoutTheOldRingHint(bool english)
+    {
+        // The light-ring step is gone, so the explore page must not draw the old hint line on top of the card.
+        var dock=new GameObject("Dock");
+        try
+        {
+            guide.ShowDocked(dock.transform,true,english,true);
+            Assert.That(guide.CardIndex,Is.Zero);
+            var panel=(Transform)Field("m_Root");
+            Assert.That(panel.GetComponentsInChildren<TMPro.TMP_Text>(true),Is.Empty);
+        }
+        finally{guide.Hide(true);Object.DestroyImmediate(dock);}
+    }
 }

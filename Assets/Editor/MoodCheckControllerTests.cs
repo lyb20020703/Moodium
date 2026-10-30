@@ -1,5 +1,7 @@
 using Moodium.MoodCheck;
 using NUnit.Framework;
+using TMPro;
+using Unity.PolySpatial;
 using UnityEditor;
 using UnityEngine;
 
@@ -145,5 +147,34 @@ public sealed class MoodCheckControllerTests
         m_Controller.Confirm();
         Assert.That(m_Controller.PendingSample, Is.Not.Null);
         Assert.That(m_Controller.PendingSample.recommendedWorldId, Is.Null.Or.Empty);
+    }
+
+    [Test]
+    public void PanelHasANativeSortingGroupWithTextAboveGlass()
+    {
+        // Without a VisionOSSortingGroup, visionOS sorts each layer by distance and text next to the opening
+        // video or a world model shows dark blocks behind the letters.
+        m_Controller.BeginPreCheck(new MoodCheckAvailability(true, true), false);
+        var panel = m_Controller.PanelTransform;
+        var group = panel.GetComponent<VisionOSSortingGroup>();
+        Assert.That(group, Is.Not.Null);
+        Assert.That(group.DepthPass, Is.EqualTo(VisionOSSortingGroup.DepthPassType.PostPass));
+        int OrderOf(string path)
+        {
+            var go = panel.Find(path).gameObject;
+            var index = group.Renderers.FindIndex(r => r.Renderer == go);
+            Assert.That(index, Is.GreaterThanOrEqualTo(0), path + " is not in the sorting group");
+            return group.Renderers[index].Order;
+        }
+        Assert.That(OrderOf("Header/Title"), Is.GreaterThan(OrderOf("PanelGlass/Glass Surface")));
+        Assert.That(OrderOf("Header/Title"), Is.GreaterThan(OrderOf("Plate/PlateWell")));
+        foreach (var label in panel.GetComponentsInChildren<TMP_Text>(true))
+        {
+            if (!label.GetComponent<Renderer>().enabled) continue;
+            Assert.That(group.Renderers.Exists(r => r.Renderer == label.gameObject), Is.True, label.name);
+        }
+        foreach (var sub in panel.GetComponentsInChildren<TMP_SubMesh>(true))
+            Assert.That(MoodCheckController.NativeSortOrder(sub.GetComponent<Renderer>()),
+                Is.EqualTo(sub.textComponent.GetComponent<Renderer>().sortingOrder), "fallback glyphs draw with their label");
     }
 }

@@ -325,28 +325,10 @@ namespace Moodium.Guide
         }
 
         /// <summary>Puts the right sprites on the face and buttons for the current mode and page.</summary>
-        TMPro.TextMeshPro m_RingCaption;
-        public TMPro.TMP_FontAsset RingCaptionFont { get; set; }
-        public static string RingCaption(bool english) => english
-            ? "Step into a ring of light on the floor, or put your hand in the little ring by the bag — something special awaits"
-            : "找到地上的光环站进去，或把手伸进袋子旁的小光环，会有惊喜";
-        void UpdateRingCaption(bool explore)
-        {
-            if (m_RingCaption == null && explore)
-            {
-                var go = new GameObject("Explore Ring Hint"); go.transform.SetParent(m_Pivot, false);
-                m_RingCaption = go.AddComponent<TMPro.TextMeshPro>();
-                if (RingCaptionFont != null) m_RingCaption.font = RingCaptionFont;
-                m_RingCaption.fontSize = 1.4f; m_RingCaption.alignment = TMPro.TextAlignmentOptions.Center;
-                m_RingCaption.rectTransform.sizeDelta = new Vector2(.48f, .065f);
-                m_RingCaption.transform.localPosition = new Vector3(0, -.16f, -.003f);
-                m_RingCaption.GetComponent<MeshRenderer>().sortingOrder = m_SortingOrder + 2;
-            }
-            if (m_RingCaption != null) { m_RingCaption.gameObject.SetActive(explore); m_RingCaption.text = RingCaption(m_English); }
-        }
+        // The explore page is the pre-rendered card only. The light-ring hint line that used to be drawn on top of it
+        // is gone: the ring step no longer exists in the experience.
         void ApplyPage()
         {
-            UpdateRingCaption(m_Mode == Mode.Explore || (m_Pages.Count > m_Index && m_Pages[m_Index].Explore));
             if (m_Mode == Mode.Tutorial || m_Mode == Mode.Docked)
             {
                 var page = m_Pages[m_Index];
@@ -543,7 +525,6 @@ namespace Moodium.Guide
         void SetAlpha(float alpha)
         {
             m_Alpha = Mathf.Clamp01(alpha);
-            if (m_RingCaption != null) m_RingCaption.alpha = m_Alpha;
             var color = new Color(1f, 1f, 1f, m_Alpha);
             if (m_Face != null) m_Face.color = color;
             if (m_SkipButton != null) m_SkipButton.color = color;

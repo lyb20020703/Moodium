@@ -349,7 +349,6 @@ namespace Moodium.CandyWorld
                 world != null ? world.Prefabs : null, m_WalkTrailGuidePrefab);
             m_Journey = GetComponent<WorldJourneyDirector>() ?? gameObject.AddComponent<WorldJourneyDirector>();
             m_Journey.Begin();
-            if (m_WorldGuide != null) m_WorldGuide.RingCaptionFont = Moodium.Guide.WorldGuideCards.IsEnglish() ? m_EnglishFont : m_ChineseFont;
             m_RoomVisibility = GetComponent<RoomContentVisibility>() ?? gameObject.AddComponent<RoomContentVisibility>();
             m_RoomVisibility.Clear();
             m_Rings = GetComponent<BubbleRingController>() ?? gameObject.AddComponent<BubbleRingController>();

@@ -193,6 +193,51 @@ namespace Moodium.Flow
             m_MoodCheckLaunchSource = MoodCheckLaunchSource.StickerSelection;
             m_MoodCheckController.ShowRecommendCard = m_SelectionHasBag;
             m_MoodCheckController?.BeginPreCheck(CurrentMoodAvailability(), IsEnglish());
+            // Video-backed (has-bag) selection: the panel stands in front of the video and moves with its handle.
+            if (m_SelectionHasBag)
+                AttachToOpeningWindow(m_MoodCheckController?.PanelTransform, true);
+        }
+
+        /// <summary>
+        /// Layout rule for panels opened from the video-backed selection (mood panel, settings panel):
+        /// they stand <see cref="OpeningPanelClearance"/> in front of the video plane, toward the viewer, and keep
+        /// that pose relative to the video while its window handle is dragged. Transparent layers this close
+        /// to each other sort unreliably on visionOS, so they must never touch or cross the video.
+        /// </summary>
+        public const float OpeningPanelClearance = .3f;
+        /// <summary>The handle keeps the video at least this far away, so panels in front stay ≥ 0.55 m from the eyes.</summary>
+        public const float OpeningWindowMinDistance = .85f;
+        /// <summary>Extra distance in front of the gear for the settings panel (the gear itself is 4 cm in front of the video).</summary>
+        public const float SettingsPanelExtraClearance = .06f;
+
+        /// <summary>Mood panel pose: on the line from the viewer to the video, <paramref name="clearance"/> in front of it, at reading height.</summary>
+        public static Pose PanelPoseInFrontOfVideo(Transform display, Vector3 viewer, float clearance)
+        {
+            var away = Vector3.ProjectOnPlane(display.forward, Vector3.up);
+            if (away.sqrMagnitude < 1e-6f) away = Vector3.ProjectOnPlane(display.position - viewer, Vector3.up);
+            away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.forward;
+            var position = display.position - away * clearance;
+            position.y = viewer.y - .12f;   // same reading height as MoodCheckController.PlacePanel
+            return new Pose(position, Quaternion.LookRotation(away, Vector3.up));
+        }
+
+        void AttachToOpeningWindow(Transform panel, bool placeInFront)
+        {
+            var display = m_OpeningVideoSession?.DisplayRoot;
+            if (panel == null || display == null || !display.gameObject.activeInHierarchy)
+                return;
+            if (placeInFront)
+            {
+                var camera = m_MainCamera != null ? m_MainCamera : Camera.main;
+                if (camera != null)
+                {
+                    var pose = PanelPoseInFrontOfVideo(display, camera.transform.position, OpeningPanelClearance);
+                    panel.SetPositionAndRotation(pose.position, pose.rotation);
+                }
+            }
+            var handle = display.GetComponentInChildren<MoodiumWindowHandle>(true);
+            if (handle != null) handle.AddFollower(panel);
+            Debug.Log($"[Moodium Window] {panel.name} follows the opening video (handle={(handle != null)}).");
         }
 
         public void CancelMoodCheckImmediate()
@@ -387,6 +432,12 @@ namespace Moodium.Flow
             m_SelectionSettingsPanel = panel;
             panel.transform.SetPositionAndRotation(gear.position + gear.up * Moodium.UI.MoodiumUIRefreshLayout.SettingsPanelAboveKey, gear.rotation);
             panel.AddComponent<Moodium.UI.SelectionSettingsVisual>().Initialize(IsEnglish(), SensoryBagOwnership.HasBag, ApplySelectionSettings, CloseSelectionSettings);
+            if (m_SelectionHasBag)
+            {
+                // The gear sits 4 cm in front of the video: give the panel room, then let it move with the video.
+                panel.transform.position -= gear.forward * SettingsPanelExtraClearance;
+                AttachToOpeningWindow(panel.transform, false);
+            }
             SuspendForSettings();
         }
         void SuspendForSettings()
@@ -1431,6 +1482,7 @@ namespace Moodium.Flow
             collider.size = new Vector3(0.23f, 0.052f, 0.025f);
             var drag = handle.AddComponent<MoodiumWindowHandle>();
             drag.Configure(displayRoot);
+            drag.MinDistanceFromViewer = OpeningWindowMinDistance;
         }
 
         TMP_Text CreateText(

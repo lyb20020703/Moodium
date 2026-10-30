@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Moodium.Flow;
 using TMPro;
+using Unity.PolySpatial;
 using UnityEngine;
 
 namespace Moodium.MoodCheck
@@ -26,6 +27,9 @@ namespace Moodium.MoodCheck
         bool m_CompletionSent;
         bool m_SkipSent;
         float m_ConfirmShownAt;
+        VisionOSSortingGroup m_Sorting;
+        readonly List<Renderer> m_SortRenderers = new();
+        int m_SortedRendererCount = -1;
 
         public event Action<MoodCheckSample> Completed;
         public event Action Skipped;
@@ -188,6 +192,7 @@ namespace Moodium.MoodCheck
             }
             WireButtons();
             ApplyLanguage();
+            SyncNativeSorting(true);
             State = MoodCheckState.Dragging;
         }
 
@@ -229,6 +234,8 @@ namespace Moodium.MoodCheck
 
         void LateUpdate()
         {
+            // New TMP fallback-font sub-meshes, the recommendation card and footer swaps add renderers.
+            SyncNativeSorting();
             if (m_PanelInstance == null || Plate == null ||
                 State is not (MoodCheckState.Dragging or MoodCheckState.Confirming)) return;
             var dot = m_PanelInstance.transform.Find("Readout/MoodDot")?.GetComponent<SpriteRenderer>();
@@ -342,6 +349,8 @@ namespace Moodium.MoodCheck
                 view.Show(PendingSample, m_English, title != null ? title.font : TMP_Settings.defaultFontAsset,
                     AcceptRecommendation, Retry);
             }
+            // The card now has its own group; take its layers out of the panel's group.
+            SyncNativeSorting(true);
         }
 
         void ShowComparison()
@@ -534,6 +543,47 @@ namespace Moodium.MoodCheck
             return panel;
         }
 
+        /// <summary>
+        /// visionOS ignores Unity's sortingOrder unless a VisionOSSortingGroup exists. Without one, RealityKit sorts
+        /// every glass layer, sprite and text label of this panel on its own by distance. Next to another transparent
+        /// object (the opening video, a world model) that order flips, and the text's glyph rectangles are drawn
+        /// before the glass behind them: they show as dark blocks behind the letters. Same fix as GlassSlideToEnter
+        /// and MoodRecommendationView: one group, PostPass, ordered by the sortingOrder the prefab already has
+        /// (glass 0–2, plate 10–23, text 30).
+        /// </summary>
+        void SyncNativeSorting(bool force = false)
+        {
+            if (m_PanelInstance == null) return;
+            if (force)
+                foreach (var label in m_PanelInstance.GetComponentsInChildren<TMP_Text>(true))
+                    if (label.isActiveAndEnabled) label.ForceMeshUpdate();
+            m_PanelInstance.GetComponentsInChildren(true, m_SortRenderers);
+            if (!force && m_SortRenderers.Count == m_SortedRendererCount) return;
+            if (m_Sorting == null)
+            {
+                m_Sorting = m_PanelInstance.GetComponent<VisionOSSortingGroup>() ??
+                    m_PanelInstance.AddComponent<VisionOSSortingGroup>();
+                m_Sorting.DepthPass = VisionOSSortingGroup.DepthPassType.PostPass;
+            }
+            m_Sorting.Renderers.Clear();
+            foreach (var renderer in m_SortRenderers)
+            {
+                // A sub-panel with its own group (the recommendation card) keeps its own order.
+                if (renderer.GetComponentInParent<VisionOSSortingGroup>(true) != m_Sorting) continue;
+                m_Sorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting
+                    { Renderer = renderer.gameObject, Order = NativeSortOrder(renderer), ApplyToDescendants = false });
+            }
+            m_SortedRendererCount = m_SortRenderers.Count;
+        }
+
+        /// <summary>Order inside the panel's sorting group. TMP fallback-font glyphs draw with their label.</summary>
+        public static int NativeSortOrder(Renderer renderer)
+        {
+            var sub = renderer.GetComponent<TMP_SubMesh>();
+            var owner = sub != null && sub.textComponent != null ? sub.textComponent.GetComponent<Renderer>() : null;
+            return (owner != null ? owner : renderer).sortingOrder;
+        }
+
         void DismissPanel()
         {
             if (m_PanelInstance != null)
@@ -544,6 +594,8 @@ namespace Moodium.MoodCheck
             }
             m_PanelInstance = null;
             Plate = null;
+            m_Sorting = null;
+            m_SortedRendererCount = -1;
         }
 
         void OnDestroy() => DismissPanel();
