@@ -60,6 +60,10 @@ namespace Moodium.Characters
         Vector3 m_Velocity;
         bool m_ManualWalk;
         bool m_ManualWalkValue;
+        int m_SupportHand = -1;
+        bool m_LeftWasInside, m_RightWasInside;
+        bool m_TouchFlourish;
+        int m_Flourishes;
         bool m_HasWalked;
         bool m_Greeted;
         bool m_StartPending;
@@ -108,7 +112,12 @@ namespace Moodium.Characters
             m_Greeted = true;
             m_Animator.ResetTrigger(HappyId);
             m_Animator.ResetTrigger(WaveId);
-            m_Animator.SetTrigger(TouchedId);
+            if (m_TouchFlourish)
+            {
+                m_Animator.ResetTrigger(TouchedId);
+                m_Animator.SetTrigger((m_Flourishes++ & 1) == 0 ? HappyId : WaveId);
+            }
+            else m_Animator.SetTrigger(TouchedId);
             Touched?.Invoke();
         }
 
@@ -138,6 +147,39 @@ namespace Moodium.Characters
         }
 
         public void ClearManualWalk() => m_ManualWalk = false;
+
+        /// <summary>
+        /// The hand Moodi is sitting on (0 left, 1 right, −1 none). Its own fingertips are always close to Moodi's
+        /// body, so it never counts as a touch; only the other hand pats. Each hand has its own touch edge, so a
+        /// resting hand can no longer hold the shared "inside" flag and block every later touch.
+        /// </summary>
+        public void SetSupportHand(int hand)
+        {
+            m_SupportHand = hand;
+            m_LeftWasInside = m_RightWasInside = false;
+        }
+        public int SupportHand => m_SupportHand;
+
+        /// <summary>
+        /// Selection screens: Moodi stands on a moving model. Keep Idle (no walk from the carousel's motion), widen
+        /// the reach a little for the small model, and answer touches with a clear Happy / Wave in turn
+        /// (the old ShySmile / Wink alternation).
+        /// </summary>
+        public void ConfigureSelectionTouch(float margin = .03f)
+        {
+            SetWalking(false);
+            m_TouchMargin = Mathf.Max(m_TouchMargin, margin);
+            m_TouchFlourish = true;
+        }
+        public bool TouchFlourish => m_TouchFlourish;
+
+        /// <summary>Pure: which hands start a touch this frame (rising edge per hand, support hand ignored).</summary>
+        public static bool TouchStarts(bool leftInside, bool rightInside, bool leftWas, bool rightWas, int supportHand)
+        {
+            var l = supportHand != 0 && leftInside && !leftWas;
+            var r = supportHand != 1 && rightInside && !rightWas;
+            return l || r;
+        }
 
         void Awake()
         {
@@ -248,16 +290,19 @@ namespace Moodium.Characters
         {
             if (m_Hands == null)
                 m_Hands = XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRHandSubsystem>();
-            if (m_Hands == null || !m_Hands.running){m_HandWasInside=false;return;}
+            if (m_Hands == null || !m_Hands.running){m_HandWasInside=m_LeftWasInside=m_RightWasInside=false;return;}
             m_Hands.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
             if (m_XROrigin == null) m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
             var origin = m_XROrigin != null ? m_XROrigin.Origin.transform : null;
 
             var center = transform.TransformPoint(m_BodyCenterLocal);
             var radius = m_TouchRadiusLocal * Mathf.Abs(transform.lossyScale.x) + m_TouchMargin;
-            var inside = IsInside(m_Hands.leftHand, origin, center, radius) || IsInside(m_Hands.rightHand, origin, center, radius);
-            if (inside && !m_HandWasInside) PlayTouched();
-            m_HandWasInside = inside;
+            var left = IsInside(m_Hands.leftHand, origin, center, radius);
+            var right = IsInside(m_Hands.rightHand, origin, center, radius);
+            if (TouchStarts(left, right, m_LeftWasInside, m_RightWasInside, m_SupportHand)) PlayTouched();
+            m_LeftWasInside = left;
+            m_RightWasInside = right;
+            m_HandWasInside = (left && m_SupportHand != 0) || (right && m_SupportHand != 1);
         }
 
         static bool IsInside(XRHand hand, Transform origin, Vector3 center, float radius)

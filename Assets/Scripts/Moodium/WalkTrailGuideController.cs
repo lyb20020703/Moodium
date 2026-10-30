@@ -175,6 +175,11 @@ namespace Moodium.NatureWorld
             if (guidePrefab != null)
             {
                 var visual=Instantiate(guidePrefab,m_Guide);
+                // MoodiBreathingFloat captured the prefab scale on Instantiate and writes it back every frame, which
+                // fought PrepareGuide's 20 cm size and the hand companion's landing squash (Moodi popped smaller).
+                // The companion already bobs Moodi on the palm, so the guide does without it. Off before scaling:
+                // its OnDisable restores the captured scale.
+                if (visual.TryGetComponent<Moodium.Flow.MoodiBreathingFloat>(out var breathing)) breathing.enabled = false;
                 PrepareGuide(visual);
                 m_GuideMoodi=visual.GetComponent<Moodium.Characters.MoodiCompanionAnimator>();
                 if(m_GuideMoodi!=null)m_GuideMoodi.SetFacingViewer(m_Viewer);

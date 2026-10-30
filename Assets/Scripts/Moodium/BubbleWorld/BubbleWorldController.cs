@@ -56,6 +56,12 @@ namespace Moodium.NatureWorld
         [SerializeField] float m_OuterFadeStartRadius = 1f;
         [SerializeField] float m_OuterFadeEndRadius = 4f;
         [SerializeField, Range(.9f, .99f)] float m_NestedSkyScale = .97f;
+        [Tooltip("Seconds after entering a world before the next-layer bubble / exit bubble appear. 0 = at once " +
+                 "(they used to wait 10 s).")]
+        [SerializeField, Min(0f)] float m_NextBubbleDelaySeconds = 0f;
+        [Tooltip("Build the next layer while the viewer is still in the room, so its bubble is ready the moment the " +
+                 "viewer is inside. Off: it is built after entering (a few seconds' wait).")]
+        [SerializeField] bool m_PrepareNestedEarly = true;
         public static float OuterAlpha(float radius, float start = 1f, float end = 4f) =>
             1f - Mathf.InverseLerp(start, end, radius);
 
@@ -107,6 +113,9 @@ namespace Moodium.NatureWorld
         Coroutine m_BuildRoutine;
         bool m_CoreLayersReady;
         bool m_AllLayersReady;
+        // The next-layer bubble and the exit bubble appear right where the viewer's finger just touched to enter.
+        // A touch only counts once the fingertip has been away from them, so a resting hand never triggers them.
+        bool m_PortalArmed, m_HomeArmed;
 
         // Scene objects
         GameObject m_Root;          // bubble centre; the scan centre (eye point) sits here
@@ -440,6 +449,8 @@ namespace Moodium.NatureWorld
             m_Root.SetActive(false); m_TouchRequested = false;
             m_Phase = Phase.Armed; m_Routine = null;
             Left?.Invoke(target);
+            // Return() dropped the next layer; build it again in the room so a re-entry shows its bubble at once.
+            if (m_PrepareNestedEarly && m_Root != null) PrepareNested();
         }
         void ResetCached()
         {
@@ -495,7 +506,9 @@ namespace Moodium.NatureWorld
             if (m_Phase == Phase.Portal)
             {
                 m_WorldRoot.Rotate(Vector3.up, m_SpinDegreesPerSecond * Time.deltaTime, Space.Self);
-                if (FingertipTouching(m_Root.transform.position, m_Radius)) EnterFromPortal();
+                var touchingPortal = FingertipTouching(m_Root.transform.position, m_Radius);
+                if (!m_PortalArmed) m_PortalArmed = !touchingPortal;
+                else if (touchingPortal) EnterFromPortal();
                 return;
             }
             if (m_Phase == Phase.HandingOff)
@@ -521,7 +534,7 @@ namespace Moodium.NatureWorld
             m_BreathScale = Mathf.MoveTowards(m_BreathScale, breath, Time.deltaTime * .015f / (breath > m_BreathScale ? .4f : 1.2f));
             m_WorldRoot.localScale = Vector3.one * m_BreathScale;
             m_Sky.localScale = Vector3.one * SkyScaleForBreath(m_BreathScale);
-            if (Time.time - m_InsideAt < 10f) return;
+            if (Time.time - m_InsideAt < m_NextBubbleDelaySeconds) return;
             if (m_Nested != null)
             {
                 if (!m_Nested.m_CoreLayersReady) return;
@@ -545,17 +558,20 @@ namespace Moodium.NatureWorld
                 m_Home.AddComponent<MoodiumSpatialButton>().Configure(null, null, RequestHome);
                 m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
                 m_Home.transform.position = m_HomeTarget;
+                m_HomeArmed = false;
             }
             m_Home.SetActive(true);
             if (Vector3.Angle(viewer.transform.forward, m_HomeTarget - viewer.transform.position) > 60f)
                 m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
             m_Home.transform.position = Vector3.Lerp(m_Home.transform.position, m_HomeTarget, 1f - Mathf.Exp(-Time.deltaTime * 5f));
-            if (FingertipTouching(m_Home.transform.position, .08f)) RequestHome();
+            var touchingHome = FingertipTouching(m_Home.transform.position, .08f);
+            if (!m_HomeArmed) m_HomeArmed = !touchingHome;
+            else if (touchingHome) RequestHome();
         }
 
         public static float SkyScaleForBreath(float breathScale) => SkyMaxRadius / Mathf.Max(.001f, breathScale);
 
-        public const int SkySortOrder = 0, PointLayerSortOrder = 1;
+        public const int SkySortOrder = 0, PointLayerSortOrder = 1, HandWakeSortOrder = 2;
 
         /// <summary>Texture for the sky sphere. Soft falls back to the photo (with a warning) if panorama_soft is missing.</summary>
         public static Texture2D SkyTexture(string folder, SkyStyle style, Texture2D panorama)
@@ -650,6 +666,7 @@ namespace Moodium.NatureWorld
             ResetCached();
             m_Root.transform.SetPositionAndRotation(position, Quaternion.identity);
             SetRadius(radius);
+            m_PortalArmed = false;
             m_Phase = Phase.Portal;
         }
 
@@ -969,9 +986,14 @@ namespace Moodium.NatureWorld
             if (m_HandWake)
             {
                 var wake = new GameObject("Bubble Hand Wake");
-                wake.transform.SetParent(m_Root.transform, false);
+                // Under the scan root and in its sorting group, drawn after the point layers: a renderer outside
+                // the group had no defined order against the PostPass group and could be hidden behind it.
+                wake.transform.SetParent(m_WorldRoot, false);
                 m_Wake = wake.AddComponent<BubbleHandWake>();
                 m_Wake.Initialize(bytes, colors, m_EyeHeight, BubbleWorldData.IsCandy(m_Folder), m_WorldRoot, ResolveViewer());
+                if (m_WorldSorting != null)
+                    m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting
+                        { Renderer = wake, Order = HandWakeSortOrder, ApplyToDescendants = false });
             }
 
             // The interaction shell belongs to the core warmup, so a user can
@@ -1048,6 +1070,7 @@ namespace Moodium.NatureWorld
 
             if (m_Phase == Phase.Armed) SetRadius(.001f);
             // ResetCached enables the root only when the bubble is actually summoned.
+            if (m_PrepareNestedEarly) PrepareNested();
         }
 
         static GameObject CreateRenderer(string name, Transform parent, Mesh mesh, Material material)

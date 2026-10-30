@@ -98,9 +98,12 @@ namespace Moodium.CandyWorld
         public void ConfigureRewardTouchSound(AudioClip touchSound) => m_RewardTouchSound = touchSound;
         public void ConfigureCandyPrefabDeformationSound(AudioClip sound) => m_CandyPrefabDeformationSound = sound;
         public void ConfigureExitAction(System.Action exitAction) => m_ExitAction = exitAction;
+        public static bool WristHiddenFor(bool running, WorldJourneyStage? stage) => running && stage == WorldJourneyStage.Bubble;
 
         void Update()
         {
+            // No wrist band inside the bubble worlds (from the touch that enters until back in the room).
+            if (m_EnergyUI != null) m_EnergyUI.Suppressed = WristHiddenFor(m_Running, m_Journey != null ? m_Journey.Stage : (WorldJourneyStage?)null);
             if (m_Running && m_Journey != null)
             {
                 m_Rings?.SetInteractionState(m_Journey.Stage == WorldJourneyStage.Explore,

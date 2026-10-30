@@ -132,6 +132,14 @@ namespace Moodium.CandyWorld
 
         public float DisplayedProgress => m_DisplayedProgress;
         public bool HandTracked { get; private set; }
+        /// <summary>
+        /// Hidden (fades out, no input) while true — set by CandyWorldManager while the viewer is in a bubble world.
+        /// Hand tracking keeps running, so <see cref="HandTracked"/> stays valid for other components.
+        /// </summary>
+        public bool Suppressed { get; set; }
+        /// <summary>False once a suppressed band has faded out and its visuals are switched off.</summary>
+        public bool VisualsShown => m_VisualsShown;
+        bool m_VisualsShown = true;
         public bool IsGlancing => m_Glancing;
         public int SocketCount => m_Sockets.Length;
         public event System.Action ReleasePressed;
@@ -314,6 +322,18 @@ namespace Moodium.CandyWorld
             UpdateProgressAnimation(dt);
             UpdateCardAndToast(dt);
             ApplyColors();
+            // Fully faded while suppressed: switch the band, card and toast off (also hides gems in the sockets).
+            ShowVisuals(!(Suppressed && m_VisualAlpha <= 0f));
+        }
+
+        void ShowVisuals(bool shown)
+        {
+            if (shown == m_VisualsShown) return;
+            m_VisualsShown = shown;
+            // Only the band's own roots: anything else parented to the wrist keeps its own state.
+            if (m_BandRoot != null) m_BandRoot.gameObject.SetActive(shown);
+            if (m_CardRect != null) m_CardRect.gameObject.SetActive(shown);
+            if (m_ToastRect != null) m_ToastRect.gameObject.SetActive(shown);
         }
 
         void UpdateWristPose(float dt)
@@ -330,7 +350,7 @@ namespace Moodium.CandyWorld
             }
 #endif
             var wasTracked=HandTracked;HandTracked = tracked;
-            m_VisualAlpha = Mathf.MoveTowards(m_VisualAlpha, tracked ? 1f : 0f, dt * 8f);
+            m_VisualAlpha = Mathf.MoveTowards(m_VisualAlpha, tracked && !Suppressed ? 1f : 0f, dt * 8f);
             if (!tracked) return;
             if (m_FlipDorsal) dorsal = -dorsal;
             var rotation = Quaternion.LookRotation(dorsal, armAxis);
@@ -381,7 +401,7 @@ namespace Moodium.CandyWorld
         void UpdateGlance(float dt)
         {
             var glancing = false;
-            if (HandTracked && m_Camera != null)
+            if (HandTracked && !Suppressed && m_Camera != null)
             {
                 var toWrist = BandTopWorld() - m_Camera.transform.position;
                 var angle = Vector3.Angle(m_Camera.transform.forward, toWrist);
@@ -393,7 +413,7 @@ namespace Moodium.CandyWorld
             // Input closes immediately; the minimum display time only holds the visual.
             m_InputReady=glancing;
             if (glancing && !m_Glancing) m_GlanceSince = Time.time;
-            if (HandTracked&&!glancing && m_Glancing && Time.time - m_GlanceSince < m_MinCardSeconds) glancing = true;
+            if (HandTracked&&!Suppressed&&!glancing && m_Glancing && Time.time - m_GlanceSince < m_MinCardSeconds) glancing = true;
             m_Glancing = glancing;
             m_Glance = Mathf.MoveTowards(m_Glance, glancing ? 1f : 0f, dt / (glancing ? .22f : .18f));
         }

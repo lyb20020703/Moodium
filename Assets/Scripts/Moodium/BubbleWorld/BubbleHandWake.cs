@@ -86,6 +86,20 @@ namespace Moodium.NatureWorld
             return -1;
         }
 
+        /// <summary>Any point of the world (first filled bin from a random start), or −1 when the lookup is empty.</summary>
+        public static int PickAny(int[] lookup, float random01, int perBin = PerBin)
+        {
+            if (lookup == null || lookup.Length < perBin) return -1;
+            var bins = lookup.Length / perBin;
+            var first = Math.Min(bins - 1, (int)(random01 * bins));
+            for (var k = 0; k < bins; k++)
+            {
+                var b = (first + k) % bins;
+                if (lookup[b * perBin] >= 0) return lookup[b * perBin];
+            }
+            return -1;
+        }
+
         /// <summary>Points per second for one hand at <paramref name="speed"/> m/s.</summary>
         public static float SpawnRate(float speed, float startSpeed, float fullSpeed, float maxRate) =>
             maxRate * Mathf.Clamp01((speed - startSpeed) / Mathf.Max(.001f, fullSpeed - startSpeed));
@@ -122,18 +136,21 @@ namespace Moodium.NatureWorld
     {
         [Header("Spawning")]
         [Tooltip("Hand speed (m/s) where points start to come off.")]
-        [Min(0f)] public float StartSpeed = .25f;
+        [Min(0f)] public float StartSpeed = .06f;
         [Tooltip("Hand speed (m/s) that gives the full stream.")]
-        [Min(.1f)] public float FullSpeed = 1.2f;
-        [Min(0f)] public float MaxPerSecondPerHand = 160f;
+        [Min(.1f)] public float FullSpeed = .7f;
+        [Min(0f)] public float MaxPerSecondPerHand = 180f;
+        [Tooltip("Points per second from a hand that is held still in view, so reaching out always shows something.")]
+        [Min(0f)] public float IdlePerSecondPerHand = 14f;
         [Tooltip("Points spawn within this radius around the palm and fingertips (m).")]
         [Min(0f)] public float SpawnRadius = .035f;
         [Tooltip("Hands closer than this in front of the eyes do not spawn (m).")]
         [Min(0f)] public float MinForward = .15f;
 
         [Header("Look")]
-        [Tooltip("Quad edge in metres, random between x and y. World points look ~0.4° wide; 4–9 mm at arm's length is similar.")]
-        public Vector2 SizeMetres = new(.004f, .009f);
+        [Tooltip("Quad edge in metres, random between x and y (wake points only; the world's points are not affected). " +
+                 "4–9 mm was too small to notice on device.")]
+        public Vector2 SizeMetres = new(.007f, .014f);
         public Vector2 LifeSeconds = new(1.1f, 2f);
 
         [Header("Motion")]
@@ -188,6 +205,9 @@ namespace Moodium.NatureWorld
         Camera m_Viewer;
         XRHandSubsystem m_Hands;
         XROrigin m_Origin;
+        int m_Spawned, m_LoggedSpawned = -1;
+        float m_NextLogAt;
+        bool m_WasActive;
         readonly HandTrack[] m_Track = { new(), new() };
         System.Random m_Random = new(20261030);
 
@@ -263,8 +283,13 @@ namespace Moodium.NatureWorld
         {
             if (m_Lookup == null || m_Points == null || m_AtlasSize <= 0) return false;
             var direction = m_Scan != null ? m_Scan.InverseTransformDirection(position - eye) : position - eye;
-            var index = BubbleHandWakeMath.Pick(m_Lookup, direction, (float)m_Random.NextDouble());
+            var r = (float)m_Random.NextDouble();
+            var index = BubbleHandWakeMath.Pick(m_Lookup, direction, r);
+            // Open sky behind the hand: a colour from a wider neighbourhood, then any point of this world.
+            if (index < 0) index = BubbleHandWakeMath.Pick(m_Lookup, direction, r, 24);
+            if (index < 0) index = BubbleHandWakeMath.PickAny(m_Lookup, r);
             if (index < 0) return false;
+            m_Spawned++;
             var slot = m_Next;
             m_Next = (m_Next + 1) % m_Points.Length;   // when full, the oldest point gives way
             if (!m_Points[slot].Alive) m_Live++;
@@ -304,8 +329,9 @@ namespace Moodium.NatureWorld
         void Upload(Vector3 right, Vector3 up)
         {
             if (m_Live == 0 && m_UploadedEmpty && !m_UVsDirty) return;   // nothing changed: no mesh sync
-            var r = transform.InverseTransformDirection(right).normalized;
-            var u = transform.InverseTransformDirection(up).normalized;
+            // Local vectors of one world metre: correct under the (breathing) scan scale.
+            var r = transform.InverseTransformVector(right.normalized);
+            var u = transform.InverseTransformVector(up.normalized);
             for (var k = 0; k < m_Points.Length; k++)
             {
                 var v = k * 4;
@@ -338,8 +364,25 @@ namespace Moodium.NatureWorld
             var dt = Time.deltaTime;
             if (Active && m_Lookup != null) SpawnFromHands(dt);
             else { m_Track[0].Has = m_Track[1].Has = false; }
+            LogState();
             var view = m_Viewer.transform;
             Step(dt, view.right, view.up);
+        }
+
+        /// <summary>Device logs: one line on each Active change and every 5 s while active, to see why nothing shows.</summary>
+        void LogState()
+        {
+            var changed = Active != m_WasActive;
+            m_WasActive = Active;
+            if (!changed && (!Active || Time.unscaledTime < m_NextLogAt)) return;
+            m_NextLogAt = Time.unscaledTime + 5f;
+            if (!changed && m_Spawned == m_LoggedSpawned) return;
+            m_LoggedSpawned = m_Spawned;
+            var hands = m_Hands != null ? (m_Hands.running ? "running" : "stopped") : "missing";
+            var left = m_Hands != null && m_Hands.leftHand.isTracked;
+            var right = m_Hands != null && m_Hands.rightHand.isTracked;
+            Debug.Log($"[Bubble Wake] active={Active} lookup={(m_Lookup != null)} hands={hands} L={left} R={right} " +
+                      $"spawned={m_Spawned} live={m_Live} renderer={(TryGetComponent<MeshRenderer>(out var mr) && mr.enabled && gameObject.activeInHierarchy)}");
         }
 
         void SpawnFromHands(float dt)
@@ -364,7 +407,8 @@ namespace Moodium.NatureWorld
                 track.Last = palm;
                 if (Vector3.Dot(palm - eye, forward) < MinForward) { track.Pending = 0f; continue; }
                 var speed = track.Velocity.magnitude;
-                track.Pending += BubbleHandWakeMath.SpawnRate(speed, StartSpeed, FullSpeed, MaxPerSecondPerHand) * dt;
+                track.Pending += (IdlePerSecondPerHand +
+                    BubbleHandWakeMath.SpawnRate(speed, StartSpeed, FullSpeed, MaxPerSecondPerHand)) * dt;
                 var burst = Mathf.Min(64, (int)track.Pending);
                 track.Pending -= burst;
                 var spread = Spread * Mathf.Clamp01(speed / FullSpeed);

@@ -31,9 +31,8 @@ namespace Moodium.Opening
             Unity.PolySpatial.PolySpatialObjectUtils.MarkDirty(m_TargetTexture);
         }
 
-        void OnDisable()
-        {
-            m_TargetTexture = null;
-        }
+        // No OnDisable reset: OpeningVideoSession.SetVisible(false) deactivates this object (world entry, the
+        // no-bag carousel), and the texture was then never set again, so after SetVisible(true) Vision Pro kept
+        // the last frame while the video ran on. A destroyed texture already fails ShouldTransfer.
     }
 }

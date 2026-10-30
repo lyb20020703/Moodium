@@ -184,8 +184,7 @@ namespace Moodium.Flow
 
         public void End()
         {
-            if (m_SelectionSeekRoutine != null) StopCoroutine(m_SelectionSeekRoutine);
-            m_SelectionSeekRoutine = null;
+            m_Loop = null;
             if (m_TrackedImageManager != null)
                 m_TrackedImageManager.trackablesChanged.RemoveListener(OnTrackedImagesChanged);
             m_Active = false;
@@ -213,13 +212,25 @@ namespace Moodium.Flow
             if (!m_Active || m_Session?.Player == null)
                 return;
             var player = m_Session.Player;
-            if (m_SelectionSeekRoutine != null) return;
-            var loop = OpeningVideoTimeline.StickerSelectionLoop;
+            if (m_Loop == null) { SeekSelectionLoopStart(); return; }
+            if (!player.isPrepared)
+            {
+                if (!m_Preparing) { m_Preparing = true; player.Prepare(); }
+                return;
+            }
+            if (m_Preparing) { m_Preparing = false; IssueLoopSeek(player); return; }
             var frame = player.frame >= 0
                 ? player.frame
                 : (long)Math.Round(player.time * OpeningVideoTimeline.FramesPerSecond);
-            if (frame >= loop.EndFrame || !player.isPlaying)
-                SeekSelectionLoopStart();
+            switch (m_Loop.Tick(Time.realtimeSinceStartup, frame, player.isPlaying))
+            {
+                case VideoLoopAction.Play:
+                    player.Play();
+                    break;
+                case VideoLoopAction.Seek:
+                    IssueLoopSeek(player);
+                    break;
+            }
         }
 
         void OnTrackedImagesChanged(ARTrackablesChangedEventArgs<ARTrackedImage> changes)
@@ -490,51 +501,43 @@ namespace Moodium.Flow
             return worldId == "candy" ? "糖果世界" : "自然世界";
         }
 
-        Coroutine m_SelectionSeekRoutine;
+        // Sticker-selection loop (frames 1240–1380). The driver decides; this class only talks to the VideoPlayer.
+        VideoSegmentLoopDriver m_Loop;
+        bool m_Preparing;
+        public VideoSegmentLoopDriver SelectionLoop => m_Loop;
 
         void SeekSelectionLoopStart()
         {
-            if (m_Session?.Player == null || m_SelectionSeekRoutine != null)
+            var player = m_Session?.Player;
+            if (player == null)
                 return;
-            if (Application.isPlaying)
+            if (!Application.isPlaying)
             {
-                m_SelectionSeekRoutine = StartCoroutine(SeekSelectionLoop());
+                player.time = OpeningVideoTimeline.FrameToSeconds(
+                    OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
+                player.Play();
                 return;
             }
-            m_Session.Player.time = OpeningVideoTimeline.FrameToSeconds(
-                OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
-            m_Session.Player.Play();
+            var loop = OpeningVideoTimeline.StickerSelectionLoop;
+            m_Loop = new VideoSegmentLoopDriver(loop.StartFrame, loop.EndFrame);
+            m_Preparing = false;
+            if (!player.isPrepared)
+            {
+                // Update seeks once the player is prepared.
+                m_Preparing = true;
+                player.Prepare();
+                return;
+            }
+            IssueLoopSeek(player);
         }
 
-        System.Collections.IEnumerator SeekSelectionLoop()
+        void IssueLoopSeek(UnityEngine.Video.VideoPlayer player)
         {
-            var player = m_Session.Player;
-            var completed = false;
-            UnityEngine.Video.VideoPlayer.EventHandler onSeek = _ => completed = true;
-            player.seekCompleted += onSeek;
-            try
-            {
-                player.Pause();
-                player.time = OpeningVideoTimeline.FrameToSeconds(OpeningVideoTimeline.StickerSelectionLoop.StartFrame);
-                var deadline = Time.realtimeSinceStartup + 3f;
-                // Always yield once: assignment does not mean the decoder has
-                // presented the requested frame. Never restart a pending seek.
-                do { yield return null; }
-                while (!completed && Time.realtimeSinceStartup < deadline);
-                if (m_Active && m_Session?.Player == player)
-                {
-                    if (!completed) Debug.LogWarning("[Moodium Sticker Selection] Video seek timed out; resuming decoder before retry.");
-                    player.Play();
-                    // Give the backend time to present a frame before Update
-                    // evaluates the loop boundary again, including on visionOS.
-                    yield return null;
-                }
-            }
-            finally
-            {
-                if (player != null) player.seekCompleted -= onSeek;
-                m_SelectionSeekRoutine = null;
-            }
+            // Never Pause() first: a paused AVFoundation player may not present the sought frame or raise
+            // seekCompleted until it plays again, which is how the picture used to stay on one frame.
+            player.frame = m_Loop.StartFrame;
+            player.Play();
+            m_Loop.NotifySeekIssued(Time.realtimeSinceStartup);
         }
 
         static float SafeScaleDivide(float value, float divisor) =>

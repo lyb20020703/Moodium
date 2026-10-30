@@ -118,6 +118,12 @@ namespace Moodium.Flow
             if (entryRoot == null)
                 return null;
 
+            // The rigged Moodi (v2) has its own animator controller; the legacy clips here would freeze it, so it
+            // answers touches itself. Give it the selection-screen touch reaction instead (Happy / Wave in turn).
+            var rigged = entryRoot.GetComponentsInChildren<Moodium.Characters.MoodiCompanionAnimator>(true);
+            foreach (var moodi in rigged) moodi.ConfigureSelectionTouch();
+            if (rigged.Length > 0) return null;
+
             var animator = FindMascotAnimator(entryRoot);
             if (animator == null)
             {

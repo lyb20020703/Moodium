@@ -50,6 +50,13 @@ namespace Moodium.Characters
         [SerializeField, Range(.05f, 1f)] float m_FlipHold = .25f;
         [SerializeField, Range(.3f, 3f)] float m_TossSpeed = .8f;
         [SerializeField, Range(.1f, 2f)] float m_LostHold = .4f;
+        [Tooltip("After a pat, or while the other hand is at Moodi: no flip/toss release, and the holding hand may " +
+                 "drop out of tracking this long before Moodi leaves the palm.")]
+        [SerializeField, Range(.1f, 3f)] float m_LostHoldWhilePatting = 1.5f;
+        [SerializeField, Range(0f, 3f)] float m_PatGrace = 1.2f;
+        [Tooltip("Other hand's palm within this distance of Moodi's body counts as patting (m).")]
+        [SerializeField, Range(.05f, .4f)] float m_PatReach = .16f;
+        float m_TouchedAt = -10f;
         [SerializeField, Range(.1f, 2f)] float m_WalkSpeed = .4f;
         [SerializeField, Range(.2f, 5f)] float m_WalkHold = 1.5f;
 
@@ -260,6 +267,13 @@ namespace Moodium.Characters
             m_FlipFor = m_WalkFor = m_LiftFor = m_ShakeFor = 0f;
             m_PrevPerchVelocity = CurrentHand().Velocity;
             m_Accel = Vector3.zero;
+            m_TouchedAt = -10f;
+            if (m_Animator != null)
+            {
+                // Riding the palm moves the root; without this the movement read as walking and Idle never played.
+                m_Animator.SetWalking(false);
+                m_Animator.SetSupportHand(m_SummonRight ? 1 : 0);
+            }
             ShowRing(false, default, 0f);
             if (m_Voice != null) m_Voice.Say("B2");
             Landed?.Invoke();
@@ -268,10 +282,13 @@ namespace Moodium.Characters
         void UpdatePerched(float dt)
         {
             var hand = CurrentHand();
+            // A pat from the other hand often hides the holding hand from tracking for a moment, or makes its joints
+            // jump. Right after a touch (or while the other hand is at Moodi) Moodi stays put instead of falling off.
+            var patting = Time.time - m_TouchedAt < m_PatGrace || OtherHandNear();
             if (!hand.Valid)
             {
                 m_LostFor += dt;
-                if (m_LostFor > m_LostHold) Release(false, true);
+                if (m_LostFor > (patting ? m_LostHoldWhilePatting : m_LostHold)) Release(false, true);
                 return;
             }
             m_LostFor = 0f;
@@ -322,10 +339,10 @@ namespace Moodium.Characters
             }
 
             // Release: palm turned over, a toss, or walking off with Moodi in hand.
-            m_FlipFor = IsFlipped(hand.Facing, m_FlipDot) ? m_FlipFor + dt : 0f;
+            m_FlipFor = IsFlipped(hand.Facing, m_FlipDot) && !patting ? m_FlipFor + dt : 0f;
             if (m_FlipFor >= m_FlipHold) { Release(false, false); return; }
             var forward = Vector3.ProjectOnPlane(m_Viewer.forward, Vector3.up).normalized;
-            if (Vector3.Dot(hand.Velocity, (forward + Vector3.up).normalized) > m_TossSpeed && sinceLanding > .4f)
+            if (!patting && Vector3.Dot(hand.Velocity, (forward + Vector3.up).normalized) > m_TossSpeed && sinceLanding > .4f)
             { Release(false, false); return; }
             m_WalkFor = m_HeadSpeed > m_WalkSpeed ? m_WalkFor + dt : 0f;
             if (m_WalkFor >= m_WalkHold) Release(true, false);
@@ -345,6 +362,7 @@ namespace Moodium.Characters
             m_SaidNotice = false;
             ShowRing(false, default, 0f);
             if (m_Visual != null) m_Visual.localScale = m_VisualScale;
+            if (m_Animator != null) { m_Animator.SetSupportHand(-1); m_Animator.ClearManualWalk(); }
             if (!quiet && m_Voice != null) m_Voice.Say(walking ? "D2" : "D1");
             MoodiVoice.MarkLearned("C6");
             Released?.Invoke();
@@ -368,6 +386,7 @@ namespace Moodium.Characters
             m_Tilt = Quaternion.identity;
             if (m_Guide != null) m_Guide.rotation = Quaternion.identity;
             if (m_Visual != null) m_Visual.localScale = m_VisualScale;
+            if (m_Animator != null) { m_Animator.SetSupportHand(-1); m_Animator.ClearManualWalk(); }
             if (m_Ring != null) m_Ring.gameObject.SetActive(false);
         }
 
@@ -383,6 +402,7 @@ namespace Moodium.Characters
         {
             if (m_Voice == null && m_Animator == null) return;
             MoodiVoice.MarkLearned("C1");
+            m_TouchedAt = Time.time;
             if (m_State != State.Perched)
             {
                 if (m_Voice != null) m_Voice.SayOneOf("C2");
@@ -400,6 +420,16 @@ namespace Moodium.Characters
         // ---------- hands ----------
 
         Hand CurrentHand() => m_SummonRight ? m_Right : m_Left;
+        Hand OtherHand() => m_SummonRight ? m_Left : m_Right;
+
+        /// <summary>The free hand's palm is within reach of Moodi's body (about to pat, or patting).</summary>
+        bool OtherHandNear()
+        {
+            var other = OtherHand();
+            if (!other.Valid || m_Guide == null) return false;
+            var body = m_Animator != null ? m_Animator.transform.TransformPoint(m_Animator.BodyCenterLocal) : m_Guide.position;
+            return (other.Palm - body).sqrMagnitude < m_PatReach * m_PatReach;
+        }
 
         Hand PickSummonHand()
         {
