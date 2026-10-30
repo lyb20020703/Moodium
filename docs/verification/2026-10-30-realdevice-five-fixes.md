@@ -177,3 +177,38 @@ AVFoundation 暂停时可能不显示目标帧，也不发 `seekCompleted`，每
 | `VideoSegmentLoopDriverTests`（新） | 跳转后的旧帧号被忽略；跳转丢失时先 Play 再重新跳转；只有落地后才在结尾循环；短暂不播放时等待，长时间不播放只补 Play；帧不前进时先 Play 再跳转；跑出循环段时跳回 |
 | `RealDevice1030bTests`（新） | 手腕只在泡泡世界里隐藏；隐藏时停止输入；入口不再等 10 秒且需要手指先离开；视频贴图更新器隐藏再显示后仍有贴图；选关循环不再 `Pause()`；`PickAny`；托着的手不阻挡也不误触发触摸；选关 Moodi 配置；手心 Moodi 保持 Idle、被摸时不掉；呼吸浮动在缩放之前关闭 |
 | 现有 `MoodiAnimatedTests`、`StickerWorldSelectionControllerTests`、`BubbleHandWakeTests`、`BubbleWorld*`、`IntroVideoGateTests`、`OpeningSkipBehaviorTests` | 必须仍然通过 |
+
+
+## 本地实施与验证
+
+从原工程当前 f56a589 创建 codex/realdevice-fixes-1030b，输入补丁原样提交 4c06ccf。代码实际修改在 `/Users/yibei/Desktop/appcontest2026/Moodium`；独立副本仅用于编译和自动化测试。未合并、未推送。工程已有 FBX 改动保留，未纳入本次提交。
+
+Unity 6000.0.30f1 编译通过，无需修正输入补丁。新脚本 .meta 由 Unity 生成并复制回原工程。
+
+全套 665 项：**636 通过、29 失败**。与 f56a589 对应的 bubble-hand-wake 全套 XML 按名称比较，新增失败 0、旧失败消失 0。[完整 XML](realdevice-fixes-1030b/full-tests.xml)、[29 项旧失败逐项清单](realdevice-fixes-1030b/remaining-failures.md)。
+
+指定套件：
+
+- VideoSegmentLoopDriverTests：6/6
+- RealDevice1030bTests：9/9
+- MoodiAnimatedTests：14/14
+- StickerWorldSelectionControllerTests：9/12
+- IntroVideoGateTests：18/18
+- OpeningSkipBehaviorTests：3/3
+- OpeningVideoSessionTests：2/2
+- BubbleHandWakeTests：8/8
+- BubbleWorld：36/36
+
+原有 StickerWorldSelectionController 等旧失败仍保留，不能把相关套件整体描述为全通过。没有修改旧测试期望来凑通过数。
+
+本次保留手心 Moodi 大小/位置、Touched 动作、视频素材与帧常量、世界点云大小及静态圆点材质、面板和 Soft 天空方案。尾迹的尺寸和触发参数按包内要求更新，尾迹排序登记到世界排序组。
+
+以下设备验收尚未执行：
+
+1. 两层泡泡中手腕光带淡出、无输入，退出后恢复。
+2. 各个开机进度点跳过与英文分支落入 1240–1380 循环，隐藏再显示、进世界返回与感官袋切换后继续播放。
+3. 入口/出口立即显示；指尖先离开后再次接触才能触发；重进仍有效；提前准备下一层的实际卡顿。
+4. 手心 Idle、另一手触摸压扁回弹、三次拍击反馈、触摸不掉落、不抢缩放、翻手/上抛放走；两种选关的 Happy/Wave 交替。
+5. 静止/慢移手部尾迹可见、景色颜色匹配、尺寸观感、退出清理和帧率。
+
+自动化通过不等同于 AVFoundation、RealityKit 或真机手追踪已验收。若尾迹仍不出现，保留包内新增 [Bubble Wake] active=… 诊断日志用于定位。
