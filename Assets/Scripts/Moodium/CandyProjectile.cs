@@ -9,12 +9,12 @@ namespace Moodium.CandyWorld
         [SerializeField, Range(0.1f, 1f)] float m_ColliderScale = 0.35f;
 
         Collider[] m_Colliders;
-        SqueezeProgressVideoController m_ProtectedVideo;
+        ISqueezeProgressDisplay m_ProtectedVideo;
         Renderer[] m_Visuals;
         float m_VideoProtectionStarted;
         float m_VideoOverlapTime;
 
-        public void ProtectVideo(SqueezeProgressVideoController video)
+        public void ProtectVideo(ISqueezeProgressDisplay video)
         {
             m_ProtectedVideo = video;
             m_Visuals = GetComponentsInChildren<Renderer>(true);

@@ -6,8 +6,9 @@ namespace Moodium.Reality
 {
     public sealed class SqueezeProgressDisplayRouter:MonoBehaviour,ISqueezeProgressDisplay
     {
+        [SerializeField] bool m_UseMoodiRise=true;
         SqueezeProgressVideoController video;
-        public MoodiEmergenceDisplay Mesh {get;private set;}
+        public MoodiRiseDisplay Mesh {get;private set;}
         ISqueezeProgressDisplay active;
         ChocolateCapsuleInteraction bound;
         bool nature;
@@ -17,8 +18,8 @@ namespace Moodium.Reality
         public void Configure(Camera c,VideoClip a,VideoClip b)
         {
             video=GetComponent<SqueezeProgressVideoController>()??gameObject.AddComponent<SqueezeProgressVideoController>();
-            Mesh=GetComponent<MoodiEmergenceDisplay>()??gameObject.AddComponent<MoodiEmergenceDisplay>();
-            video.Configure(c,a,b);active=video;
+            Mesh=GetComponent<MoodiRiseDisplay>()??gameObject.AddComponent<MoodiRiseDisplay>();
+            Mesh.Configure(c,a,b);video.Configure(c,a,b);active=video;
             video.Popped-=Pop;video.Popped+=Pop;Mesh.Popped-=Pop;Mesh.Popped+=Pop;
         }
         void Pop(Vector3 p)=>Popped?.Invoke(p);
@@ -26,12 +27,12 @@ namespace Moodium.Reality
         public void BindToSoft(ChocolateCapsuleInteraction c)
         {
             if(c==null||bound==c)return;
-            Mesh.BindToSoft(c);
-            if(Mesh.Ready){video.ResetAndHide();active=Mesh;}
+            if(m_UseMoodiRise)Mesh.BindToSoft(c);
+            if(m_UseMoodiRise&&Mesh.Ready){video.ResetAndHide();active=Mesh;}
             else
             {
                 active=video;video.Begin(nature);video.BindToSoft(c);
-                Debug.LogWarning("[Moodi Emergence] Mouth rig or emergence resources unavailable; using video fallback.");
+                Debug.LogWarning("[Moodi Emergence] Rise disabled or resources unavailable; using video fallback.");
             }
             bound=c;active.SetProgress(progress);
             Debug.Log($"[Moodi Emergence] {(nature?"nature":"candy")} display = {(active==Mesh?"mesh":"video")}");

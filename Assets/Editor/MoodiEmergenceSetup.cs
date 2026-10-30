@@ -69,72 +69,36 @@ public static class MoodiEmergenceSetup
         layer.blendingMode=AnimatorLayerBlendingMode.Additive;layer.defaultWeight=1;
         layer.stateMachine.defaultState=State(layer.stateMachine,name,clip,time);c.layers=layers.ToArray();
     }
-    [MenuItem("Moodium/Moodi/Setup Squeeze Out")]
+    [MenuItem("Moodium/Moodi/Setup Rise Display")]
     public static void Setup()
     {
-        PreserveOriginalClips();
         MoodiAnimatedSetup.SetupAll();
-        Directory.CreateDirectory("Assets/Resources/MoodiEmergence");
         var fallback=PrefabUtility.LoadPrefabContents("Assets/prefab/Moodi meshy.prefab");
         try{PrefabUtility.SaveAsPrefabAsset(fallback,"Assets/Resources/MoodiEmergence/Moodi.prefab");}finally{PrefabUtility.UnloadPrefabContents(fallback);}
         foreach(var world in new[]{"Nature","Candy"})
         {
-            var particlePath=$"Assets/Resources/MoodiEmergence/{world}Particles.mat";
-            var particleMaterial=AssetDatabase.LoadAssetAtPath<Material>(particlePath);
-            if(particleMaterial==null){particleMaterial=new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit"));AssetDatabase.CreateAsset(particleMaterial,particlePath);}
-            particleMaterial.SetTexture("_BaseMap",AssetDatabase.LoadAssetAtPath<Texture2D>(world=="Nature"?"Assets/Moodium/image/leaf.png":"Assets/Epic Toon FX/Textures/sparkle3.png"));
-            Moodium.Opening.OpeningVideoSurfaceSettings.TransparentAlpha.ApplyTo(particleMaterial);EditorUtility.SetDirty(particleMaterial);
-            var path=$"Assets/Model/Soft/{world}Soft_Mouth.fbx";
-            var importer=(ModelImporter)AssetImporter.GetAtPath(path);
-            importer.animationType=ModelImporterAnimationType.Generic;importer.avatarSetup=ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.optimizeGameObjects=false;importer.importAnimation=true;importer.importCameras=false;importer.importLights=false;
-            importer.SaveAndReimport();
-            var defs=importer.defaultClipAnimations;
-            foreach(var clip in defs){clip.name=MoodiAnimatedSetup.ShortClipName(clip.takeName);clip.loopTime=false;if(clip.name=="Mouth_Pucker"){clip.hasAdditiveReferencePose=true;clip.additiveReferencePoseFrame=0;}}
-            importer.clipAnimations=defs;importer.SaveAndReimport();
-            var clips=AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>().Where(x=>!x.name.StartsWith("__preview__")).ToDictionary(x=>x.name);
-            var cp=Output+world+"MouthEmergence.controller";
-            var c=AssetDatabase.LoadAssetAtPath<AnimatorController>(cp)??AnimatorController.CreateAnimatorControllerAtPath(cp);
-            Param(c,"Progress",AnimatorControllerParameterType.Float);Param(c,"Press",AnimatorControllerParameterType.Float);Param(c,"Pop",AnimatorControllerParameterType.Trigger);
-            var sm=c.layers[0].stateMachine;
-            sm.defaultState=State(sm,"Emerge",clips["Mouth_Emerge"],"Progress");
-            var pop=State(sm,"Pop",clips["Mouth_Pop"]);
-            pop.speed=clips["Mouth_Pop"].length/.8f;
-            foreach(var t in sm.anyStateTransitions)sm.RemoveAnyStateTransition(t);
-            var transition=sm.AddAnyStateTransition(pop);transition.hasExitTime=false;transition.duration=0;transition.AddCondition(AnimatorConditionMode.If,0,"Pop");
-            AddLayer(c,"Pucker",clips["Mouth_Pucker"],"Press");EditorUtility.SetDirty(c);
-            var prefabPath=$"Assets/prefab/{world}Soft.prefab";var root=PrefabUtility.LoadPrefabContents(prefabPath);
+            var importer=(ModelImporter)AssetImporter.GetAtPath($"Assets/Model/{world}Soft.fbx");
+            var readable=importer.isReadable;
             try
             {
-                var old=root.transform.Cast<Transform>().FirstOrDefault(t=>t.GetComponentInChildren<Renderer>(true)!=null);
-                if(old==null)throw new InvalidOperationException("Missing soft model");
-                var materials=(old.GetComponentsInChildren<Renderer>(true).FirstOrDefault(r=>r.name.Contains("_Static"))??old.GetComponentInChildren<Renderer>(true)).sharedMaterials;
-                var pos=old.localPosition;var rot=old.localRotation;var scale=old.localScale;
-                // The new export includes Blender's Z-up to Unity Y-up conversion.
-                // Remove the old mesh-only import correction exactly once.
-                if(Quaternion.Angle(rot,Quaternion.Euler(-90,0,0))<.01f)rot=Quaternion.identity;
-                UnityEngine.Object.DestroyImmediate(old.gameObject);
-                var model=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path),root.transform);
-                model.transform.localPosition=pos;model.transform.localRotation=rot;model.transform.localScale=scale;
-                model.name=world+"Soft_Mouth";
-                var animator=model.GetComponent<Animator>()??model.AddComponent<Animator>();animator.runtimeAnimatorController=c;animator.applyRootMotion=false;animator.cullingMode=AnimatorCullingMode.AlwaysAnimate;
-                foreach(var r in model.GetComponentsInChildren<Renderer>(true))
+                importer.isReadable=true;importer.SaveAndReimport();
+                var prefab=AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/prefab/{world}Soft.prefab");
+                var points=new Dictionary<Vector2Int,Vector3>();
+                foreach(var filter in prefab.GetComponentsInChildren<MeshFilter>())
                 {
-                    if(!r.name.Contains("Collar"))r.sharedMaterials=materials;
-                    else
+                    var matrix=prefab.transform.worldToLocalMatrix*filter.transform.localToWorldMatrix;
+                    foreach(var vertex in filter.sharedMesh.vertices)
                     {
-                        var shader=AssetDatabase.LoadAssetAtPath<Shader>($"Assets/Shaders/{world}MouthCollar.shadergraph");
-                        if(shader==null)throw new InvalidOperationException("Missing collar graph");
-                        var mp=Output+world+"MouthCollar.mat";
-                        var mat=AssetDatabase.LoadAssetAtPath<Material>(mp);
-                        if(mat==null){mat=new Material(shader);AssetDatabase.CreateAsset(mat,mp);}else mat.shader=shader;
-                        r.sharedMaterial=mat;
+                        var v=matrix.MultiplyPoint3x4(vertex);var key=new Vector2Int(Mathf.RoundToInt(v.x/.001f),Mathf.RoundToInt(v.z/.001f));
+                        if(!points.TryGetValue(key,out var previous)||v.y>previous.y)points[key]=v;
                     }
-                    if(r is SkinnedMeshRenderer skin)skin.updateWhenOffscreen=true;
                 }
-                PrefabUtility.SaveAsPrefabAsset(root,prefabPath);
-            }finally{PrefabUtility.UnloadPrefabContents(root);}
+                var path=$"Assets/Resources/MoodiEmergence/{world}Surface.asset";
+                var asset=AssetDatabase.LoadAssetAtPath<Moodium.Reality.SoftSurfaceSamples>(path);
+                if(asset==null){asset=ScriptableObject.CreateInstance<Moodium.Reality.SoftSurfaceSamples>();AssetDatabase.CreateAsset(asset,path);}
+                asset.Points=points.Values.ToArray();EditorUtility.SetDirty(asset);
+            }finally{importer.isReadable=readable;importer.SaveAndReimport();}
         }
-        AssetDatabase.SaveAssets();AssetDatabase.Refresh();
+        AssetDatabase.SaveAssets();
     }
 }

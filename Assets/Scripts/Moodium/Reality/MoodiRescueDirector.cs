@@ -69,7 +69,7 @@ namespace Moodium.Reality
         float m_LastNudge = -100f;
         readonly Queue<float> m_RecentPinches = new();
         Coroutine m_Routine;
-        MoodiEmergenceDisplay MeshDisplay => (m_Video as SqueezeProgressDisplayRouter)?.Mesh;
+        MoodiRiseDisplay MeshDisplay => (m_Video as SqueezeProgressDisplayRouter)?.Mesh;
 
         // ---------- pure rules (tested) ----------
 
@@ -284,7 +284,7 @@ namespace Moodium.Reality
             // If the video is missing or never popped, still let Moodi out shortly after 100%.
             yield return new WaitForSeconds(1.2f);
             // The mesh display must finish its paced emergence before the fallback can interrupt it.
-            var deadline=Time.time+8f;
+            var deadline=Time.time+3f;
             while(MeshDisplay!=null && MeshDisplay.Ready && !IsRescued && m_Progress>=1f && Time.time<deadline)
                 yield return null;
             if (IsRescued) yield break;

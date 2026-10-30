@@ -189,7 +189,7 @@ namespace Moodium.CandyWorld
             List<GameObject> prefabs, int count, bool pureNatureDebug = false, bool contactBurst = false)
         {
             Debug.Log($"[Candy Burst] Spawning {count} miniature candies from Chocolate Capsule center at {center}.");
-            var protectedVideo = FindFirstObjectByType<Moodium.Reality.SqueezeProgressVideoController>();
+            var protectedVideo = FindFirstObjectByType<Moodium.Reality.SqueezeProgressDisplayRouter>();
             var remaining = contactBurst ? count : 0;
             try
             {
