@@ -50,16 +50,30 @@
   ],
   "ground_tilt_deg": 2.0,
   "eye_height_above_ground_m": 0.56,
-  "exported_at": "2026-10-29T15:38:16.526499+00:00",
+  "exported_at": "2026-10-30T15:18:36.933618+00:00",
   "source_sha256": "7ba615a13bf947f11887e235fa0f562439984da222e400822526dd0a13b4fa36",
-  "points_sha256": "5d0bc569ad631d1927023177069bcca2800a15b7707dad1b09f9bef3c5ed5ecd",
+  "points_sha256": "bab41805de28f20a7fe3b07affe1d2719d56f57f393dd0211889baaa5bcf14ac",
   "count": 500000,
   "runtime_source_rotation": "identity",
+  "export_options": {
+    "footprint": "layer1",
+    "sampling": "eye",
+    "viewer_eye_height": 1.5,
+    "direction_balance": 0.5
+  },
   "export_verification": {
-    "score": 0.5946077705961319,
-    "canonical_error_degrees": 0.4352404172487839,
-    "score_gap": 0.19878302431229722,
+    "score": 0.5942761555263696,
+    "canonical_error_degrees": 0.12559825924913925,
+    "score_gap": 0.21739717735778857,
     "passed": true,
     "sampling": "fixed source-frame direction cells; original Gaussian opacity > .35"
+  },
+  "previous_export": {
+    "points_sha256": "5d0bc569ad631d1927023177069bcca2800a15b7707dad1b09f9bef3c5ed5ecd",
+    "exported_at": "2026-10-29T15:38:16.526499+00:00",
+    "export_options": {
+      "footprint": "legacy",
+      "sampling": "capture"
+    }
   }
 }

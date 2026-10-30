@@ -89,16 +89,30 @@
     ],
     "score": 0.6104436805001697
   },
-  "exported_at": "2026-10-29T15:44:01.108821+00:00",
+  "exported_at": "2026-10-30T15:16:28.066590+00:00",
   "source_sha256": "bea0edb6d2b950c4af4ad52995e8c3cb4c27731a576320c7de7532bdcb552b74",
-  "points_sha256": "f13ff2d21cad4627cd7d9ea7d744666d74939c5331da6a3f6b7ab74bfbcbb5bd",
+  "points_sha256": "52876c7fbc8009a4e021357e6b3d65b306a00fa4a5ebdc3c18052775ab64f408",
   "count": 500000,
   "runtime_source_rotation": "identity",
+  "export_options": {
+    "footprint": "layer1",
+    "sampling": "eye",
+    "viewer_eye_height": 1.5,
+    "direction_balance": 0.5
+  },
   "export_verification": {
-    "score": 0.6117482151749157,
-    "canonical_error_degrees": 0.5512568468012872,
-    "score_gap": 0.27993087434371244,
+    "score": 0.6132815448429152,
+    "canonical_error_degrees": 0.4352404172487839,
+    "score_gap": 0.26306931868699407,
     "passed": true,
     "sampling": "fixed source-frame direction cells; original Gaussian opacity > .35"
+  },
+  "previous_export": {
+    "points_sha256": "f13ff2d21cad4627cd7d9ea7d744666d74939c5331da6a3f6b7ab74bfbcbb5bd",
+    "exported_at": "2026-10-29T15:44:01.108821+00:00",
+    "export_options": {
+      "footprint": "legacy",
+      "sampling": "capture"
+    }
   }
 }
