@@ -12,6 +12,7 @@ namespace Moodium.Interaction
 
         public static GameObject Spawn(Vector3 position)
         {
+            if(!Application.isPlaying)return null;
             var effectObject = new GameObject("Moodium White Candy Burst");
             effectObject.transform.position = position;
             effectObject.AddComponent<ParticleBurstEffect>().BuildAndPlay();

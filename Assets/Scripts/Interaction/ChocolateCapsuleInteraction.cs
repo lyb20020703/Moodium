@@ -267,18 +267,9 @@ namespace Moodium.Interaction
 
         void CaptureBurstCenter()
         {
-            var renderers = m_NormalShell != null
-                ? m_NormalShell.GetComponentsInChildren<Renderer>(true)
-                : GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                m_BurstCenterLocal = Vector3.zero;
-                return;
-            }
-            var bounds = renderers[0].bounds;
-            for (var i = 1; i < renderers.Length; i++)
-                bounds.Encapsulate(renderers[i].bounds);
-            m_BurstCenterLocal = transform.InverseTransformPoint(bounds.center);
+            var root=m_NormalShell!=null?m_NormalShell.transform:transform;
+            m_BurstCenterLocal=Moodium.Flow.SoftModelBounds.TryGetLocalBounds(root,out var bounds)
+                ?transform.InverseTransformPoint(root.TransformPoint(bounds.center)):Vector3.zero;
         }
 
         void PlayPressSquash()

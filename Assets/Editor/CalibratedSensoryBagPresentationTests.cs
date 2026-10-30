@@ -69,7 +69,7 @@ public sealed class CalibratedSensoryBagPresentationTests
         Assert.That(Quaternion.Angle(before, presentation.VisualRoot.rotation), Is.EqualTo(30f).Within(.01f));
         Assert.That(Quaternion.Angle(presentation.VisualRoot.rotation, m_Anchor.transform.rotation), Is.LessThan(.01f));
         Assert.That(presentation.VisualRoot.localScale.x, Is.EqualTo(data.Width).Within(.0001f));
-        Assert.That(presentation.VisualRoot.localScale.y, Is.EqualTo(1f).Within(.0001f));
+        Assert.That(presentation.VisualRoot.localScale.y, Is.EqualTo(Mathf.Sqrt(data.Width*data.Height)).Within(.0001f));
         Assert.That(presentation.VisualRoot.localScale.z, Is.EqualTo(data.Height).Within(.0001f));
     }
 
@@ -82,7 +82,7 @@ public sealed class CalibratedSensoryBagPresentationTests
             prefabBounds: new Bounds(Vector3.zero, new Vector3(2f, .40f, 1f)));
 
         Assert.That(scale.x, Is.EqualTo(.15f).Within(.0001f));
-        Assert.That(scale.y, Is.EqualTo(1f).Within(.0001f));
+        Assert.That(scale.y, Is.EqualTo(Mathf.Sqrt(.15f*.18f)).Within(.0001f));
         Assert.That(scale.z, Is.EqualTo(.18f).Within(.0001f));
     }
 

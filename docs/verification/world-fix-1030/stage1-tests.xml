@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="16" result="Passed" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.1923488">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="641" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.192349" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1786" name="Assembly-CSharp-Editor.dll" fullname="/Users/yibei/Desktop/appcontest2026/Moodium/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="632" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.184341" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="64893" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1064" name="CalibratedSensoryBagPresentationTests" fullname="CalibratedSensoryBagPresentationTests" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.023112" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1065" name="Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" fullname="CalibratedSensoryBagPresentationTests.Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" methodname="Presentation_UsesCalibrationFrameOrientation_ForTwoDimensionalFit" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1168934679" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.012888" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1069" name="VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" fullname="CalibratedSensoryBagPresentationTests.VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" methodname="VisualFit_IncludesThePrefabAuthoredRootScaleInItsReferenceBounds" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1289443082" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.001916" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1067" name="VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" fullname="CalibratedSensoryBagPresentationTests.VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" methodname="VisualFit_MapsFrameWidthAndHeightOntoPrefabTablePlaneXAndZ" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="555310398" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000191" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1068" name="VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" fullname="CalibratedSensoryBagPresentationTests.VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" methodname="VisualFit_ScalesThicknessFromTheOverallTablePlaneFit" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1715783061" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000107" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1066" name="VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" fullname="CalibratedSensoryBagPresentationTests.VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" methodname="VisualRoot_FollowsStickerOrientation_WhileFittingBagXZ" classname="CalibratedSensoryBagPresentationTests" runstate="Runnable" seed="1741194266" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000963" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1165" name="DualTrackingRealityFlowTests" fullname="DualTrackingRealityFlowTests" classname="DualTrackingRealityFlowTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.110307" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1167" name="ImageTrackedCapsuleIncreasesSharedCandyEnergy" fullname="DualTrackingRealityFlowTests.ImageTrackedCapsuleIncreasesSharedCandyEnergy" methodname="ImageTrackedCapsuleIncreasesSharedCandyEnergy" classname="DualTrackingRealityFlowTests" runstate="Runnable" seed="2039129207" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.107590" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Candy Burst] Cleared 0 Reality Enhancement candy instances.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy Progress] Environment journey started at natural reality state.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy World] Reality Enhancement Mode experience started.
+Chocolate Capsule Pinched
+[Moodi Emergence] Mouth rig or emergence resources unavailable; using video fallback.
+[Moodi Emergence] candy display = video
+[Candy Energy] 5/100
+[Candy Burst] Chocolate Capsule source or prefab list is not ready.
+Chocolate Crack Animation Start
+]]></output>
+        </test-case>
+        <test-case id="1166" name="RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" fullname="DualTrackingRealityFlowTests.RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" methodname="RealityFlowKeepsObjectAndImageCapsulesRegisteredTogether" classname="DualTrackingRealityFlowTests" runstate="Runnable" seed="1321782695" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.001754" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1521" name="PalmPressWorldSpaceContactTests" fullname="PalmPressWorldSpaceContactTests" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.020998" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1526" name="DetachedTrackedCapsuleStillIncreasesCandyEnergy" fullname="PalmPressWorldSpaceContactTests.DetachedTrackedCapsuleStillIncreasesCandyEnergy" methodname="DetachedTrackedCapsuleStillIncreasesCandyEnergy" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="802476313" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.009451" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Candy Burst] Cleared 0 Reality Enhancement candy instances.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy Progress] Environment journey started at natural reality state.
+[Candy Spatial Mesh] Transparent overlay progress=0.00, origin=(0.00, 0.00, 0.00)
+[Candy World] Reality Enhancement Mode experience started.
+Chocolate Capsule Pinched
+[Moodi Emergence] Mouth rig or emergence resources unavailable; using video fallback.
+[Moodi Emergence] candy display = video
+[Candy Energy] 5/100
+[Candy Burst] Chocolate Capsule source or prefab list is not ready.
+Chocolate Crack Animation Start
+]]></output>
+        </test-case>
+        <test-case id="1524" name="PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" fullname="PalmPressWorldSpaceContactTests.PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" methodname="PalmContactChecksCapsuleColliderInsteadOfTrackedObjectVolume" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="211934485" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.002643" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1523" name="PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" fullname="PalmPressWorldSpaceContactTests.PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" methodname="PalmVolumeCanBeDerivedWithoutUnsupportedPalmJoint" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="533844442" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.001167" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1525" name="TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" fullname="PalmPressWorldSpaceContactTests.TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" methodname="TrackedCapsuleUsesExplicitWorldPoseInsteadOfParentTransformPropagation" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="50760363" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000564" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1522" name="TrackingPoseIsConvertedThroughXROrigin" fullname="PalmPressWorldSpaceContactTests.TrackingPoseIsConvertedThroughXROrigin" methodname="TrackingPoseIsConvertedThroughXROrigin" classname="PalmPressWorldSpaceContactTests" runstate="Runnable" seed="2110079961" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000518" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1622" name="SoftPrefabFitTests" fullname="SoftPrefabFitTests" classname="SoftPrefabFitTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.010453" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1627" name="MeshAndColliderFillCalibration" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.008864" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+]]></output>
+          <test-case id="1623" name="MeshAndColliderFillCalibration(&quot;Candy&quot;,0.4f,0.25f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Candy&quot;,0.4f,0.25f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="1892663258" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.004504" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1624" name="MeshAndColliderFillCalibration(&quot;Nature&quot;,0.4f,0.25f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Nature&quot;,0.4f,0.25f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="39889481" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.003137" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1625" name="MeshAndColliderFillCalibration(&quot;Candy&quot;,0.3f,0.18f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Candy&quot;,0.3f,0.18f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="1738882094" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000248" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1626" name="MeshAndColliderFillCalibration(&quot;Nature&quot;,0.3f,0.18f)" fullname="SoftPrefabFitTests.MeshAndColliderFillCalibration(&quot;Nature&quot;,0.3f,0.18f)" methodname="MeshAndColliderFillCalibration" classname="SoftPrefabFitTests" runstate="Runnable" seed="1989539615" result="Passed" start-time="2026-10-30 05:08:27Z" end-time="2026-10-30 05:08:27Z" duration="0.000194" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+            <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+          </test-case>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

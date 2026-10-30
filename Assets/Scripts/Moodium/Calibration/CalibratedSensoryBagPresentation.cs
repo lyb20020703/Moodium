@@ -152,6 +152,7 @@ namespace Moodium.Calibration
             var result = new Bounds(Vector3.zero, Vector3.zero);
             foreach (var renderer in renderers)
             {
+                if(!Moodium.Flow.SoftModelBounds.IsSoftBodyRenderer(renderer))continue;
                 // A world AABB cannot be inverted into an accurate tilted local bound.
                 var bounds=renderer.localBounds;
                 var matrix=root.worldToLocalMatrix*renderer.localToWorldMatrix;

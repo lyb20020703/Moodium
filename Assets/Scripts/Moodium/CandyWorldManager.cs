@@ -440,6 +440,8 @@ namespace Moodium.CandyWorld
 
         void OnDestroy()
         {
+            ChocolateCapsuleInteraction.AnyCapsulePinched -= OnCapsulePinched;
+            if(m_Energy!=null)m_Energy.EnergyChanged-=OnEnergyChanged;
             if (m_EnergyUI != null)
             {
                 m_EnergyUI.ReleasePressed -= ReleaseAccumulatedEnergy;
@@ -530,6 +532,7 @@ namespace Moodium.CandyWorld
 
         void OnCapsulePinched(ChocolateCapsuleInteraction capsule, Vector3 position)
         {
+            if(this==null)return;
             if (m_Journey != null && m_Journey.Stage == WorldJourneyStage.Bubble) return;
             if ((m_Journey != null && !m_Journey.CanGrowInRoom) || !m_Running || capsule == null || !capsule.gameObject.activeInHierarchy)
                 return;
