@@ -13,6 +13,7 @@ namespace Moodium.NatureWorld
         public readonly BubblePlayHand[] Hands=new BubblePlayHand[2];
         public static bool PinchState(bool before,float distance)=>distance<(before?.025f:.015f);
         public static bool CanCatch(Vector3 palm,Vector3 up,Vector3 point,int held)=>held<5&&Vector3.Dot(up,Vector3.up)>.6f&&Vector3.Distance(point,palm)<.07f&&Vector3.Dot(point-palm,Vector3.up)>=0;
+        public void Reset(){for(int i=0;i<2;i++){initialized[i]=pinched[i]=false;Hands[i]=default;}}
         public void Sample()
         {
             if(system==null||!system.running){systems.Clear();SubsystemManager.GetSubsystems(systems);system=systems.Find(s=>s.running);}
@@ -22,8 +23,8 @@ namespace Moodium.NatureWorld
                 Hands[i]=default;if(system==null)continue;var hand=i==0?system.leftHand:system.rightHand;
                 if(!hand.isTracked||!Joint(hand,XRHandJointID.ThumbTip,out var thumb)||!Joint(hand,XRHandJointID.IndexTip,out var index)||!Joint(hand,XRHandJointID.Wrist,out var wrist)||!Joint(hand,XRHandJointID.IndexMetacarpal,out var im)||!Joint(hand,XRHandJointID.MiddleMetacarpal,out var mm)||!Joint(hand,XRHandJointID.LittleMetacarpal,out var lm)){initialized[i]=false;pinched[i]=false;continue;}
                 bool now=PinchState(pinched[i],Vector3.Distance(thumb,index));
-                Joint(hand,XRHandJointID.MiddleProximal,out var knuckle);
-                Hands[i]=new BubblePlayHand{Valid=true,Pinching=now,Started=initialized[i]&&!pinched[i]&&now,Open=Vector3.Distance(thumb,index)>.05f,Tip=(thumb+index)*.5f,Index=index,Palm=Vector3.Lerp(wrist,knuckle,.7f),Up=MoodiHandCompanion.PalmFacing(wrist,im,mm,lm,i==1)};
+                var palm=Joint(hand,XRHandJointID.MiddleProximal,out var knuckle)?Vector3.Lerp(wrist,knuckle,.7f):(wrist+mm)*.5f;
+                Hands[i]=new BubblePlayHand{Valid=true,Pinching=now,Started=initialized[i]&&!pinched[i]&&now,Open=Vector3.Distance(thumb,index)>.05f,Tip=(thumb+index)*.5f,Index=index,Palm=palm,Up=MoodiHandCompanion.PalmFacing(wrist,im,mm,lm,i==1)};
                 initialized[i]=true;pinched[i]=now;
             }
         }

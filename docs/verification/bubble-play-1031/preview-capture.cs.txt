@@ -1,0 +1,46 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using TMPro;
+using Moodium.NatureWorld;
+public static class BubblePlayCapture
+{
+ static void Shot(PreviewRenderUtility p,string path){p.BeginStaticPreview(new Rect(0,0,800,900));p.Render(true);var image=p.EndStaticPreview();File.WriteAllBytes(path,image.EncodeToPNG());Object.DestroyImmediate(image);}
+ public static void Capture()
+ {
+  ShaderUtil.allowAsyncCompilation=false;Directory.CreateDirectory("/tmp/play-final-previews");
+  foreach(var candy in new[]{true,false})
+  {
+   var preview=new PreviewRenderUtility();var root=new GameObject("Wish Preview");
+   try{
+    var garden=root.AddComponent<WishChimeGarden>();garden.Initialize(candy?BubbleWorldData.CandyFolder:BubbleWorldData.NatureFolder,root.transform,preview.camera,new BubblePlayHands(),null);
+    typeof(WishChimeGarden).GetField("taught",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(garden,true);
+    typeof(WishChimeGarden).GetProperty("ChineseFont").SetValue(garden,AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/UI/Moodium/Fonts/AlibabaPuHuiTi Moodium SDF.asset"));
+    var host=new GameObject("Wish");host.transform.SetParent(root.transform,false);var chime=host.AddComponent<WishChime>();
+    var record=new WishChimeRecord{id="preview",folder=candy?BubbleWorldData.CandyFolder:BubbleWorldData.NatureFolder,position=new[]{0f,0f,0f}};
+    record.strokes.Add(new List<float[]>{new[]{.25f,.2f},new[]{.25f,.8f},new[]{.8f,.8f}});record.strokes.Add(new List<float[]>{new[]{.25f,.5f},new[]{.65f,.5f}});chime.Initialize(garden,record);
+    var frame=Resources.Load<WishPaperFrame>("MoodiumBubblePlay/PaperFrame_"+(candy?"Candy":"Nature"));var center=chime.Strip.TransformPoint(frame.Surface(Vector2.one*.5f));var normal=chime.Strip.TransformDirection(frame.Normal);
+    preview.AddSingleGO(root);preview.camera.transform.position=center+normal*.42f+Vector3.up*.07f;preview.camera.transform.LookAt(center+Vector3.up*.04f);preview.camera.fieldOfView=45;preview.camera.nearClipPlane=.001f;
+    Shot(preview,"/tmp/play-final-previews/"+(candy?"candy":"nature")+".png");
+    typeof(WishChime).GetField("<State>k__BackingField",BindingFlags.NonPublic|BindingFlags.Instance).SetValue(chime,WishChime.Stage.Blank);chime.BeginWrite();foreach(var text in host.GetComponentsInChildren<TMP_Text>())text.ForceMeshUpdate();preview.camera.fieldOfView=60;
+    Shot(preview,"/tmp/play-final-previews/"+(candy?"candy":"nature")+"-writing.png");
+   }finally{preview.Cleanup();if(root!=null)Object.DestroyImmediate(root);}
+  }
+ }
+ public static void All(){Capture();Catch();}
+ static void Catch()
+ {
+  foreach(var candy in new[]{true,false})
+  {
+   var p=new PreviewRenderUtility();var root=new GameObject("Catch Preview");
+   try{
+    var pool=root.AddComponent<BubbleCatchFall>();pool.Initialize(new BubblePlayHands(),p.camera,candy);
+    var bits=(System.Collections.IEnumerable)typeof(BubbleCatchFall).GetField("bits",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(pool);int i=0;
+    foreach(var item in bits){if(i>=3)break;var go=(GameObject)item.GetType().GetField("Object").GetValue(item);go.SetActive(true);go.transform.position=new Vector3((i-1)*.025f,0,0);i++;}
+    p.AddSingleGO(root);p.camera.transform.position=new Vector3(0,.065f,-.12f);p.camera.transform.LookAt(Vector3.zero);p.camera.fieldOfView=45;p.camera.nearClipPlane=.001f;Shot(p,"/tmp/play-final-previews/"+(candy?"candy":"nature")+"-catch.png");
+   }finally{p.Cleanup();if(root!=null)Object.DestroyImmediate(root);}
+  }
+ }
+}

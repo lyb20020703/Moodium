@@ -507,7 +507,7 @@ namespace Moodium.NatureWorld
         {
             if (m_Motion != null) m_Motion.SetStage(MotionStage(m_Phase));
             if (m_Wake != null) m_Wake.Active = m_Phase == Phase.Inside && m_WanderFade > .6f;
-            if(m_Play!=null)m_Play.SetInside(m_Phase==Phase.Inside&&m_WanderFade>.6f);
+            if(m_Play!=null)m_Play.SetInside(m_Phase==Phase.Inside);
             CheckEditorMouse();
             if (m_Phase == Phase.Portal)
             {
@@ -526,7 +526,7 @@ namespace Moodium.NatureWorld
                 return;
             }
             if (m_Phase != Phase.Inside) return;
-            // The GPU moves splats; keep layer frames and the horizon fixed.
+            // Keep scan frames fixed; play interactions use independent actors and layer tint swaps.
             var viewer = ResolveViewer(); if (viewer == null) return;
             var offset = viewer.transform.position - m_Entry; offset.y = 0;
             var away = WanderState(m_Wandering, offset.magnitude);

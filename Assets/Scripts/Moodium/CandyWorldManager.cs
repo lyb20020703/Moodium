@@ -93,6 +93,7 @@ namespace Moodium.CandyWorld
 
         TMP_FontAsset m_ChineseFont;
         TMP_FontAsset m_EnglishFont;
+        public TMP_FontAsset BubblePlayChineseFont=>m_ChineseFont;
 
         public float Energy => m_Energy != null ? m_Energy.Energy : 0f;
 

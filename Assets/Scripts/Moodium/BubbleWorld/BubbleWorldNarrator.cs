@@ -110,6 +110,7 @@ namespace Moodium.NatureWorld
                 yield return null;
             }
             m_Source.Stop();
+            if(m_Lines.Count>0)yield return DrainLines();
             m_Routine = null;
         }
 

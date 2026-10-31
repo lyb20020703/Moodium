@@ -1,3 +1,4 @@
+using Unity.Profiling;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,6 +6,8 @@ namespace Moodium.NatureWorld
 {
  public sealed class BubbleLightRipple : MonoBehaviour
  {
+  static readonly ProfilerMarker s_Profile=new("BubblePlay.BubbleLightRipple");
+
   Material original,peak,fall;readonly List<Renderer> layers=new();float[] radii;int[] states;float started=-100,last=-100;Action<float> sparkle;Transform scan;AudioSource audioSource;
   public static float Arrival(float radius)=>radius/6;
   public static bool CanTrigger(float now,float previous,bool excluded)=>!excluded&&now-previous>=2.5f;
@@ -21,6 +24,7 @@ namespace Moodium.NatureWorld
   }
   void Update()
   {
+   using var timing=s_Profile.Auto();
    if(original==null)return;
    var alpha=original.GetColor("_BaseColor").a;
    foreach(var m in new[]{peak,fall}){var c=m.GetColor("_BaseColor");if(!Mathf.Approximately(c.a,alpha)){c.a=alpha;m.SetColor("_BaseColor",c);}}
