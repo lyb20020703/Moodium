@@ -29,8 +29,9 @@ namespace Moodium.Squeeze
         int squeezeCount,rhythmCount,totalBreaths;
         bool adaptiveUsed;
         SqueezeSample contact;
-        bool suspended;
-        public void SetSuspended(bool value) { suspended = value; if (view != null) view.SetSuspended(value); }
+        bool suspended, audioInterrupted;
+        BreathAudioGuide breathAudio;
+        public void SetSuspended(bool value) { suspended = value; if(value){audioInterrupted=true;breathAudio?.StopAudio();} if (view != null) view.SetSuspended(value); }
         public SqueezeMode Mode=>state?.Current??SqueezeMode.Free;
         public SqueezeMode Recommended=>state?.Recommended??SqueezeMode.Free;
         public SqueezeMode? Pending=>state?.Pending;
@@ -73,7 +74,8 @@ namespace Moodium.Squeeze
             ChocolateCapsuleInteraction.AnyCapsuleReleased+=OnContactReleased;
             ChocolateCapsuleInteraction.AnyCapsuleTrackingLost+=OnTrackingLost;
             log=new SqueezeLog(context?.ActiveVisitId,Application.isPlaying);
-            running=true;finishing=false;ResetScorer();
+            running=true;finishing=false;suspended=false;audioInterrupted=false;
+            breathAudio=GetComponent<BreathAudioGuide>()??gameObject.AddComponent<BreathAudioGuide>();ResetScorer();
             view=gameObject.AddComponent<SqueezeTableView>();view.Initialize(this,nature);
             enabled=true;
         }
@@ -87,22 +89,23 @@ namespace Moodium.Squeeze
         {
             if(suspended||!running||Complete||capsule==null||validSource?.Invoke(capsule)!=true)return;
             accepted[capsule.GetInstanceID()]=capsule;view.Bind(capsule);
-            tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
+            audioInterrupted=false;tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
             context?.RegisterPinch();
             if(Mode==SqueezeMode.Free)Pay(5,"legacy");
         }
         void OnContactHeld(ChocolateCapsuleInteraction capsule,Vector3 position)
         {
             if(suspended||!running||(Complete&&!tracker.IsHeld)||capsule==null||!accepted.ContainsKey(capsule.GetInstanceID()))return;
-            tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
+            audioInterrupted=false;tracker.Contact(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);
         }
         void OnContactReleased(ChocolateCapsuleInteraction capsule)
         {if(capsule!=null&&accepted.ContainsKey(capsule.GetInstanceID()))tracker.Release(capsule.GetInstanceID(),Time.unscaledTimeAsDouble);}
         void OnTrackingLost(ChocolateCapsuleInteraction capsule)
-        {if(capsule!=null&&accepted.ContainsKey(capsule.GetInstanceID()))tracker.Release(capsule.GetInstanceID(),Time.unscaledTimeAsDouble,true);}
+        {if(capsule!=null&&accepted.ContainsKey(capsule.GetInstanceID())){audioInterrupted=true;breathAudio?.StopAudio();tracker.Release(capsule.GetInstanceID(),Time.unscaledTimeAsDouble,true);}}
         SqueezeSample Enrich(SqueezeSample sample)=>new(sample.Time,sample.HoldSeconds,sample.GapSeconds,closureSampler.Sample(),beatTime);
         void OnStarted(SqueezeSample sample)
         {
+            if(!suspended&&!finishing&&Mode==SqueezeMode.Breath)breathAudio?.Inhale();
             contact=Enrich(sample);contactEnergy=0;squeezeCount++;SinceRelease=double.PositiveInfinity;
             if(Mode!=SqueezeMode.Free)Pay(scorer.OnStarted(contact),"start");
             if(Rhythm!=null)
@@ -111,6 +114,7 @@ namespace Moodium.Squeeze
         void OnHeld(SqueezeSample sample,double delta)=>Pay(scorer.OnHeld(Enrich(sample),delta),"hold");
         void OnReleased(SqueezeSample sample)
         {
+            if(!audioInterrupted&&!suspended&&!finishing&&Mode==SqueezeMode.Breath)breathAudio?.Exhale();
             Pay(scorer.OnReleased(Enrich(sample)),"release");releasedAt=sample.Time;
             if(Breath!=null&&Breath.LastQuality>0){totalBreaths++;breathSeconds+=sample.HoldSeconds+(double.IsFinite(contact.GapSeconds)?contact.GapSeconds:0);context?.RecordBreath();}
             WriteContact(sample);ContactReleased?.Invoke(sample);
@@ -131,6 +135,7 @@ namespace Moodium.Squeeze
         }
         void CommitMode(SqueezeMode old)
         {
+            breathAudio?.StopAudio();audioInterrupted=true;
             timeInMode[(int)old]+=Time.unscaledTimeAsDouble-modeBegan;modeBegan=Time.unscaledTimeAsDouble;
             log?.Write(new SqueezeLog.Entry{type="switch",visitId=context?.ActiveVisitId,world=nature?"nature":"candy",from=old.ToString(),to=Mode.ToString(),tStart=Elapsed,energy=energy.Energy});
             ResetScorer();releasedAt=double.NaN;SinceRelease=double.PositiveInfinity;ModeChanged?.Invoke();
@@ -148,7 +153,7 @@ namespace Moodium.Squeeze
             else beatTime+=Math.Max(0,now-lastTick);
             lastTick=now;
             foreach(var pair in accepted)
-                if(pair.Value==null||!pair.Value.gameObject.activeInHierarchy)tracker.Release(pair.Key,now,true);
+                if(pair.Value==null||!pair.Value.gameObject.activeInHierarchy){audioInterrupted=true;breathAudio?.StopAudio();tracker.Release(pair.Key,now,true);}
             tracker.Tick(now);
             SinceRelease=double.IsNaN(releasedAt)?double.PositiveInfinity:Math.Max(0,now-releasedAt);
             if(view!=null&&!view.IsBound&&now>=nextFind)
@@ -169,6 +174,7 @@ namespace Moodium.Squeeze
         public void StageFeedback(int stage)=>view?.StageFeedback(stage);
         public void StopSession()
         {
+            breathAudio?.StopAudio();audioInterrupted=true;
             if(running)
             {
                 finishing=true;

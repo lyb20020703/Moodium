@@ -45,7 +45,7 @@ public sealed class BubbleWorldNarratorTests
         var manager = File.ReadAllText("Assets/Scripts/Moodium/CandyWorldManager.cs");
         Assert.That(manager, Does.Contain("m_BubbleWorld.LayerRevealed += OnBubbleLayerRevealed"));
         Assert.That(manager, Does.Contain("m_BubbleWorld.LayerRevealed -= OnBubbleLayerRevealed"));
-        Assert.That(manager, Does.Contain("m_Narrator.IsSpeaking) yield return null"), "F3 waits for the intro");
+        Assert.That(manager, Does.Not.Contain("Say(\"F3\")"), "The user removed the former F3 welcome");
     }
 
     [Test]
