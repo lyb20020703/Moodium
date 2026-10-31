@@ -16,6 +16,14 @@ namespace Moodium.Flow
         bool m_AnimateTransform;
         bool m_Hovered;
         bool m_Pressing;
+        float m_LastPress = float.NegativeInfinity;
+
+        /// <summary>
+        /// One poke can arrive twice: SensoryBagDirectTouchInput presses when the fingertip is 12 mm away, then
+        /// visionOS sends its own Touch Began for the same contact. Presses closer together than this are one press.
+        /// </summary>
+        public const float PressCooldown = .3f;
+        public static bool IsRepeat(float lastPress, float now) => now - lastPress < PressCooldown;
 
         public TMP_Text Label => m_Label;
 
@@ -64,6 +72,9 @@ namespace Moodium.Flow
 
         public void Press()
         {
+            var now = Time.realtimeSinceStartup;
+            if (IsRepeat(m_LastPress, now)) return;
+            m_LastPress = now;
             Debug.Log($"[Moodium Flow] Button pressed: {(m_Label != null ? m_Label.text : name)}");
             if (m_AnimateTransform)
                 StartCoroutine(PressCard());

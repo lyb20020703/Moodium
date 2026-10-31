@@ -19,7 +19,9 @@ namespace Moodium.CandyWorld
         FloatingSqueezeProgress m_FloatingProgress;
         CandyEnergyController m_Energy;
         CandyBurstController m_BurstController;
-        CandyEnergyWristUI m_EnergyUI;
+        // Floating [Shower] [Exit World] dock in front of the user. Replaces the wrist band (CandyEnergyWristUI),
+        // which users did not find and found hard to press; the wrist progress band is gone.
+        WorldActionDock m_Dock;
         CandySpatialMeshTransformationController m_SpatialTransformation;
         CandyFrostParticleController m_Frost;
         NatureLeafParticleController m_NatureLeaves;
@@ -109,8 +111,8 @@ namespace Moodium.CandyWorld
 
         void Update()
         {
-            // No wrist band inside the bubble worlds (from the touch that enters until back in the room).
-            if (m_EnergyUI != null) m_EnergyUI.Suppressed = WristHiddenFor(m_Running, m_Journey != null ? m_Journey.Stage : (WorldJourneyStage?)null);
+            // No dock inside the bubble worlds (from the touch that enters until back in the room).
+            if (m_Dock != null) m_Dock.Suppressed = WristHiddenFor(m_Running, m_Journey != null ? m_Journey.Stage : (WorldJourneyStage?)null);
             if (m_Running && m_Journey != null)
             {
                 m_Rings?.SetInteractionState(m_Journey.Stage == WorldJourneyStage.Explore,
@@ -146,7 +148,6 @@ namespace Moodium.CandyWorld
         {
             m_ChineseFont = chineseFont;
             m_EnglishFont = englishFont;
-            m_EnergyUI?.ConfigureLanguageFonts(chineseFont, englishFont);
         }
 
         // Keep existing editor tests and external callers source-compatible. The full
@@ -242,17 +243,17 @@ namespace Moodium.CandyWorld
             if (m_NatureIvyGrowth == null)
                 m_NatureIvyGrowth = gameObject.AddComponent<NatureIvySpatialGrowthController>();
 
-            if (m_EnergyUI == null)
+            if (m_Dock == null)
             {
-                var ui = new GameObject("Candy Energy Left Wrist HUD");
-                ui.transform.SetParent(transform, false);
-                m_EnergyUI = ui.AddComponent<CandyEnergyWristUI>();
-                m_EnergyUI.Build(camera, font, wristRoundedSprite, wristCircleSprite);
+                // Not parented: the dock follows the viewer in world space and must not inherit this object's scale.
+                var ui = new GameObject("World Action Dock");
+                m_Dock = ui.AddComponent<WorldActionDock>();
+                m_Dock.Build(camera, Moodium.Characters.MoodiVoice.LanguageCode == "en");
             }
-            m_EnergyUI.ReleasePressed -= ReleaseAccumulatedEnergy;
-            m_EnergyUI.ReleasePressed += ReleaseAccumulatedEnergy;
-            m_EnergyUI.ExitPressed -= RequestExit;
-            m_EnergyUI.ExitPressed += RequestExit;
+            m_Dock.ReleasePressed -= ReleaseAccumulatedEnergy;
+            m_Dock.ReleasePressed += ReleaseAccumulatedEnergy;
+            m_Dock.ExitPressed -= RequestExit;
+            m_Dock.ExitPressed += RequestExit;
             StopExperience();
         }
 
@@ -281,10 +282,11 @@ namespace Moodium.CandyWorld
             m_ProgressController.Configure(
                 Camera.main, m_SpatialTransformation, m_NatureWorldActive ? null : m_Frost, m_RainReward,
                 world != null ? world.Prefabs : null, m_CandyPrefabDeformationSound);
-            m_EnergyUI?.SetWorldTheme(m_NatureWorldActive);
+            m_Dock?.SetLanguage(Moodium.Characters.MoodiVoice.LanguageCode == "en");
+            m_Dock?.SetWorldTheme(m_NatureWorldActive);
             m_RewardReleased = false;
-            m_EnergyUI?.SetReleaseAvailable(false);
-            m_EnergyUI?.SetExitAvailable(true);
+            m_Dock?.SetReleaseAvailable(false);
+            m_Dock?.SetExitAvailable(true);
             m_LastNatureProgress = 0f;
             m_LastNatureSoftOrigin = Vector3.zero;
             // The pink candy-wrapper overlay belongs only to Candy World. Nature keeps
@@ -356,7 +358,7 @@ namespace Moodium.CandyWorld
             m_WalkTrailGuide = GetComponent<WalkTrailGuideController>() ?? gameObject.AddComponent<WalkTrailGuideController>();
             m_WalkTrailGuide.BeginSession(m_NatureFootstepGrass, m_RainReward,
                 Camera.main != null ? Camera.main.transform : null,
-                m_EnergyUI != null ? m_EnergyUI.transform : null, !m_NatureWorldActive,
+                m_Dock != null ? m_Dock.transform : null, !m_NatureWorldActive,
                 world != null ? world.Prefabs : null, m_WalkTrailGuidePrefab);
             m_Journey = GetComponent<WorldJourneyDirector>() ?? gameObject.AddComponent<WorldJourneyDirector>();
             m_Journey.Begin();
@@ -390,7 +392,7 @@ namespace Moodium.CandyWorld
             BeginSqueezeRescue();
             m_SpatialTouchFeedback?.SetInteractionEnabled(true);
             m_HandOpenBurstGesture?.SetGestureEnabled(true);
-            m_EnergyUI.gameObject.SetActive(true);
+            m_Dock.gameObject.SetActive(true);
             if (m_Running)
                 return;
             m_ExploreGuideShown=false;
@@ -414,7 +416,7 @@ namespace Moodium.CandyWorld
             if (m_WalkTrailGuide != null) { m_WalkTrailGuide.WalkInvited -= OnWalkInvited; m_WalkTrailGuide.GardenDiscovered -= OnGardenDiscovered; if (m_Rings != null) m_WalkTrailGuide.StepRecorded -= m_Rings.RecordStep; }
             if (m_Rings != null) { m_Rings.FirstRingShown -= OnFirstRing; m_Rings.HintRequested -= OnRingHint; m_Rings.StopAndClear(); }
             m_RoomVisibility?.Clear(); m_Journey?.End();
-            m_EnergyUI?.SetRoomInteractionEnabled(true);
+            m_Dock?.SetRoomInteractionEnabled(true);
             foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(true);
             m_Frost?.SetSuspended(false); m_NatureLeaves?.SetSuspended(false);
             m_NatureIvyGrowth?.SetSuspended(false); m_NatureFootstepGrass?.SetSuspended(false);
@@ -434,11 +436,11 @@ namespace Moodium.CandyWorld
             if (m_FloatingProgress != null) m_FloatingProgress.gameObject.SetActive(false);
             m_SpatialTouchFeedback?.SetInteractionEnabled(false);
             m_HandOpenBurstGesture?.SetGestureEnabled(false);
-            if (m_EnergyUI != null)
+            if (m_Dock != null)
             {
-                m_EnergyUI.SetReleaseAvailable(false);
-                m_EnergyUI.SetExitAvailable(false);
-                m_EnergyUI.gameObject.SetActive(false);
+                m_Dock.SetReleaseAvailable(false);
+                m_Dock.SetExitAvailable(false);
+                m_Dock.gameObject.SetActive(false);
             }
             m_ProgressController?.StopAndClear();
             m_SqueezeProgressVideo?.ResetAndHide();
@@ -456,10 +458,12 @@ namespace Moodium.CandyWorld
         {
             ChocolateCapsuleInteraction.AnyCapsulePinched -= OnCapsulePinched;
             if(m_Energy!=null)m_Energy.EnergyChanged-=OnEnergyChanged;
-            if (m_EnergyUI != null)
+            if (m_Dock != null)
             {
-                m_EnergyUI.ReleasePressed -= ReleaseAccumulatedEnergy;
-                m_EnergyUI.ExitPressed -= RequestExit;
+                m_Dock.ReleasePressed -= ReleaseAccumulatedEnergy;
+                m_Dock.ExitPressed -= RequestExit;
+                BubblePlayVisuals.Release(m_Dock.gameObject);
+                m_Dock=null;
             }
             StopExperience();
         }
@@ -740,12 +744,12 @@ namespace Moodium.CandyWorld
             if(Time.unscaledTime>=m_NextEnergyUIUpdate||normalizedProgress>=1f||normalizedProgress<=0)
             {
                 m_NextEnergyUIUpdate=Time.unscaledTime+.1f;
-                m_EnergyUI.SetProgress(energy, normalizedProgress);
+                m_Dock?.SetProgress(normalizedProgress);
                 m_FloatingProgress?.SetProgress(normalizedProgress);
                 m_ProgressController.SetProgress(energy, normalizedProgress);
                 m_SqueezeProgressVideo?.SetProgress(normalizedProgress);
             }
-            m_EnergyUI?.SetReleaseAvailable(EnergyReleasePolicy.ShouldShowToggle(normalizedProgress));
+            m_Dock?.SetReleaseAvailable(EnergyReleasePolicy.ShouldShowToggle(normalizedProgress));
             if (m_NatureWorldActive)
             {
                 m_NatureIvyGrowth?.SetProgress(normalizedProgress);
@@ -844,9 +848,9 @@ namespace Moodium.CandyWorld
             m_WalkTrailGuide?.SetSuspended(true);
             m_NatureFootstepGrass?.SetSuspended(true); m_NatureIvyGrowth?.SetSuspended(true);
             m_RainReward?.StopAndClear(); m_RewardReleased = false;
-            m_EnergyUI?.SetRoomInteractionEnabled(false);
+            m_Dock?.SetRoomInteractionEnabled(false);
             foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(false);
-            m_EnergyUI?.SetReleaseAvailable(false); m_EnergyUI?.SetReleaseToggleState(false);
+            m_Dock?.SetReleaseAvailable(false); m_Dock?.SetReleaseToggleState(false);
             m_SpatialTouchFeedback?.SetInteractionEnabled(false); m_HandOpenBurstGesture?.SetGestureEnabled(false);
             m_ProgressController?.SetSpatialTransformationEnabled(false);
             m_Frost?.SetSuspended(true); m_NatureLeaves?.SetSuspended(true);
@@ -907,9 +911,9 @@ namespace Moodium.CandyWorld
             m_SpatialTouchFeedback?.SetInteractionEnabled(true); m_HandOpenBurstGesture?.SetGestureEnabled(true);
             m_ProgressController?.SetSpatialTransformationEnabled(!m_NatureWorldActive);
             m_NatureLeaves?.SetSuspended(false); m_Frost?.SetSuspended(false);
-            m_EnergyUI?.SetRoomInteractionEnabled(true);
+            m_Dock?.SetRoomInteractionEnabled(true);
             foreach (var bracelet in FindObjectsByType<Moodium.Rewards.RewardBracelet>(FindObjectsSortMode.None)) bracelet.SetInteractionEnabled(true);
-            m_EnergyUI?.SetReleaseAvailable(true); m_Rings?.NotifyBubbleReturned();
+            m_Dock?.SetReleaseAvailable(true); m_Rings?.NotifyBubbleReturned();
             m_WalkTrailGuide?.Say("F7");
             if (m_ReopenBubbleEntry)
             {
@@ -928,13 +932,13 @@ namespace Moodium.CandyWorld
             if (m_RainReward.IsPlaying)
             {
                 m_RainReward.StopAndClear();
-                m_EnergyUI?.SetReleaseToggleState(false);
+                m_Dock?.SetReleaseToggleState(false);
                 Debug.Log($"[Moodium Energy Release] { (m_NatureWorldActive ? "Nature" : "Candy") } reward rain stopped.");
             }
             else
             {
                 m_RainReward.PlayReward();
-                m_EnergyUI?.SetReleaseToggleState(true);
+                m_Dock?.SetReleaseToggleState(true);
                 Debug.Log($"[Moodium Energy Release] { (m_NatureWorldActive ? "Nature" : "Candy") } reward rain started.");
             }
         }

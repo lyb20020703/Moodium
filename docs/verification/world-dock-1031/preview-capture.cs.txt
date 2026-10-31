@@ -1,0 +1,38 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using Moodium.CandyWorld;
+using Moodium.NatureWorld;
+public static class WorldDockCapture
+{
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ static void Set(object o,string n,object v)=>o.GetType().GetField(n,Flags).SetValue(o,v);
+ static void Tick(WorldActionDock dock,float now,float dt)=>typeof(WorldActionDock).GetMethod("Tick",Flags).Invoke(dock,new object[]{now,dt,float.PositiveInfinity});
+ static void Shot(PreviewRenderUtility p,string name){p.BeginStaticPreview(new Rect(0,0,1200,850));p.Render(true);var t=p.EndStaticPreview();File.WriteAllBytes("/tmp/world-dock-previews/"+name+".png",t.EncodeToPNG());Object.DestroyImmediate(t);}
+ static void Box(Transform root,string name,Vector3 position,Vector3 scale,string color,List<Object> owned)
+ {
+  var go=GameObject.CreatePrimitive(PrimitiveType.Cube);go.name=name;go.transform.SetParent(root,false);go.transform.position=position;go.transform.localScale=scale;
+  var mat=BubblePlayVisuals.Material(color);owned.Add(mat);go.GetComponent<Renderer>().sharedMaterial=mat;
+ }
+ public static void Capture()
+ {
+  ShaderUtil.allowAsyncCompilation=false;Directory.CreateDirectory("/tmp/world-dock-previews");
+  foreach(bool nature in new[]{false,true})foreach(bool en in new[]{false,true})foreach(int state in new[]{0,1,2})
+  {
+   var p=new PreviewRenderUtility();var root=new GameObject("Dock preview");var owned=new List<Object>();
+   try{
+    p.camera.transform.position=new Vector3(0,1.55f,0);p.camera.transform.rotation=Quaternion.identity;p.camera.nearClipPlane=.01f;p.camera.farClipPlane=30;p.camera.fieldOfView=65;
+    p.camera.clearFlags=CameraClearFlags.SolidColor;p.camera.backgroundColor=new Color(.9f,.91f,.92f);
+    Box(root.transform,"Preview wall",new Vector3(0,1.6f,3),new Vector3(6,4,.05f),"#E6E1DA",owned);
+    Box(root.transform,"Preview floor",new Vector3(0,-.04f,1),new Vector3(8,.08f,8),"#B7A692",owned);
+    Box(root.transform,"Preview table",new Vector3(0,.72f,1.2f),new Vector3(1.2f,.06f,.75f),"#CBB8A6",owned);
+    var host=new GameObject("World Action Dock");host.transform.SetParent(root.transform,false);var dock=host.AddComponent<WorldActionDock>();dock.Build(p.camera,en);dock.SetWorldTheme(nature);dock.SetExitAvailable(true);dock.SetProgress(state==0?.55f:1);
+    float now=Time.time;Tick(dock,now-4,.25f);dock.SetReleaseAvailable(state>0);dock.SetReleaseToggleState(state==2);Set(dock,"m_AvailableAt",now-3);Set(dock,"m_ReadyAnnounced",state==2);Tick(dock,now,.25f);
+    var prefix=(nature?"nature":"candy")+"-"+(en?"en":"zh")+"-"+(state==0?"locked":state==1?"ready":"on");
+    p.AddSingleGO(root);Shot(p,prefix+"-view");p.camera.transform.LookAt(host.transform.position);p.camera.fieldOfView=27;Shot(p,prefix+"-close");
+   }finally{p.Cleanup();if(root!=null)Object.DestroyImmediate(root);foreach(var obj in owned)Object.DestroyImmediate(obj);}
+  }
+ }
+}

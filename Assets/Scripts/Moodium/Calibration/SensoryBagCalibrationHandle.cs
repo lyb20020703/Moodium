@@ -33,12 +33,23 @@ namespace Moodium.Calibration
             m_Action = action;
         }
 
+        float m_LastTap = float.NegativeInfinity;
+        static bool IsOneShot(CalibrationAction a) =>
+            a == CalibrationAction.Confirm || a == CalibrationAction.Reset || a == CalibrationAction.RaiseTable || a == CalibrationAction.LowerTable;
+
         public void PointerStarted(int pointerId, Vector3 worldPosition)
         {
             if (!CanInteract||m_ActivePointerId!=-1)
                 return;
             m_Calibrator.NotifyUserInteraction();
 
+            // One-shot buttons: the fingertip bridge and the system Touch can both start the same poke.
+            if (IsOneShot(m_Action))
+            {
+                var now = Time.realtimeSinceStartup;
+                if (Moodium.Flow.MoodiumSpatialButton.IsRepeat(m_LastTap, now)) return;
+                m_LastTap = now;
+            }
             if (m_Action == CalibrationAction.Confirm)
             {
                 m_Calibrator.ConfirmCalibration();

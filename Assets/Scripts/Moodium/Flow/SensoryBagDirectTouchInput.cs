@@ -10,6 +10,9 @@ using UnityEngine.XR.Management;
 namespace Moodium.Flow
 {
     /// <summary>Scoped fingertip bridge for the branch UI; all business actions use the same pointer contracts.</summary>
+    /// <remarks>Runs before MoodiumSpatialInteractionController: when a system touch begins, this bridge cancels its own
+    /// drag first, so the router's PointerStarted for the same slider / swipe / handle is not rejected as a second pointer.</remarks>
+    [DefaultExecutionOrder(-50)]
     public sealed class SensoryBagDirectTouchInput : MonoBehaviour
     {
         XRHandSubsystem hands;

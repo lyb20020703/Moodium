@@ -28,7 +28,7 @@ namespace Moodium.NatureWorld
         CandyRainRewardController m_Rain;
         Transform m_Viewer;
         Transform m_Wrist;
-        CandyEnergyWristUI m_WristUI;
+        WorldActionDock m_Dock;
         Transform m_Root;
         Transform m_Guide;
         Moodium.Characters.MoodiCompanionAnimator m_GuideMoodi;
@@ -133,7 +133,7 @@ namespace Moodium.NatureWorld
         {
             StopAndClear();
             m_Trail = trail; m_Rain = rain; m_Viewer = viewer; m_Wrist = wrist; m_Candy = candy;
-            m_WristUI = wrist != null ? wrist.GetComponent<CandyEnergyWristUI>() : null;
+            m_Dock = wrist != null ? wrist.GetComponent<WorldActionDock>() : null;
             m_English = PlayerPrefs.GetString("Moodium.Language", "Chinese") == "English";
             m_Tint = candy ? new Color(1f, .55f, .78f) : new Color(.44f, .83f, .60f);
             m_Phase = Phase.Waiting;
@@ -660,9 +660,9 @@ namespace Moodium.NatureWorld
                 if (card.Renderer == null || age > duration)
                 { if (card.Renderer != null) Destroy(card.Renderer.gameObject); m_Cards.RemoveAt(i); continue; }
                 var position = card.Position;
-                if (card.Collect && age > 1f && m_Wrist != null && m_Wrist.gameObject.activeInHierarchy &&
-                    m_WristUI != null && m_WristUI.HandTracked)
-                    position = Vector3.Lerp(position, m_Wrist.position, Mathf.SmoothStep(0f, 1f, (age - 1f) / .6f));
+                // Collected cards fly into the dock's Shower button (formerly: into the wrist band).
+                if (card.Collect && age > 1f && m_Dock != null && m_Dock.isActiveAndEnabled && m_Dock.Visible)
+                    position = Vector3.Lerp(position, m_Dock.ReleaseAnchor.position, Mathf.SmoothStep(0f, 1f, (age - 1f) / .6f));
                 Face(card.Renderer.transform, position);
                 card.Renderer.color = new Color(1f, 1f, 1f, Mathf.Clamp01((duration - age) / .5f));
                 if (card.Collect && age > 1f) card.Renderer.transform.localScale *= Mathf.Exp(-Time.deltaTime * 3f);

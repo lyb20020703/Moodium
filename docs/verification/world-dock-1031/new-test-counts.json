@@ -1,0 +1,18 @@
+{
+  "WorldActionDockTests": {
+    "total": 13,
+    "passed": 13
+  },
+  "WorldDockNamingTests": {
+    "total": 1,
+    "passed": 1
+  },
+  "InputDoublePressTests": {
+    "total": 4,
+    "passed": 4
+  },
+  "WorldDockIntegrationTests": {
+    "total": 7,
+    "passed": 7
+  }
+}
