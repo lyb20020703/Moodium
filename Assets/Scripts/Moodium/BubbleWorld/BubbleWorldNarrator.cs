@@ -64,8 +64,18 @@ namespace Moodium.NatureWorld
 
         IEnumerator Speak(AudioClip clip)
         {
-            yield return new WaitForSeconds(m_Delay);
             var source = EnsureSource();
+            if (source.isPlaying)
+            {
+                var start = source.volume;
+                for (var t = 0f; t < FadeSeconds && source.isPlaying; t += Time.deltaTime)
+                {
+                    source.volume = Mathf.Lerp(start, 0f, t / FadeSeconds);
+                    yield return null;
+                }
+                source.Stop();
+            }
+            yield return new WaitForSeconds(m_Delay);
             source.Stop();
             source.clip = clip;
             source.volume = m_Volume;
