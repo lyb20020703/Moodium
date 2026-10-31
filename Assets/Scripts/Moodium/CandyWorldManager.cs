@@ -38,7 +38,7 @@ namespace Moodium.CandyWorld
         BubbleRingController m_Rings;
         BubbleWorldNarrator m_Narrator;
         [SerializeField] bool m_SqueezeBreath = true;
-        bool m_FirstReveal, m_BreathTaught, m_BubbleEntryScheduled;
+        bool m_BreathTaught, m_BubbleEntryScheduled;
         bool m_ReopenBubbleEntry;
         float m_RevealedAt = -1f;
         bool m_StayReminder;
@@ -370,7 +370,7 @@ namespace Moodium.CandyWorld
             m_BubbleWorld.LayerRevealed += OnBubbleLayerRevealed;
             m_Narrator = GetComponent<BubbleWorldNarrator>() ?? gameObject.AddComponent<BubbleWorldNarrator>();
             m_Narrator.ResetSession();
-            m_FirstReveal = m_BreathTaught = m_StayReminder = false; m_BubbleEntryScheduled = false; m_ReopenBubbleEntry = false; m_RevealedAt = -1f;
+            m_BreathTaught = m_StayReminder = false; m_BubbleEntryScheduled = false; m_ReopenBubbleEntry = false; m_RevealedAt = -1f;
             m_Energy.ResetEnergy();
             m_SqueezeModes=GetComponent<SqueezeModeController>()??gameObject.AddComponent<SqueezeModeController>();
             m_SqueezeModes.BeginSession(m_Energy,m_SqueezeContext,m_NatureWorldActive,IsValidSqueezeSource);
@@ -874,16 +874,9 @@ namespace Moodium.CandyWorld
         void OnBubbleRevealed()
         {
             m_RevealedAt = Time.time;
-            if (!m_FirstReveal) { m_FirstReveal = true; StartCoroutine(BubbleWelcome()); }
         }
-        // Moodi introduces each layer as it opens (W1*/W2*); F3 follows once the first intro has finished.
+        // The world-specific narration is the welcome; the former F3 follow-up is no longer played.
         void OnBubbleLayerRevealed(string folder) { if (m_Running) m_Narrator?.PlayIntro(folder); }
-        System.Collections.IEnumerator BubbleWelcome()
-        {
-            yield return new WaitForSeconds(1.5f);
-            while (m_Narrator != null && m_Narrator.IsSpeaking) yield return null;
-            if (m_Running && m_Journey.Stage == WorldJourneyStage.Bubble) m_WalkTrailGuide?.Say("F3");
-        }
         void OnBubbleWandered() { m_Narrator?.Stop(); m_WalkTrailGuide?.Say("F5"); }
         void OnBubbleLeft(LeaveTarget target)
         {
