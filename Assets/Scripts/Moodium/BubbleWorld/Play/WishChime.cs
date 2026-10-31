@@ -22,6 +22,11 @@ namespace Moodium.NatureWorld
   bool PressBlocked()=>ActionBlocked(current!=null,Time.time,lastStrokeEnd,clearing,saving);
   public bool HasInk=>WishChimeStore.CanRelease(strokes);
   public bool IsWriting=>State==Stage.Writing;
+  // Preset wishes (see WishPresetLibrary / WishWritingTimeline). Picking a chip erases the paper, then the wish writes itself.
+  /// <summary>Set true to release a preset wish on its own right after it finishes writing (no Release press).</summary>
+  public static bool AutoReleaseAfterPreset=false;
+  WishPresetPanel presets;WishPreset preset;WishWritingTimeline timeline;string presetId,lang="zh";float presetStart;int presetDone;bool presetCursor,handHover;
+  public string PresetId=>presetId;public bool PresetWriting=>timeline!=null;
   WishChimeGarden garden;WishPaperFrame frame;WishInkMesh ink;Camera viewer;BubblePlayHands input;bool candy,lite,fullVisible=true;
   readonly List<Material> materials=new();List<List<float[]>> strokes=new();List<float[]> current;Vector2? currentTip,displayedTip;int total,writer=-1;
   AudioSource sound,writeSound;GameObject buttons,cursor,model;Vector3 stripScale,stripPosition,flyStripScale,flyStripPosition;Quaternion baseRotation,lastRotation;float lastAction,ringAt,patAt,shakeAt;bool b5,b8,clearing,grabbing,saving;
@@ -47,7 +52,7 @@ namespace Moodium.NatureWorld
    var collider=Strip.gameObject.AddComponent<BoxCollider>();collider.center=Strip.GetComponent<MeshFilter>().sharedMesh.bounds.center;collider.size=Strip.GetComponent<MeshFilter>().sharedMesh.bounds.size+Vector3.one*.01f;
    Strip.gameObject.AddComponent<MoodiumSpatialButton>().Configure(null,null,BeginWrite);
    var audioObject=new GameObject("Writing Audio");audioObject.transform.SetParent(transform,false);writeSound=audioObject.AddComponent<AudioSource>();writeSound.playOnAwake=false;writeSound.loop=true;writeSound.spatialBlend=1;writeSound.volume=0;writeSound.clip=BubblePlayVisuals.Clip("chime_write_loop");
-   if(record!=null){strokes=record.strokes;foreach(var s in strokes)total+=s.Count;ink.Completed(strokes);State=Stage.Hanging;baseRotation=transform.localRotation;ringAt=Time.time+UnityEngine.Random.Range(25f,60f);}
+   if(record!=null){strokes=record.strokes;foreach(var s in strokes)total+=s.Count;if(!string.IsNullOrEmpty(record.preset))ink.SetWidth(WishPresetLibrary.InkWidth,WishPresetLibrary.GlowWidth);ink.Completed(strokes);State=Stage.Hanging;baseRotation=transform.localRotation;ringAt=Time.time+UnityEngine.Random.Range(25f,60f);}
    else{State=Stage.Blank;FaceViewer();baseRotation=transform.localRotation;lastAction=Time.time;StartCoroutine(Grow());}
   }
   GameObject lodGlow;
@@ -87,9 +92,12 @@ namespace Moodium.NatureWorld
    lastAction=Time.time;lastRotation=transform.rotation;garden.TeachWriting();
    cursor=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(cursor.GetComponent<Collider>());cursor.name="Ink Cursor";cursor.transform.SetParent(transform,false);cursor.transform.localScale=Vector3.one*.004f;cursor.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FF78B4":"#FFE98C");Moodium.UI.UIRefreshVisuals.Register(transform,cursor,WishInkMesh.InkOrder+1);cursor.SetActive(false);
    buttons=new GameObject("Wish Actions");buttons.transform.SetParent(transform,false);
-   bool en=Moodium.Characters.MoodiVoice.LanguageCode=="en";
-   rewriteButton=AddAction("Rewrite",WishActionButton.Prefix(false,candy,en),-WishActionButton.Offset,Rewrite);
-   releaseButton=AddAction("Release",WishActionButton.Prefix(true,candy,en),WishActionButton.Offset,ReleaseWish);
+   bool en=Moodium.Characters.MoodiVoice.LanguageCode=="en";lang=WishPresetLibrary.Language(en);
+   _=WishPresetLibrary.Document;   // parse the preset json now, not on the first chip tap
+   // Left: choose what to write. Centre: the paper. Right: Release above Rewrite.
+   releaseButton=AddAction("Release",WishActionButton.Prefix(true,candy,en),WishActionButton.Offset,WishPresetPanel.ButtonY,ReleaseWish);
+   rewriteButton=AddAction("Rewrite",WishActionButton.Prefix(false,candy,en),WishActionButton.Offset,-WishPresetPanel.ButtonY,Rewrite);
+   presets=WishPresetPanel.Create(buttons.transform,StripCentre,viewer.transform.right,viewer.transform.up,viewer.transform.forward,candy,lang,PickPreset,WriteOwn,PressBlocked,5);
    rewriteButton.SetInteractable(HasInk);releaseButton.SetInteractable(HasInk);
   }
   void AlignWriting()
@@ -99,10 +107,10 @@ namespace Moodium.NatureWorld
    transform.rotation=Quaternion.LookRotation((viewer.transform.position-target).normalized,viewer.transform.up)*Quaternion.Inverse(basis)*transform.rotation;
    transform.position+=target-Strip.TransformPoint(frame.Surface(Vector2.one*.5f));
   }
-  WishActionButton AddAction(string name,string prefix,float offset,Action action)
+  WishActionButton AddAction(string name,string prefix,float x,float y,Action action)
   {
    var holder=new GameObject(name).transform;holder.SetParent(buttons.transform,false);
-   holder.position=StripCentre+viewer.transform.right*offset;holder.rotation=Quaternion.LookRotation(viewer.transform.forward,Vector3.up);
+   holder.position=StripCentre+viewer.transform.right*x+viewer.transform.up*y;holder.rotation=Quaternion.LookRotation(viewer.transform.forward,Vector3.up);
    Moodium.UI.UIRefreshVisuals.UnitScale(holder);
    return WishActionButton.Create(holder,name+" Glass",prefix,action,PressBlocked,5);
   }
@@ -122,14 +130,15 @@ namespace Moodium.NatureWorld
     return;
    }
    if(State!=Stage.Writing)return;
-   releaseButton?.SetInteractable(HasInk);rewriteButton?.SetInteractable(HasInk||current!=null);
+   releaseButton?.SetInteractable(HasInk||PresetWriting);rewriteButton?.SetInteractable(HasInk||current!=null||PresetWriting);
    if(saving)return;
+   if(timeline!=null)StepPreset();
    bool drew=false,visible=false,grabbed=false;float speed=0;
    for(int hand=0;hand<2;hand++)
    {
     var h=input.Hands[hand];if(!h.Valid)continue;var local=Strip.InverseTransformPoint(h.Tip);var uv=frame.Project(local);var surface=frame.Surface(uv);var distance=Strip.TransformVector(local-surface).magnitude;bool bounds=uv.x>=0&&uv.x<=1&&uv.y>=0&&uv.y<=1;
-    if(bounds&&distance<.06f){visible=true;cursor.transform.position=Strip.TransformPoint(surface+frame.Normal*.0006f);}
-    if(!clearing&&h.Pinching&&bounds&&distance<.03f&&total<4000&&(writer<0||writer==hand))
+    if(bounds&&distance<.06f&&timeline==null){visible=true;cursor.transform.position=Strip.TransformPoint(surface+frame.Normal*.0006f);}
+    if(!clearing&&timeline==null&&h.Pinching&&bounds&&distance<.03f&&total<4000&&(writer<0||writer==hand))
     {
      if(current==null){current=new List<float[]>();writer=hand;lastWriter=hand;}
      var previous=current.Count>0?new Vector2(current[^1][0],current[^1][1]):uv;
@@ -140,30 +149,95 @@ namespace Moodium.NatureWorld
      drew=true;
      if(current.Count>=74){var last=currentTip.HasValue?new[]{currentTip.Value.x,currentTip.Value.y}:current[^1];FinishStroke();if(total<4000){current=new List<float[]>{last};total++;writer=hand;ink.Active(current);}}
     }
-    if(HasInk&&Vector3.Dot(h.Up,Vector3.up)>.6f)
+    if((HasInk||PresetWriting)&&Vector3.Dot(h.Up,Vector3.up)>.6f)
     {
      if(liftAt[hand]<0&&Vector3.Distance(h.Palm,BellCenter)<.12f&&h.Palm.y<=BellCenter.y){liftAt[hand]=Time.time;liftY[hand]=h.Palm.y;wasOpen[hand]=h.Open;}
      if(liftAt[hand]>=0&&Time.time-liftAt[hand]<=1&&(h.Palm.y-liftY[hand]>.1f||h.Open&&!wasOpen[hand])){ReleaseWish();return;}
     }
     if(liftAt[hand]>=0&&Time.time-liftAt[hand]>1)liftAt[hand]=-1;
-    if(h.Pinching&&h.Up.sqrMagnitude>.001f&&Vector3.Distance(h.Tip,BellCenter)<.06f&&current==null)
+    if(h.Pinching&&h.Up.sqrMagnitude>.001f&&Vector3.Distance(h.Tip,BellCenter)<.06f&&current==null&&timeline==null)
     {
      var q=Quaternion.LookRotation(-h.Up,viewer.transform.up);float angular=grabbing?Quaternion.Angle(lastRotation,q)/Mathf.Max(.001f,Time.deltaTime):0;transform.rotation=q;grabbed=true;
      if(angular>350&&Time.time-shakeAt>.8f){shakeAt=Time.time;Rewrite();}lastRotation=q;
     }
    }
-   grabbing=grabbed;if(!drew)FinishStroke();cursor.SetActive(visible);
-   if(drew&&speed>.001f){if(!writeSound.isPlaying)writeSound.Play();writeSound.volume=Mathf.Clamp(speed*2,0,.35f);}else writeSound.volume=0;
+   grabbing=grabbed;handHover=visible;if(!drew)FinishStroke();cursor.SetActive(visible||presetCursor);
+   if(drew&&speed>.001f){if(!writeSound.isPlaying)writeSound.Play();writeSound.volume=Mathf.Clamp(speed*2,0,.35f);}else if(timeline==null)writeSound.volume=0;
    if(HasInk&&!b5&&Time.time-lastAction>=3){b5=true;garden.Say("B5");}
   }
   void FinishStroke(){if(current==null)return;if(currentTip.HasValue&&current.Count>0&&current.Count<75&&total<4000){var last=current[^1];var lastUV=new Vector2(last[0],last[1]);if(Vector3.Distance(Strip.TransformPoint(frame.Surface(lastUV)),Strip.TransformPoint(frame.Surface(currentTip.Value)))>.0002f){current.Add(new[]{currentTip.Value.x,currentTip.Value.y});total++;}}currentTip=displayedTip=null;if(current.Count>=2)strokes.Add(current);else total-=current.Count;current=null;writer=-1;ink.Active(null);ink.Completed(strokes);lastStrokeEnd=Time.time;}
-  public void Rewrite(){if(State!=Stage.Writing||clearing||saving)return;FinishStroke();if(!b8){b8=true;garden.Say("B8");}StartCoroutine(Erase());}
-  IEnumerator Erase(){clearing=true;for(float t=0;t<.5f;t+=Time.deltaTime){ink.Alpha(1-t/.5f);yield return null;}strokes.Clear();total=0;ink.Completed(strokes);ink.Active(null);ink.Alpha(1);clearing=false;lastAction=Time.time;}
+  public void Rewrite(){if(State!=Stage.Writing||clearing||saving)return;FinishStroke();StopPreset(false);presetId=null;preset=null;presets?.Select(null);if(!b8){b8=true;garden.Say("B8");}StartCoroutine(Erase());}
+  IEnumerator Erase(float seconds=.5f,Action then=null){clearing=true;for(float t=0;t<seconds;t+=Time.deltaTime){ink.Alpha(1-t/seconds);yield return null;}strokes.Clear();total=0;ink.SetWidth(1,1);ink.Completed(strokes);ink.Active(null);ink.Alpha(1);clearing=false;lastAction=Time.time;then?.Invoke();}
+  // ---------- preset wishes ----------
+  void PickPreset(string id)
+  {
+   // Re-tapping the chosen wish does nothing: it would erase a signature added under it.
+   if(State!=Stage.Writing||clearing||saving||(presetId==id&&(timeline!=null||HasInk)))return;
+   var p=WishPresetLibrary.Find(id,lang);if(p==null){Debug.LogWarning("[Wish Preset] missing "+id+"/"+lang);return;}
+   bool hadInk=HasInk||total>0||PresetWriting;FinishStroke();StopPreset(false);preset=p;presetId=id;presets?.Select(id);
+   Debug.Log($"[Wish Preset] pick {id}/{lang} strokes={p.strokes.Count}");
+   // Whatever is on the paper (handwriting or another preset) fades out quickly first.
+   if(hadInk)StartCoroutine(Erase(.3f,StartPreset));else StartPreset();
+  }
+  void StartPreset()
+  {
+   if(preset==null||State!=Stage.Writing)return;
+   strokes=new List<List<float[]>>();total=0;ink.SetWidth(WishPresetLibrary.InkWidth,WishPresetLibrary.GlowWidth);ink.Completed(strokes);ink.Active(null);
+   timeline=new WishWritingTimeline(preset.strokes,preset.kinds);presetStart=Time.time;presetDone=0;
+  }
+  void StepPreset()
+  {
+   var f=timeline.Sample(Time.time-presetStart);
+   if(f.Done!=presetDone){presetDone=f.Done;strokes=WishPresetLibrary.CopyStrokes(preset,f.Done);ink.Completed(strokes);}
+   if(f.PenMoving)
+   {
+    ink.Active(f.Partial,f.Tip);presetCursor=true;
+    cursor.transform.position=Strip.TransformPoint(frame.Surface(f.Tip.Value)+frame.Normal*.0006f);
+    cursor.transform.localScale=Vector3.one*.006f;
+    if(!writeSound.isPlaying)writeSound.Play();writeSound.volume=.22f;
+   }
+   else{ink.Active(null);writeSound.volume=0;}   // between strokes the nib waits where it lifted
+   lastAction=Time.time;
+   if(Time.time-presetStart>=timeline.Total)CompletePreset(true);
+  }
+  void CompletePreset(bool announce)
+  {
+   if(timeline==null)return;
+   strokes=WishPresetLibrary.CopyStrokes(preset);total=WishPresetLibrary.PointCount(strokes);
+   StopPreset();ink.Completed(strokes);lastAction=Time.time;
+   Debug.Log($"[Wish Preset] written {presetId}/{lang} points={total}");
+   if(!announce)return;
+   Ring();releaseButton?.Pulse();
+   if(AutoReleaseAfterPreset)StartCoroutine(AutoRelease());
+  }
+  void StopPreset(bool clearActive=true){timeline=null;presetCursor=false;if(cursor!=null)cursor.transform.localScale=Vector3.one*.004f;if(clearActive)ink.Active(null);if(writeSound!=null)writeSound.volume=0;}
+  IEnumerator AutoRelease(){yield return new WaitForSeconds(.6f);if(State==Stage.Writing&&timeline==null&&presetId!=null)ReleaseWish();}
+  void WriteOwn()
+  {
+   if(State!=Stage.Writing||clearing||saving)return;
+   bool hadPreset=presetId!=null||timeline!=null;
+   StopPreset(!hadPreset);presetId=null;preset=null;presets?.Select(null);
+   // A preset paper is cleared, including anything added under it; plain handwriting stays.
+   if(hadPreset)StartCoroutine(Erase(.3f));
+   StartCoroutine(InviteWriting());
+  }
+  IEnumerator InviteWriting()
+  {
+   // The nib breathes at the middle of the paper for 1.2 s: "write here".
+   var centre=Strip.TransformPoint(frame.Surface(Vector2.one*.5f)+frame.Normal*.0006f);
+   for(float t=0;t<1.2f;t+=Time.deltaTime)
+   {
+    if(current!=null||timeline!=null||handHover||State!=Stage.Writing)break;   // a finger near the paper takes the cursor
+    presetCursor=true;cursor.transform.position=centre;cursor.transform.localScale=Vector3.one*(.004f+.004f*Mathf.Abs(Mathf.Sin(t/.6f*Mathf.PI)));
+    yield return null;
+   }
+   if(timeline==null){presetCursor=false;if(cursor!=null)cursor.transform.localScale=Vector3.one*.004f;}
+  }
   public void ReleaseWish()
   {
-   if(State!=Stage.Writing||clearing||saving)return;FinishStroke();if(!HasInk)return;
+   if(State!=Stage.Writing||clearing||saving)return;if(timeline!=null)CompletePreset(false);FinishStroke();if(!HasInk)return;
    if(!garden.TryDestination(out var target))return;
-   var record=new WishChimeRecord{id=Guid.NewGuid().ToString("N"),world=candy?"candy":"nature",layer=garden.Layer,folder=garden.Folder,createdAt=DateTimeOffset.Now.ToString("o"),position=new[]{target.x,target.y,target.z},yaw=transform.localEulerAngles.y,strokes=strokes};
+   var record=new WishChimeRecord{id=Guid.NewGuid().ToString("N"),world=candy?"candy":"nature",layer=garden.Layer,folder=garden.Folder,createdAt=DateTimeOffset.Now.ToString("o"),position=new[]{target.x,target.y,target.z},yaw=transform.localEulerAngles.y,strokes=strokes,preset=presetId};
    saving=true;writeSound.Stop();StartCoroutine(SaveAndFly(record,target));
   }
   IEnumerator SaveAndFly(WishChimeRecord record,Vector3 target)

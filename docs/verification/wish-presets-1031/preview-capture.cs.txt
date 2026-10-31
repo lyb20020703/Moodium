@@ -1,0 +1,38 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Moodium.NatureWorld;
+public static class WishPresetsCapture
+{
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ static void Set(object o,string n,object v)=>o.GetType().GetField(n,Flags).SetValue(o,v);
+ static object Get(object o,string n)=>o.GetType().GetField(n,Flags).GetValue(o);
+ static void Call(object o,string n,params object[] args)=>o.GetType().GetMethod(n,Flags).Invoke(o,args);
+ static void Shot(PreviewRenderUtility p,string name){p.BeginStaticPreview(new Rect(0,0,1200,1100));p.Render(true);var t=p.EndStaticPreview();File.WriteAllBytes("/tmp/wish-presets-previews/"+name+".png",t.EncodeToPNG());Object.DestroyImmediate(t);}
+ public static void Capture()
+ {
+  ShaderUtil.allowAsyncCompilation=false;Directory.CreateDirectory("/tmp/wish-presets-previews");
+  var folders=new[]{BubbleWorldData.CandyFolder,BubbleWorldData.NestedCandyFolder,BubbleWorldData.NatureFolder,BubbleWorldData.NestedNatureFolder};
+  var names=new[]{"Candy","Candy_Nested","Nature","NestedNature"};var ids=new[]{"peace_joy","happy","stay_well","let_go"};
+  for(int i=0;i<folders.Length;i++)
+  {
+   bool candy=i<2;var p=new PreviewRenderUtility();var root=new GameObject("Wish presets preview");var owned=new List<Object>();
+   try{
+    var garden=root.AddComponent<WishChimeGarden>();garden.Initialize(folders[i],root.transform,p.camera,new BubblePlayHands(),null);Set(garden,"taught",true);
+    var host=new GameObject("Wish");host.transform.SetParent(root.transform,false);var chime=host.AddComponent<WishChime>();chime.Initialize(garden,new WishChimeRecord{id="preview",folder=folders[i],position=new[]{0f,0f,0f}});
+    var frame=Resources.Load<WishPaperFrame>("MoodiumBubblePlay/PaperFrame_"+(candy?"Candy":"Nature"));var center=chime.StripCentre;var normal=chime.Strip.TransformDirection(frame.Normal);
+    p.camera.transform.position=center+normal*.42f+Vector3.up*.07f;p.camera.transform.LookAt(center+Vector3.up*.04f);p.camera.fieldOfView=63;p.camera.nearClipPlane=.001f;p.camera.farClipPlane=30;
+    Set(chime,"<State>k__BackingField",WishChime.Stage.Blank);chime.BeginWrite();Call(chime,"PickPreset",ids[i]);
+    var texture=new Texture2D(2,2);texture.LoadImage(File.ReadAllBytes("/tmp/moodium-wish-presets/wish-presets-1031/Source/preview-bg/"+names[i]+".jpg"));owned.Add(texture);
+    var sky=GameObject.CreatePrimitive(PrimitiveType.Sphere);sky.name="Preview backdrop only";sky.transform.SetParent(root.transform);sky.transform.position=p.camera.transform.position;sky.transform.localScale=Vector3.one*20;
+    var mat=BubbleWorldData.CreateUnlit("Preview pano",texture,false,CullMode.Off,Color.white);owned.Add(mat);sky.GetComponent<Renderer>().sharedMaterial=mat;
+    p.AddSingleGO(root);var timeline=(WishWritingTimeline)Get(chime,"timeline");Set(chime,"presetStart",Time.time-timeline.Total*.5f);Call(chime,"Update");
+    var cursor=(GameObject)Get(chime,"cursor");cursor.SetActive((bool)Get(chime,"presetCursor"));Shot(p,names[i]+"-half");
+    Set(chime,"presetStart",Time.time-timeline.Total-.01f);Call(chime,"Update");Shot(p,names[i]+"-complete");
+   }finally{p.Cleanup();if(root!=null)Object.DestroyImmediate(root);foreach(var obj in owned)Object.DestroyImmediate(obj);}
+  }
+ }
+}

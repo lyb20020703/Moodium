@@ -18,11 +18,12 @@ namespace Moodium.NatureWorld
   public bool FocusActive{get;private set;}public int WriterHand{get;private set;}=-1;float focusUntil;
   public bool TryKeepOut(out Vector3 centre){if(Writing!=null&&Writing.Strip!=null){centre=Writing.StripCentre;return true;}if(blank!=null&&blank.State==WishChime.Stage.Blank){centre=blank.transform.position;return true;}centre=default;return false;}
   public bool IsWriting=>Writing!=null;
+  string storagePath;
   Transform scan;BubbleWorldNarrator narrator;WishChimeDocument document;readonly List<WishChime> chimes=new();WishChime blank;
   float introEnded=-1,nextBlank,nextLod;Vector3 previousHead;bool running,taught,b7,restoring,hadSaved;
-  public void Initialize(string folder,Transform world,Camera camera,BubblePlayHands hands,BubbleWorldNarrator voice)
+  public void Initialize(string folder,Transform world,Camera camera,BubblePlayHands hands,BubbleWorldNarrator voice,string persistencePath=null)
   {
-   Folder=folder;scan=world;Viewer=camera;Hands=hands;narrator=voice;
+   storagePath=persistencePath??WishChimeStore.DefaultPath;Folder=folder;scan=world;Viewer=camera;Hands=hands;narrator=voice;
    // Existing world UI font reference, without making an unreadable TMP material copy.
    var fonts=FindFirstObjectByType<Moodium.MoodCheck.MoodCheckFontReferences>(FindObjectsInactive.Include);var manager=FindFirstObjectByType<Moodium.CandyWorld.CandyWorldManager>();ChineseFont=fonts!=null?fonts.Chinese:manager!=null&&manager.BubblePlayChineseFont!=null?manager.BubblePlayChineseFont:TMP_Settings.defaultFontAsset;
   }
@@ -33,7 +34,7 @@ namespace Moodium.NatureWorld
   public void Leave(){StopAllCoroutines();FocusActive=false;WriterHand=-1;focusUntil=0;running=false;Writing=null;blank=null;foreach(var c in chimes)if(c!=null)BubblePlayVisuals.Release(c.gameObject);chimes.Clear();}
   IEnumerator LoadSaved()
   {
-   restoring=true;var path=WishChimeStore.DefaultPath;var task=Task.Run(()=>WishChimeStore.Load(path));
+   restoring=true;var path=storagePath??WishChimeStore.DefaultPath;var task=Task.Run(()=>WishChimeStore.Load(path));
    while(!task.IsCompleted)yield return null;
    document=task.Status==TaskStatus.RanToCompletion?task.Result:new WishChimeDocument();
    var records=document.chimes.Where(r=>r.folder==Folder).OrderBy(r=>Vector3.Distance(scan.TransformPoint(new Vector3(r.position[0],r.position[1],r.position[2])),Viewer.transform.position)).ToArray();
@@ -78,7 +79,7 @@ namespace Moodium.NatureWorld
   public void Say(string id)=>narrator?.SayLine(id);
   public Task<bool> PersistAsync(WishChimeRecord record)
   {
-   var path=WishChimeStore.DefaultPath;
+   var path=storagePath??WishChimeStore.DefaultPath;
    return Task.Run(()=>WishChimeStore.Append(path,record));
   }
   public void Released(WishChime chime){blank=null;nextBlank=Time.time+20;}

@@ -87,6 +87,26 @@ namespace Moodium.NatureWorld
             m_Action?.Invoke();
         }
 
+        Vector3 m_BaseScale; bool m_Pulsing;
+
+        /// <summary>Two soft 6% swells (0.9 s), used on Release once a preset wish has finished writing.</summary>
+        public void Pulse()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled || m_Pulsing) return;
+            StartCoroutine(PulseRoutine());
+        }
+
+        IEnumerator PulseRoutine()
+        {
+            m_Pulsing = true; m_BaseScale = transform.localScale;
+            for (float t = 0; t < .9f; t += Time.deltaTime)
+            {
+                transform.localScale = m_BaseScale * (1f + .06f * Mathf.Abs(Mathf.Sin(t / .45f * Mathf.PI)));
+                yield return null;
+            }
+            transform.localScale = m_BaseScale; m_Pulsing = false;
+        }
+
         IEnumerator Feedback()
         {
             m_Pressed = true;
@@ -114,6 +134,7 @@ namespace Moodium.NatureWorld
         void OnDisable()
         {
             StopAllCoroutines();
+            if (m_Pulsing) { transform.localScale = m_BaseScale; m_Pulsing = false; }
             m_Pressed = m_Hover = false;
             Refresh();
         }

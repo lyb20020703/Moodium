@@ -10,6 +10,9 @@ namespace Moodium.NatureWorld
         public const int PaperOrder = 4, GlowOrder = 5, InkOrder = 6;
         public const float InkLiftMetres = .0012f, GlowLiftMetres = .0008f;
         const int MaxActivePoints = 75;
+        float inkScale = 1f, glowScale = 1f;
+        public float InkScale => inkScale;
+        public float GlowScale => glowScale;
         readonly List<Material> owned = new();
         readonly List<Mesh> meshes = new();
         Transform paper;
@@ -85,6 +88,11 @@ namespace Moodium.NatureWorld
                 PolySpatialObjectUtils.MarkDirty(owned[i]);
             }
         }
+        /// <summary>Line width multipliers (1 = handwriting). Takes effect on the next Active / Completed call.</summary>
+        public void SetWidth(float ink, float glow)
+        {
+            inkScale = Mathf.Max(.1f, ink); glowScale = Mathf.Max(.1f, glow);
+        }
         public void Show(bool value)
         {
             currentRenderer.enabled = currentGlowRenderer.enabled = doneRenderer.enabled = doneGlowRenderer.enabled = value;
@@ -99,7 +107,7 @@ namespace Moodium.NatureWorld
         void Build(Mesh mesh, MeshRenderer renderer, List<List<float[]>> strokes, bool glow)
         {
             var vertices = new List<Vector3>(); var triangles = new List<int>();
-            float halfWidth = glow ? .0024f : .0008f;
+            float halfWidth = glow ? .0024f * glowScale : .0008f * inkScale;
             float lift = glow ? GlowLiftMetres : InkLiftMetres;
             foreach (var stroke in strokes)
             {

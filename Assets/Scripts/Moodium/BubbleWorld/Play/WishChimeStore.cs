@@ -8,6 +8,8 @@ namespace Moodium.NatureWorld
  [Serializable] public sealed class WishChimeRecord
  {
   public string id,world,folder,createdAt;public int layer;public float[] position;public float yaw;public List<List<float[]>> strokes=new();
+  // Preset wish id (WishPresetLibrary.Ids) when the paper was written by a preset; null for handwriting. Old files simply lack it.
+  public string preset;
  }
  [Serializable] public sealed class WishChimeDocument {public int version=1;public List<WishChimeRecord> chimes=new();}
  public static class WishChimeStore
