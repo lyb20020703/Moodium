@@ -1,6 +1,5 @@
 using Unity.Profiling;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 namespace Moodium.NatureWorld
@@ -27,18 +26,11 @@ namespace Moodium.NatureWorld
   }
   public void SetInside(bool value)
   {
-   if(active==value)return;Hands.Reset();active=value;gameObject.SetActive(value);if(value){garden.Enter();StartCoroutine(Hints());}
-  }
-  IEnumerator Hints()
-  {
-   yield return null;while(narrator!=null&&narrator.IsSpeaking)yield return null;
-   yield return new WaitForSeconds(2);
-   narrator?.SayLine(folder==BubbleWorldData.NestedCandyFolder?"B2c":folder==BubbleWorldData.NestedNatureFolder?"B2n":"B1");
+   if(active==value)return;Hands.Reset();active=value;gameObject.SetActive(value);if(value)garden.Enter();
   }
   void Update(){
    using var timing=s_Profile.Auto();   float ms=Time.unscaledDeltaTime*1000;worst=Mathf.Max(worst,ms);sum+=ms;frames++;
    if(Time.unscaledTime-metricAt>5){Debug.Log($"[Bubble Play] {folder} writing={garden.IsWriting} frames={frames} avg={sum/Mathf.Max(1,frames):0.0}ms worst={worst:0.0}ms");metricAt=Time.unscaledTime;frames=0;worst=sum=0;}
    Hands.Sample();foreach(var h in Hands.Hands)if(h.Valid&&h.Started)ripple.Trigger((blocked?.Invoke(h.Tip)==true)||garden.IsWriting||garden.Near(h.Tip));}
-  void OnDisable(){StopAllCoroutines();}
  }
 }

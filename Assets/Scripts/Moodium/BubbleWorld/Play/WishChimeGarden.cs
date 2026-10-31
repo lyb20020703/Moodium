@@ -55,7 +55,7 @@ namespace Moodium.NatureWorld
    using var timing=s_Profile.Auto();
    if(!running||Viewer==null)return;
    float speed=(Viewer.transform.position-previousHead).magnitude/Mathf.Max(.001f,Time.deltaTime);previousHead=Viewer.transform.position;
-   if(introEnded<0&&(narrator==null||!narrator.IsSpeaking)){introEnded=Time.time;nextBlank=Time.time+12;}
+   if(introEnded<0&&(narrator==null||!narrator.IsSpeaking)){introEnded=Time.time;nextBlank=Time.time+2;}
    if(introEnded>=0&&!restoring&&hadSaved&&!b7){b7=true;Say("B7");}
    if(!restoring&&blank==null&&!IsWriting&&introEnded>=0&&Time.time>=nextBlank&&speed<.15f){blank=Create(null);Say("B3");}
    if(Time.time>=nextLod){nextLod=Time.time+2;UpdateNearest();}
