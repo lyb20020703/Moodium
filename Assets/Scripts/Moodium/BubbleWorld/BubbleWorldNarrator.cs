@@ -17,6 +17,7 @@ namespace Moodium.NatureWorld
         [SerializeField] float m_Delay = 1f;
         const float FadeSeconds = .5f;
 
+        readonly Queue<AudioClip> m_Lines=new();
         AudioSource m_Source;
         Coroutine m_Routine;
         readonly HashSet<string> m_Said = new HashSet<string>();
@@ -47,7 +48,7 @@ namespace Moodium.NatureWorld
             if (id == null || m_Said.Contains(id)) return false;
             var clip = Resources.Load<AudioClip>(MoodiVoice.ClipResourcePath(id, MoodiVoice.LanguageCode));
             if (clip == null) { Debug.LogWarning($"[Bubble World] Missing intro voice {id} ({MoodiVoice.LanguageCode})."); return false; }
-            m_Said.Add(id);
+            m_Said.Add(id);m_Lines.Clear();
             StopRoutine();
             m_Routine = StartCoroutine(Speak(clip));
             return true;
@@ -56,12 +57,27 @@ namespace Moodium.NatureWorld
         /// <summary>Fade the intro out (the user did something Moodi needs to answer, or left the bubble).</summary>
         public void Stop()
         {
+            m_Lines.Clear();
             if (m_Routine == null) return;
             StopRoutine();
             if (m_Source != null && m_Source.isPlaying && isActiveAndEnabled) m_Routine = StartCoroutine(FadeOut());
             else if (m_Source != null) m_Source.Stop();
         }
 
+        public void SayLine(string id)
+        {
+            if(!isActiveAndEnabled||!Application.isPlaying)return;
+            var clip=Resources.Load<AudioClip>(MoodiVoice.ClipResourcePath(id,MoodiVoice.LanguageCode));
+            if(clip==null){Debug.LogWarning("[Bubble Play] Missing voice "+id);return;}
+            if(m_Lines.Count<8)m_Lines.Enqueue(clip);
+            if(m_Routine==null)m_Routine=StartCoroutine(DrainLines());
+        }
+        IEnumerator DrainLines()
+        {
+            yield return null;
+            while(m_Lines.Count>0){var source=EnsureSource();source.volume=m_Volume;source.clip=m_Lines.Dequeue();source.Play();while(source.isPlaying)yield return null;}
+            m_Routine=null;
+        }
         IEnumerator Speak(AudioClip clip)
         {
             var source = EnsureSource();
@@ -81,6 +97,7 @@ namespace Moodium.NatureWorld
             source.volume = m_Volume;
             source.Play();
             while (source.isPlaying) yield return null;
+            if(m_Lines.Count>0)yield return DrainLines();
             m_Routine = null;
         }
 
@@ -115,6 +132,7 @@ namespace Moodium.NatureWorld
 
         void OnDisable()
         {
+            m_Lines.Clear();
             StopRoutine();
             if (m_Source != null) m_Source.Stop();
         }

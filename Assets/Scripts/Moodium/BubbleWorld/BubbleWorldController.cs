@@ -34,6 +34,7 @@ namespace Moodium.NatureWorld
 
         BubbleWorldController m_Nested;
         bool m_FromPortal;
+        BubbleWorldPlay m_Play;
         bool m_ExitingHandoff;
         /// <summary>
         /// What fills the gaps between points far away.
@@ -294,6 +295,7 @@ namespace Moodium.NatureWorld
         void ClearVisuals()
         {
             m_ExitingHandoff = false;
+            m_Play=null;
             m_Motion = null;
             if (m_Routine != null) StopCoroutine(m_Routine);
             m_Routine = null;
@@ -505,6 +507,7 @@ namespace Moodium.NatureWorld
         {
             if (m_Motion != null) m_Motion.SetStage(MotionStage(m_Phase));
             if (m_Wake != null) m_Wake.Active = m_Phase == Phase.Inside && m_WanderFade > .6f;
+            if(m_Play!=null)m_Play.SetInside(m_Phase==Phase.Inside&&m_WanderFade>.6f);
             CheckEditorMouse();
             if (m_Phase == Phase.Portal)
             {
@@ -1062,6 +1065,12 @@ namespace Moodium.NatureWorld
                 else
                     yield return null;
             }
+            var playObject=new GameObject("Bubble World Play");playObject.transform.SetParent(m_WorldRoot,false);
+            m_Play=playObject.AddComponent<BubbleWorldPlay>();
+            m_Play.Initialize(m_Folder,m_WorldRoot,ResolveViewer(),m_Layers,m_LayerRadii,m_PointMaterial,Sparkle,
+                point=>(m_Home!=null&&m_Home.activeInHierarchy&&Vector3.Distance(point,m_Home.transform.position)<.15f)||
+                    (m_Nested!=null&&m_Nested.m_Phase==Phase.Portal&&Vector3.Distance(point,m_Nested.m_Root.transform.position)<.15f));
+            if(m_WorldSorting!=null)m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting{Renderer=playObject,Order=3,ApplyToDescendants=true});
             CacheQuietLayerPose();
             m_AllLayersReady = true;
             m_BuildRoutine = null;
