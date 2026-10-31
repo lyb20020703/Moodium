@@ -97,6 +97,11 @@ namespace Moodium.CandyWorld
         public float Energy => m_Energy != null ? m_Energy.Energy : 0f;
 
         public void ConfigureRewardTouchSound(AudioClip touchSound) => m_RewardTouchSound = touchSound;
+        // Trees and candy houses growing in: a soft magical rise instead of the shared sparkle-explosion clip
+        // (that one still plays for the rain reward and the bubble touch).
+        public const string GrowthSoundFolder = "MoodiumGrowth/";
+        public static string GrowthSoundResource(bool nature) => GrowthSoundFolder + (nature ? "grow_nature" : "grow_candy");
+        AudioClip GrowthSound(bool nature) => Resources.Load<AudioClip>(GrowthSoundResource(nature)) ?? m_RewardTouchSound;
         public void ConfigureCandyPrefabDeformationSound(AudioClip sound) => m_CandyPrefabDeformationSound = sound;
         public void ConfigureExitAction(System.Action exitAction) => m_ExitAction = exitAction;
         public static bool WristHiddenFor(bool running, WorldJourneyStage? stage) => running && stage == WorldJourneyStage.Bubble;
@@ -295,7 +300,7 @@ namespace Moodium.CandyWorld
                 }
                 m_NatureForestGrowth.Configure(Camera.main != null ? Camera.main.transform : null, m_NatureTreePrefabs,
                     m_SpatialMeshManager);
-                m_NatureForestGrowth.ConfigureSpawnSound(m_RewardTouchSound);
+                m_NatureForestGrowth.ConfigureSpawnSound(GrowthSound(true));
                 m_NatureForestGrowth.StartGrowth();
                 m_NatureFootstepGrass.Configure(Camera.main != null ? Camera.main.transform : null,
                     m_SpatialMeshManager, m_NatureFootstepGrassPrefab, m_NatureFootstepAlternatePrefab);
@@ -327,7 +332,7 @@ namespace Moodium.CandyWorld
                 m_NatureCompletionPanorama.StopAndClear();
                 m_CandyCompletionHouse.Configure(Camera.main != null ? Camera.main.transform : null,
                     m_SpatialMeshManager, m_CandyCompletionHousePrefab, m_CandyLittleCompletionHousePrefab,
-                    m_RewardTouchSound);
+                    GrowthSound(false));
                 m_CandyCompletionHouse.ConfigureDeformationSound(m_CandyPrefabDeformationSound);
                 m_CandyCompletionHouse.ConfigureContactBursts(m_BurstController);
                 GameObject honeyJar = null;
