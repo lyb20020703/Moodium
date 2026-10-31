@@ -288,21 +288,42 @@ namespace Moodium.Characters
 
         void CheckHandTouch()
         {
+            if (DetectHandTouch(out _)) PlayTouched();
+        }
+
+        /// <summary>
+        /// Hand-touch check for a display that has taken over this Moodi and disabled this component
+        /// (MoodiRiseDisplay while Moodi sits on the soft model). Returns true on the frame a hand starts touching
+        /// Moodi's body; <paramref name="handOnMoodi"/> is true while any free hand is inside its reach.
+        /// It does not play anything: the caller chooses the reaction. <paramref name="extraMargin"/> widens the
+        /// reach (metres) for a small Moodi.
+        /// </summary>
+        public bool PollHandTouch(out bool handOnMoodi, float extraMargin = 0f)
+        {
+            handOnMoodi = false;
+            return m_DetectHandTouch && DetectHandTouch(out handOnMoodi, extraMargin);
+        }
+
+        bool DetectHandTouch(out bool handOnMoodi, float extraMargin = 0f)
+        {
+            handOnMoodi = false;
             if (m_Hands == null)
                 m_Hands = XRGeneralSettings.Instance?.Manager?.activeLoader?.GetLoadedSubsystem<XRHandSubsystem>();
-            if (m_Hands == null || !m_Hands.running){m_HandWasInside=m_LeftWasInside=m_RightWasInside=false;return;}
+            if (m_Hands == null || !m_Hands.running){m_HandWasInside=m_LeftWasInside=m_RightWasInside=false;return false;}
             m_Hands.TryUpdateHands(XRHandSubsystem.UpdateType.Dynamic);
             if (m_XROrigin == null) m_XROrigin = FindFirstObjectByType<XROrigin>(FindObjectsInactive.Include);
             var origin = m_XROrigin != null ? m_XROrigin.Origin.transform : null;
 
             var center = transform.TransformPoint(m_BodyCenterLocal);
-            var radius = m_TouchRadiusLocal * Mathf.Abs(transform.lossyScale.x) + m_TouchMargin;
+            var radius = m_TouchRadiusLocal * Mathf.Abs(transform.lossyScale.x) + m_TouchMargin + Mathf.Max(0f, extraMargin);
             var left = IsInside(m_Hands.leftHand, origin, center, radius);
             var right = IsInside(m_Hands.rightHand, origin, center, radius);
-            if (TouchStarts(left, right, m_LeftWasInside, m_RightWasInside, m_SupportHand)) PlayTouched();
+            var started = TouchStarts(left, right, m_LeftWasInside, m_RightWasInside, m_SupportHand);
             m_LeftWasInside = left;
             m_RightWasInside = right;
             m_HandWasInside = (left && m_SupportHand != 0) || (right && m_SupportHand != 1);
+            handOnMoodi = m_HandWasInside;
+            return started;
         }
 
         static bool IsInside(XRHand hand, Transform origin, Vector3 center, float radius)

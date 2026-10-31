@@ -17,6 +17,11 @@ namespace Moodium.Reality
         const float EyeSpanRig=.678f, LargestSideRig=1.904f;   // Moodi_Rig rest pose (Blender), Eye_L-Eye_R and largest side
         [SerializeField] Vector2 m_SpotOffset;
         [SerializeField] float m_BlinkClose=.1f, m_BlinkOpen=.1f, m_ClosedScale=.08f;
+        // Touching Moodi itself (not the bag around it) plays its Touched clip instead of the press squash.
+        [SerializeField, Range(0f,.04f)] float m_TouchExtraReach=.015f;
+        const string TouchedState="Touched";
+        bool touching, touchWasEmerging;
+        float touchUntil=-100f;
         Transform anchor, rig, visual, rescueRoot, stem;
         Vector3 anchorLocalPosition, anchorLocalUp; Quaternion anchorLocalRotation;
         float attachedAt; Camera viewer;
@@ -122,7 +127,34 @@ namespace Moodium.Reality
             for(int i=0;i<count;i++){var direction=UnityEngine.Random.insideUnitCircle.normalized;particles.Emit(new ParticleSystem.EmitParams{position=center,velocity=up*.4f+Vector3.ProjectOnPlane(new Vector3(direction.x,0,direction.y),up).normalized*.2f},1);}
         }
         public void SetPeeking(bool value)
-        {peeking=value;if(moodi!=null){moodi.SetBool("Peeking",value);moodi.SetBool("Emerging",!value);}}
+        {peeking=value;touching=false;if(moodi!=null){moodi.SetBool("Peeking",value);moodi.SetBool("Emerging",!value);}}
+        /// <summary>Pure: should the bag press squash Moodi this frame? Not while a hand is on Moodi itself or its
+        /// touch reaction is playing, so patting Moodi never reads as pressing it down into the bag.</summary>
+        public static bool PressesMoodi(bool bagPinched,bool handOnMoodi,bool touchPlaying)=>bagPinched&&!handOnMoodi&&!touchPlaying;
+        /// <summary>Length of the Touched clip on this controller (falls back to 1.2 s).</summary>
+        public static float TouchedSeconds(Animator animator)
+        {
+            var controller=animator!=null?animator.runtimeAnimatorController:null;
+            if(controller!=null)foreach(var clip in controller.animationClips)if(clip!=null&&clip.name.EndsWith(TouchedState))return Mathf.Max(.3f,clip.length);
+            return 1.2f;
+        }
+        public bool IsTouchPlaying=>touching;
+        // The Peek / Emerge states are entered from Any State while their bools are on, which would cut the Touched
+        // clip off at once. Turn them off for the length of the clip, then hand Moodi back to the same state.
+        void PlayTouchedOnSoft()
+        {
+            if(moodi==null)return;
+            touchWasEmerging=moodi.GetBool("Emerging");
+            moodi.SetBool("Peeking",false);moodi.SetBool("Emerging",false);
+            spring=0;springVelocity=0;moodi.SetFloat("Press",0);
+            moodi.CrossFadeInFixedTime(TouchedState,.1f,0,0);
+            touching=true;touchUntil=Time.time+TouchedSeconds(moodi);
+        }
+        void EndTouched()
+        {
+            touching=false;
+            if(moodi!=null){moodi.SetBool("Peeking",peeking);moodi.SetBool("Emerging",!peeking&&touchWasEmerging);}
+        }
         public void AttachMoodi(Animator animator)
         {
             if(!Ready||animator==null)return;
@@ -182,7 +214,7 @@ namespace Moodium.Reality
                 if(!immediate && Application.isPlaying && isActiveAndEnabled)StartCoroutine(RestoreSize(visual,originalPosition,originalRotation,originalScale,floating,floatingEnabled));
                 else{visual.localPosition=originalPosition;visual.localRotation=originalRotation;visual.localScale=originalScale;if(floating!=null)floating.enabled=floatingEnabled;}}
             if(companion!=null && companionEnabled)companion.ResumeAfterRescue();
-            attached=false;moodi=null;rig=null;companion=null;voice=null;eyes=null;
+            attached=false;touching=false;moodi=null;rig=null;companion=null;voice=null;eyes=null;
         }
         public void Blink(){blink=Time.time;}
         System.Collections.IEnumerator RestoreSize(Transform model,Vector3 position,Quaternion rotation,Vector3 scale,Moodium.Flow.MoodiBreathingFloat floatEffect,bool enableFloat)
@@ -202,7 +234,10 @@ namespace Moodium.Reality
             {
                 CreateFallback();
             }
-            var down=capsule!=null&&capsule.IsPinched;
+            var handOnMoodi=false;
+            if(attached&&companion!=null&&moodi!=null&&companion.PollHandTouch(out handOnMoodi,m_TouchExtraReach)&&!touching)PlayTouchedOnSoft();
+            if(touching&&Time.time>=touchUntil)EndTouched();
+            var down=PressesMoodi(capsule!=null&&capsule.IsPinched,handOnMoodi,touching);
             if(down&&!pressed){springVelocity+=2.5f;presses++;if(presses==1||presses==5||presses==10||presses==15)Blink();}
             pressed=down;
             spring=SqueezeProgressVideoController.StepSpring(spring,ref springVelocity,down?1:0,down?2500:220,down?.85f:.32f,Time.deltaTime);
