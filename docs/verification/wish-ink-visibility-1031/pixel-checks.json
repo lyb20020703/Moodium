@@ -1,0 +1,110 @@
+[
+  {
+    "case" : "Candy-a-55-d100",
+    "dotPixels" : 114,
+    "livePixels" : 1928,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a-55-d35",
+    "dotPixels" : 791,
+    "livePixels" : 14673,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a-55-d70",
+    "dotPixels" : 222,
+    "livePixels" : 3848,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a0-d100",
+    "dotPixels" : 150,
+    "livePixels" : 2516,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a0-d35",
+    "dotPixels" : 1158,
+    "livePixels" : 19824,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a0-d70",
+    "dotPixels" : 299,
+    "livePixels" : 5153,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a55-d100",
+    "dotPixels" : 57,
+    "livePixels" : 1179,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a55-d35",
+    "dotPixels" : 495,
+    "livePixels" : 10283,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Candy-a55-d70",
+    "dotPixels" : 118,
+    "livePixels" : 2427,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a-55-d100",
+    "dotPixels" : 114,
+    "livePixels" : 1903,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a-55-d35",
+    "dotPixels" : 786,
+    "livePixels" : 14625,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a-55-d70",
+    "dotPixels" : 222,
+    "livePixels" : 3807,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a0-d100",
+    "dotPixels" : 140,
+    "livePixels" : 2376,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a0-d35",
+    "dotPixels" : 1187,
+    "livePixels" : 20220,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a0-d70",
+    "dotPixels" : 312,
+    "livePixels" : 5350,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a55-d100",
+    "dotPixels" : 57,
+    "livePixels" : 1165,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a55-d35",
+    "dotPixels" : 497,
+    "livePixels" : 10220,
+    "penUpChangedPixels" : 0
+  },
+  {
+    "case" : "Nature-a55-d70",
+    "dotPixels" : 122,
+    "livePixels" : 2390,
+    "penUpChangedPixels" : 0
+  }
+]

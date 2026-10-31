@@ -1,0 +1,17 @@
+import AppKit
+import Foundation
+let folder=URL(fileURLWithPath:"/tmp/wish-ink-previews")
+func read(_ url:URL)throws->NSBitmapImageRep {let image=NSBitmapImageRep(data:try Data(contentsOf:url))!;precondition(image.bitsPerSample==8 && image.samplesPerPixel>=3);return image}
+func diff(_ a:NSBitmapImageRep,_ b:NSBitmapImageRep)->Int {
+ let x=a.bitmapData!,y=b.bitmapData!;var count=0
+ for row in 0..<a.pixelsHigh {for col in 0..<a.pixelsWide {
+  let ai=row*a.bytesPerRow+col*a.samplesPerPixel,bi=row*b.bytesPerRow+col*b.samplesPerPixel
+  if (0..<3).contains(where:{abs(Int(x[ai+$0])-Int(y[bi+$0]))>8}) {count+=1}
+ }};return count
+}
+var rows:[[String:Any]]=[]
+for url in try FileManager.default.contentsOfDirectory(at:folder,includingPropertiesForKeys:nil).filter({$0.lastPathComponent.hasSuffix("-blank.png")}).sorted(by:{$0.lastPathComponent<$1.lastPathComponent}) {
+ let name=String(url.lastPathComponent.dropLast(10));let blank=try read(url),dot=try read(folder.appendingPathComponent(name+"-dot.png")),live=try read(folder.appendingPathComponent(name+"-live.png")),done=try read(folder.appendingPathComponent(name+"-finished.png"))
+ rows.append(["case":name,"dotPixels":diff(blank,dot),"livePixels":diff(blank,live),"penUpChangedPixels":diff(live,done)])
+}
+let data=try JSONSerialization.data(withJSONObject:rows,options:[.prettyPrinted,.sortedKeys]);try data.write(to:folder.appendingPathComponent("pixel-checks.json"));print(String(data:data,encoding:.utf8)!)

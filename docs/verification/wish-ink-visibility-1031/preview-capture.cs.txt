@@ -1,0 +1,41 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using Moodium.NatureWorld;
+public static class WishInkCapture
+{
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ static void Shot(PreviewRenderUtility p,string name){p.BeginStaticPreview(new Rect(0,0,900,900));p.Render(true);var t=p.EndStaticPreview();File.WriteAllBytes("/tmp/wish-ink-previews/"+name+".png",t.EncodeToPNG());Object.DestroyImmediate(t);}
+ public static void Capture()
+ {
+  ShaderUtil.allowAsyncCompilation=false;Directory.CreateDirectory("/tmp/wish-ink-previews");
+  foreach(var world in new[]{"Candy","Nature"})
+  {
+   var p=new PreviewRenderUtility();var root=new GameObject("Ink preview");
+   try{
+    var hands=new BubblePlayHands();var garden=root.AddComponent<WishChimeGarden>();garden.Initialize(world=="Candy"?BubbleWorldData.CandyFolder:BubbleWorldData.NatureFolder,root.transform,p.camera,hands,null);
+    typeof(WishChimeGarden).GetField("taught",Flags).SetValue(garden,true);
+    var go=new GameObject("Wish");go.transform.SetParent(root.transform,false);var chime=go.AddComponent<WishChime>();chime.Initialize(garden,new WishChimeRecord{id="preview",position=new[]{0f,0f,0f}});
+    var frame=Resources.Load<WishPaperFrame>("MoodiumBubblePlay/PaperFrame_"+world);var centre=chime.StripCentre;
+    p.camera.transform.position=centre+chime.Strip.TransformDirection(frame.Normal)*.42f+Vector3.up*.07f;p.camera.transform.LookAt(centre);
+    typeof(WishChime).GetField("<State>k__BackingField",Flags).SetValue(chime,WishChime.Stage.Blank);chime.BeginWrite();
+    var ink=go.GetComponentInChildren<WishInkMesh>();centre=chime.StripCentre;var normal=chime.Strip.TransformDirection(frame.Normal).normalized;
+    var points=new List<float[]>();
+    for(int i=0;i<20;i++)points.Add(new[]{.25f,.2f+i*.6f/19});
+    for(int i=1;i<20;i++)points.Add(new[]{.25f+i*.5f/19,.8f});
+    p.AddSingleGO(root);p.camera.fieldOfView=55;p.camera.nearClipPlane=.001f;p.camera.backgroundColor=new Color(.85f,.85f,.85f,1);p.camera.clearFlags=CameraClearFlags.SolidColor;
+    foreach(var angle in new[]{-55f,0f,55f})foreach(var distance in new[]{.35f,.7f,1f})
+    {
+     var prefix=world+"-a"+angle.ToString("0")+"-d"+(distance*100).ToString("0");
+     p.camera.transform.position=centre+Quaternion.AngleAxis(angle,Vector3.up)*normal*distance;p.camera.transform.LookAt(centre);
+     ink.Completed(new());ink.Active(null);Shot(p,prefix+"-blank");
+     ink.Active(new(){points[0]});Shot(p,prefix+"-dot");
+     ink.Active(points);Shot(p,prefix+"-live");
+     ink.Completed(new(){points});ink.Active(null);Shot(p,prefix+"-finished");
+    }
+   }finally{p.Cleanup();if(root!=null)Object.DestroyImmediate(root);}
+  }
+ }
+}

@@ -47,7 +47,7 @@ namespace Moodium.NatureWorld
    if(record!=null){go.transform.localPosition=new Vector3(record.position[0],record.position[1],record.position[2]);go.transform.localRotation=Quaternion.Euler(0,record.yaw,0);}
    else go.transform.position=Viewer.transform.position+Vector3.ProjectOnPlane(Viewer.transform.forward,Vector3.up).normalized*.55f-Vector3.up*.25f;
    var sorting=scan.GetComponent<VisionOSSortingGroup>();
-   if(sorting!=null){for(int j=sorting.Renderers.Count-1;j>=0;j--)if(sorting.Renderers[j].Renderer==null)sorting.Renderers.RemoveAt(j);sorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting{Renderer=go,Order=4,ApplyToDescendants=true});}
+   if(sorting!=null){for(int j=sorting.Renderers.Count-1;j>=0;j--)if(sorting.Renderers[j].Renderer==null)sorting.Renderers.RemoveAt(j);}
    var c=go.AddComponent<WishChime>();c.Initialize(this,record,lite);chimes.Add(c);return c;
   }
   void Update()

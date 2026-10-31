@@ -1,37 +1,149 @@
 using System.Collections.Generic;
+using Unity.PolySpatial;
 using UnityEngine;
+using UnityEngine.Rendering;
+
 namespace Moodium.NatureWorld
 {
- public sealed class WishInkMesh : MonoBehaviour
- {
-  readonly List<Material> owned=new();readonly List<Mesh> meshes=new();Transform paper;WishPaperFrame frame;Mesh current,done;MeshRenderer currentRenderer,doneRenderer;
-  public void Initialize(Transform strip,WishPaperFrame mapping,bool candy)
-  {
-   paper=strip;frame=mapping;transform.SetParent(strip,false);
-   var ink=BubblePlayVisuals.Material(candy?"#C93D78":"#3E2A16");var glow=BubblePlayVisuals.Material(candy?"#FF78B4":"#FFE98C",.35f);owned.Add(ink);owned.Add(glow);
-   current=Create("Current Ink",ink,glow,out currentRenderer);done=Create("Completed Ink",ink,glow,out doneRenderer);
-  }
-  Mesh Create(string name,Material ink,Material glow,out MeshRenderer renderer)
-  {var go=new GameObject(name);go.transform.SetParent(transform,false);var m=new Mesh{name=name};m.MarkDynamic();meshes.Add(m);go.AddComponent<MeshFilter>().sharedMesh=m;renderer=go.AddComponent<MeshRenderer>();renderer.sharedMaterials=new[]{glow,ink};renderer.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;return m;}
-  public void Active(List<float[]> stroke){if(stroke!=null&&stroke.Count>75)stroke=stroke.GetRange(stroke.Count-75,75);Build(current,stroke==null?new():new List<List<float[]>>{stroke});}
-  public void Completed(List<List<float[]>> strokes)=>Build(done,strokes);
-  public void Alpha(float value){foreach(var m in owned){var c=m.GetColor("_BaseColor");c.a=(m==owned[1]?.35f:1f)*value;m.SetColor("_BaseColor",c);}}
-  public void Show(bool value){currentRenderer.enabled=doneRenderer.enabled=value;}
-  void Build(Mesh mesh,List<List<float[]>> strokes)
-  {
-   var verts=new List<Vector3>();var triangles=new[]{new List<int>(),new List<int>()};
-   for(int pass=0;pass<2;pass++)foreach(var stroke in strokes)
-   {
-    if(stroke.Count<2)continue;int first=verts.Count;
-    for(int i=0;i<stroke.Count;i++)
+    public sealed class WishInkMesh : MonoBehaviour
     {
-     var uv=new Vector2(stroke[i][0],stroke[i][1]);var p=frame.Surface(uv);var prev=frame.Surface(new Vector2(stroke[Mathf.Max(0,i-1)][0],stroke[Mathf.Max(0,i-1)][1]));var next=frame.Surface(new Vector2(stroke[Mathf.Min(stroke.Count-1,i+1)][0],stroke[Mathf.Min(stroke.Count-1,i+1)][1]));
-     var side=Vector3.Cross(frame.Normal,next-prev).normalized*(pass==0?.0024f:.0008f);p+=frame.Normal*(pass==0?.0003f:.0004f);verts.Add(frame.Surface(frame.Project(p-side))+frame.Normal*(pass==0?.0003f:.0004f));verts.Add(frame.Surface(frame.Project(p+side))+frame.Normal*(pass==0?.0003f:.0004f));
-     if(i==0)continue;int a=first+(i-1)*2;triangles[pass].AddRange(new[]{a,a+1,a+2,a+1,a+3,a+2});
+        public const int PaperOrder = 4, GlowOrder = 5, InkOrder = 6;
+        public const float InkLiftMetres = .0012f, GlowLiftMetres = .0008f;
+        const int MaxActivePoints = 75;
+        readonly List<Material> owned = new();
+        readonly List<Mesh> meshes = new();
+        Transform paper;
+        WishPaperFrame frame;
+        Mesh current, currentGlow, done, doneGlow;
+        MeshRenderer currentRenderer, currentGlowRenderer, doneRenderer, doneGlowRenderer;
+
+        public void Initialize(Transform strip, WishPaperFrame mapping, bool candy)
+        {
+            paper = strip; frame = mapping; transform.SetParent(strip, false);
+            ColorUtility.TryParseHtmlString(candy ? "#C93D78" : "#3E2A16", out var color);
+            // Both layers use the stock transparent Unlit path: erasing fades the main ink too.
+            var ink = BubbleWorldData.CreateUnlit("Wish ink", null, true, CullMode.Off, color);
+            var glow = BubblePlayVisuals.Material(candy ? "#FF78B4" : "#FFE98C", .35f);
+            ink.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            owned.Add(ink); owned.Add(glow);
+            current = Create("Current Ink", ink, InkOrder, out currentRenderer);
+            currentGlow = Create("Current Ink Glow", glow, GlowOrder, out currentGlowRenderer);
+            done = Create("Completed Ink", ink, InkOrder, out doneRenderer);
+            doneGlow = Create("Completed Ink Glow", glow, GlowOrder, out doneGlowRenderer);
+        }
+
+        Mesh Create(string name, Material material, int order, out MeshRenderer renderer)
+        {
+            var go = new GameObject(name); go.transform.SetParent(transform, false);
+            var mesh = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
+            mesh.MarkDynamic(); meshes.Add(mesh);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            renderer = go.AddComponent<MeshRenderer>(); renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.allowOcclusionWhenDynamic = false;
+            renderer.sortingOrder = order;
+            Moodium.UI.UIRefreshVisuals.Register(paper, go, order);
+            return mesh;
+        }
+
+        // The transient tip is not subject to journal decimation/smoothing: what the user is
+        // drawing is visible now, while persisted points retain the original jitter filtering.
+        public void Active(List<float[]> stroke, Vector2? tip = null)
+        {
+            var points = new List<float[]>();
+            if (stroke != null) points.AddRange(stroke);
+            if (tip.HasValue && points.Count > 0)
+            {
+                var last = points[points.Count - 1];
+                if ((new Vector2(last[0], last[1]) - tip.Value).sqrMagnitude > .00000001f)
+                    points.Add(new[] { tip.Value.x, tip.Value.y });
+            }
+            // Keep both the beginning and live endpoint without exceeding the 300-vertex budget.
+            if (points.Count > MaxActivePoints)
+            {
+                var reduced = new List<float[]>(MaxActivePoints);
+                for (int i = 0; i < MaxActivePoints; i++)
+                    reduced.Add(points[Mathf.RoundToInt(i * (points.Count - 1f) / (MaxActivePoints - 1f))]);
+                points = reduced;
+            }
+            var strokes = new List<List<float[]>> { points };
+            Build(current, currentRenderer, strokes, false);
+            Build(currentGlow, currentGlowRenderer, strokes, true);
+        }
+
+        public void Completed(List<List<float[]>> strokes)
+        {
+            Build(done, doneRenderer, strokes, false);
+            Build(doneGlow, doneGlowRenderer, strokes, true);
+        }
+        public void Alpha(float value)
+        {
+            for (int i = 0; i < owned.Count; i++)
+            {
+                BubbleWorldData.SetAlpha(owned[i], Mathf.Clamp01(value) * (i == 1 ? .35f : 1f));
+                PolySpatialObjectUtils.MarkDirty(owned[i]);
+            }
+        }
+        public void Show(bool value)
+        {
+            currentRenderer.enabled = currentGlowRenderer.enabled = doneRenderer.enabled = doneGlowRenderer.enabled = value;
+        }
+
+        Vector3 OnPaper(Vector2 uv, float lift)
+        {
+            var normal = Vector3.Cross(paper.TransformVector(frame.UpAt(uv)), paper.TransformVector(frame.RightAt(uv))).normalized;
+            // Use real metres even under the enlarged paper and FBX import transforms.
+            return paper.InverseTransformPoint(paper.TransformPoint(frame.Surface(uv)) + normal * lift);
+        }
+        void Build(Mesh mesh, MeshRenderer renderer, List<List<float[]>> strokes, bool glow)
+        {
+            var vertices = new List<Vector3>(); var triangles = new List<int>();
+            float halfWidth = glow ? .0024f : .0008f;
+            float lift = glow ? GlowLiftMetres : InkLiftMetres;
+            foreach (var stroke in strokes)
+            {
+                if (stroke == null || stroke.Count == 0) continue;
+                int first = vertices.Count;
+                if (stroke.Count == 1)
+                {
+                    // First contact is a visible nib dot, not an empty mesh until movement.
+                    var uv = new Vector2(stroke[0][0], stroke[0][1]);
+                    var p = frame.Surface(uv);
+                    var right = frame.RightAt(uv).normalized * halfWidth;
+                    var up = frame.UpAt(uv).normalized * halfWidth;
+                    foreach (var corner in new[] { p - right - up, p - right + up, p + right - up, p + right + up })
+                        vertices.Add(OnPaper(frame.Project(corner), lift));
+                    AddQuad(triangles, first); continue;
+                }
+                for (int i = 0; i < stroke.Count; i++)
+                {
+                    var uv = new Vector2(stroke[i][0], stroke[i][1]);
+                    var p = frame.Surface(uv);
+                    var before = stroke[Mathf.Max(0, i - 1)]; var after = stroke[Mathf.Min(stroke.Count - 1, i + 1)];
+                    var tangent = frame.Surface(new Vector2(after[0], after[1])) - frame.Surface(new Vector2(before[0], before[1]));
+                    if (tangent.sqrMagnitude < 1e-12f) tangent = frame.UpAt(uv);
+                    var normal = Vector3.Cross(frame.UpAt(uv), frame.RightAt(uv)).normalized;
+                    var side = Vector3.Cross(normal, tangent).normalized * halfWidth;
+                    vertices.Add(OnPaper(frame.Project(p - side), lift));
+                    vertices.Add(OnPaper(frame.Project(p + side), lift));
+                    if (i > 0) AddQuad(triangles, first + (i - 1) * 2);
+                }
+            }
+            mesh.Clear(); mesh.SetVertices(vertices); mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            // Explicitly notify the PolySpatial renderer after each live mesh update.
+            PolySpatialObjectUtils.MarkDirty(renderer);
+        }
+        static void AddQuad(List<int> triangles, int a)
+        {
+            triangles.Add(a); triangles.Add(a + 1); triangles.Add(a + 2);
+            triangles.Add(a + 1); triangles.Add(a + 3); triangles.Add(a + 2);
+        }
+        void OnDestroy()
+        {
+            foreach (var material in owned) BubblePlayVisuals.Release(material);
+            foreach (var mesh in meshes) BubblePlayVisuals.Release(mesh);
+        }
     }
-   }
-   mesh.Clear();mesh.SetVertices(verts);mesh.subMeshCount=2;mesh.SetTriangles(triangles[0],0);mesh.SetTriangles(triangles[1],1);mesh.RecalculateBounds();
-  }
-  void OnDestroy(){foreach(var m in owned)BubblePlayVisuals.Release(m);foreach(var m in meshes)BubblePlayVisuals.Release(m);}
- }
 }

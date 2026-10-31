@@ -23,7 +23,7 @@ namespace Moodium.NatureWorld
   public bool HasInk=>WishChimeStore.CanRelease(strokes);
   public bool IsWriting=>State==Stage.Writing;
   WishChimeGarden garden;WishPaperFrame frame;WishInkMesh ink;Camera viewer;BubblePlayHands input;bool candy,lite,fullVisible=true;
-  readonly List<Material> materials=new();List<List<float[]>> strokes=new();List<float[]> current;int total,writer=-1;
+  readonly List<Material> materials=new();List<List<float[]>> strokes=new();List<float[]> current;Vector2? currentTip,displayedTip;int total,writer=-1;
   AudioSource sound,writeSound;GameObject buttons,cursor,model;Vector3 stripScale,stripPosition,flyStripScale,flyStripPosition;Quaternion baseRotation,lastRotation;float lastAction,ringAt,patAt,shakeAt;bool b5,b8,clearing,grabbing,saving;
   readonly float[] liftAt={-1,-1},liftY=new float[2];readonly bool[] wasOpen=new bool[2];
   public void Initialize(WishChimeGarden owner,WishChimeRecord record,bool minimal=false)
@@ -31,11 +31,12 @@ namespace Moodium.NatureWorld
    garden=owner;Record=record;candy=owner.Candy;viewer=owner.Viewer;input=owner.Hands;lite=minimal;
    var path="MoodiumBubblePlay/";frame=Resources.Load<WishPaperFrame>(path+"PaperFrame_"+(candy?"Candy":"Nature"));
    sound=gameObject.AddComponent<AudioSource>();sound.playOnAwake=false;sound.spatialBlend=1;sound.volume=.25f;
-   if(minimal){model=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(model.GetComponent<Collider>());model.transform.SetParent(transform,false);model.transform.localScale=Vector3.one*.008f;model.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FFE7B0":"#D9FF8A");State=Stage.Hanging;return;}
+   if(minimal){model=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(model.GetComponent<Collider>());model.transform.SetParent(transform,false);model.transform.localScale=Vector3.one*.008f;model.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FFE7B0":"#D9FF8A");Moodium.UI.UIRefreshVisuals.Register(transform,model,WishInkMesh.PaperOrder);State=Stage.Hanging;return;}
    model=Instantiate(Resources.Load<GameObject>(path+"WishChime_"+(candy?"Candy":"Nature")),transform);
    foreach(var t in model.GetComponentsInChildren<Transform>(true))
    {
     if(t.name=="Bell")bell=t;if(t.name=="Strip")Strip=t;var r=t.GetComponent<Renderer>();if(r==null)continue;
+    Moodium.UI.UIRefreshVisuals.Register(transform,r.gameObject,WishInkMesh.PaperOrder);
     r.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
     r.sharedMaterial=t.name=="Bell"?Mat(candy?"#FFB3D1":"#E8FFF3",candy?.35f:.25f):t.name=="Glow"?Mat(candy?"#FFE7B0":"#D9FF8A"):t.name=="Clapper"?Mat("#FFFFFF",.6f):t.name=="Strip"?Mat(candy?"#FFE6F0":"#C9A574"):t.name.StartsWith("Deco_")||t.name=="Leaf_Deco"?Mat(candy?"#FFB3D1":"#6FCF8E"):Mat(candy?"#E98FB5":"#7A5A3A");
    }
@@ -61,7 +62,7 @@ namespace Moodium.NatureWorld
    }
    if(lite)return;
    if(model!=null)model.SetActive(full);if(ink!=null)ink.Show(full);
-   if(lodGlow==null&&!full){lodGlow=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(lodGlow.GetComponent<Collider>());lodGlow.transform.SetParent(transform,false);lodGlow.transform.localScale=Vector3.one*.008f;lodGlow.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FFE7B0":"#D9FF8A");}
+   if(lodGlow==null&&!full){lodGlow=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(lodGlow.GetComponent<Collider>());lodGlow.transform.SetParent(transform,false);lodGlow.transform.localScale=Vector3.one*.008f;lodGlow.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FFE7B0":"#D9FF8A");Moodium.UI.UIRefreshVisuals.Register(transform,lodGlow,WishInkMesh.PaperOrder);}
    if(lodGlow!=null)lodGlow.SetActive(!full);
   }
   Material Mat(string color,float alpha=1){var m=BubblePlayVisuals.Material(color,alpha);materials.Add(m);return m;}
@@ -84,7 +85,7 @@ namespace Moodium.NatureWorld
    var attachment=Strip.TransformPoint(frame.Surface(new Vector2(.5f,1)));Strip.localScale=stripScale*2.5f;Strip.position+=attachment-Strip.TransformPoint(frame.Surface(new Vector2(.5f,1)));
    AlignWriting();
    lastAction=Time.time;lastRotation=transform.rotation;garden.TeachWriting();
-   cursor=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(cursor.GetComponent<Collider>());cursor.name="Ink Cursor";cursor.transform.SetParent(transform,false);cursor.transform.localScale=Vector3.one*.004f;cursor.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FF78B4":"#FFE98C");cursor.SetActive(false);
+   cursor=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(cursor.GetComponent<Collider>());cursor.name="Ink Cursor";cursor.transform.SetParent(transform,false);cursor.transform.localScale=Vector3.one*.004f;cursor.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FF78B4":"#FFE98C");Moodium.UI.UIRefreshVisuals.Register(transform,cursor,WishInkMesh.InkOrder+1);cursor.SetActive(false);
    buttons=new GameObject("Wish Actions");buttons.transform.SetParent(transform,false);
    bool en=Moodium.Characters.MoodiVoice.LanguageCode=="en";
    rewriteButton=AddAction("Rewrite",WishActionButton.Prefix(false,candy,en),-WishActionButton.Offset,Rewrite);
@@ -132,9 +133,12 @@ namespace Moodium.NatureWorld
     {
      if(current==null){current=new List<float[]>();writer=hand;lastWriter=hand;}
      var previous=current.Count>0?new Vector2(current[^1][0],current[^1][1]):uv;
-     if(WishChimeStore.AddPoint(current,uv,2.5f)){total++;lastAction=Time.time;speed=Vector2.Scale(uv-previous,new Vector2(.085f,.275f)).magnitude/Mathf.Max(.001f,Time.deltaTime);ink.Active(current);}
+     bool sampled=WishChimeStore.AddPoint(current,uv,2.5f);
+     if(sampled){total++;lastAction=Time.time;speed=Vector2.Scale(uv-previous,new Vector2(.085f,.275f)).magnitude/Mathf.Max(.001f,Time.deltaTime);}
+     if(sampled||!displayedTip.HasValue||(uv-displayedTip.Value).sqrMagnitude>.00000025f){ink.Active(current,uv);displayedTip=uv;}
+     currentTip=uv;
      drew=true;
-     if(current.Count>=75){var last=current[^1];FinishStroke();if(total<4000){current=new List<float[]>{last};total++;writer=hand;}}
+     if(current.Count>=74){var last=currentTip.HasValue?new[]{currentTip.Value.x,currentTip.Value.y}:current[^1];FinishStroke();if(total<4000){current=new List<float[]>{last};total++;writer=hand;ink.Active(current);}}
     }
     if(HasInk&&Vector3.Dot(h.Up,Vector3.up)>.6f)
     {
@@ -152,7 +156,7 @@ namespace Moodium.NatureWorld
    if(drew&&speed>.001f){if(!writeSound.isPlaying)writeSound.Play();writeSound.volume=Mathf.Clamp(speed*2,0,.35f);}else writeSound.volume=0;
    if(HasInk&&!b5&&Time.time-lastAction>=3){b5=true;garden.Say("B5");}
   }
-  void FinishStroke(){if(current==null)return;if(current.Count>=2)strokes.Add(current);else total-=current.Count;current=null;writer=-1;ink.Active(null);ink.Completed(strokes);lastStrokeEnd=Time.time;}
+  void FinishStroke(){if(current==null)return;if(currentTip.HasValue&&current.Count>0&&current.Count<75&&total<4000){var last=current[^1];var lastUV=new Vector2(last[0],last[1]);if(Vector3.Distance(Strip.TransformPoint(frame.Surface(lastUV)),Strip.TransformPoint(frame.Surface(currentTip.Value)))>.0002f){current.Add(new[]{currentTip.Value.x,currentTip.Value.y});total++;}}currentTip=displayedTip=null;if(current.Count>=2)strokes.Add(current);else total-=current.Count;current=null;writer=-1;ink.Active(null);ink.Completed(strokes);lastStrokeEnd=Time.time;}
   public void Rewrite(){if(State!=Stage.Writing||clearing||saving)return;FinishStroke();if(!b8){b8=true;garden.Say("B8");}StartCoroutine(Erase());}
   IEnumerator Erase(){clearing=true;for(float t=0;t<.5f;t+=Time.deltaTime){ink.Alpha(1-t/.5f);yield return null;}strokes.Clear();total=0;ink.Completed(strokes);ink.Active(null);ink.Alpha(1);clearing=false;lastAction=Time.time;}
   public void ReleaseWish()
