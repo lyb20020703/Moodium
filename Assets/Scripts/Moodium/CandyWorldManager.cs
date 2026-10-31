@@ -36,6 +36,7 @@ namespace Moodium.CandyWorld
         WorldJourneyDirector m_Journey;
         RoomContentVisibility m_RoomVisibility;
         BubbleRingController m_Rings;
+        BubbleWorldNarrator m_Narrator;
         [SerializeField] bool m_SqueezeBreath = true;
         bool m_FirstReveal, m_BreathTaught, m_BubbleEntryScheduled;
         bool m_ReopenBubbleEntry;
@@ -115,7 +116,8 @@ namespace Moodium.CandyWorld
                     var held = false;
                     foreach (var heldCapsule in FindObjectsByType<ChocolateCapsuleInteraction>(FindObjectsSortMode.None)) held |= heldCapsule.IsPinched;
                     m_BubbleWorld.SetBreath(m_SqueezeBreath && held ? 1f : 0f);
-                    if (m_SqueezeBreath && held && !m_BreathTaught) { m_BreathTaught = true; m_WalkTrailGuide?.Say("F4"); }
+                    // Breath tip waits until Moodi's world intro has finished (the intro already invites slow breathing).
+                    if (m_SqueezeBreath && held && !m_BreathTaught && (m_Narrator == null || !m_Narrator.IsSpeaking)) { m_BreathTaught = true; m_WalkTrailGuide?.Say("F4"); }
                 }
             }
             if (m_Journey != null && !m_Journey.CanGrowInRoom) return;
@@ -365,6 +367,9 @@ namespace Moodium.CandyWorld
             m_BubbleWorld.Left += OnBubbleLeft;
             m_BubbleWorld.Revealed += OnBubbleRevealed;
             m_BubbleWorld.Wandered += OnBubbleWandered;
+            m_BubbleWorld.LayerRevealed += OnBubbleLayerRevealed;
+            m_Narrator = GetComponent<BubbleWorldNarrator>() ?? gameObject.AddComponent<BubbleWorldNarrator>();
+            m_Narrator.ResetSession();
             m_FirstReveal = m_BreathTaught = m_StayReminder = false; m_BubbleEntryScheduled = false; m_ReopenBubbleEntry = false; m_RevealedAt = -1f;
             m_Energy.ResetEnergy();
             m_SqueezeModes=GetComponent<SqueezeModeController>()??gameObject.AddComponent<SqueezeModeController>();
@@ -398,7 +403,8 @@ namespace Moodium.CandyWorld
 
         public void StopExperience()
         {
-            if (m_BubbleWorld != null) { m_BubbleWorld.Touched -= OnBubbleTouched; m_BubbleWorld.Left -= OnBubbleLeft; m_BubbleWorld.Revealed -= OnBubbleRevealed; m_BubbleWorld.Wandered -= OnBubbleWandered; }
+            if (m_BubbleWorld != null) { m_BubbleWorld.Touched -= OnBubbleTouched; m_BubbleWorld.Left -= OnBubbleLeft; m_BubbleWorld.Revealed -= OnBubbleRevealed; m_BubbleWorld.Wandered -= OnBubbleWandered; m_BubbleWorld.LayerRevealed -= OnBubbleLayerRevealed; }
+            m_Narrator?.Stop();
             if (m_WalkTrailGuide != null) { m_WalkTrailGuide.WalkInvited -= OnWalkInvited; m_WalkTrailGuide.GardenDiscovered -= OnGardenDiscovered; if (m_Rings != null) m_WalkTrailGuide.StepRecorded -= m_Rings.RecordStep; }
             if (m_Rings != null) { m_Rings.FirstRingShown -= OnFirstRing; m_Rings.HintRequested -= OnRingHint; m_Rings.StopAndClear(); }
             m_RoomVisibility?.Clear(); m_Journey?.End();
@@ -870,10 +876,18 @@ namespace Moodium.CandyWorld
             m_RevealedAt = Time.time;
             if (!m_FirstReveal) { m_FirstReveal = true; StartCoroutine(BubbleWelcome()); }
         }
-        System.Collections.IEnumerator BubbleWelcome() { yield return new WaitForSeconds(1.5f); if (m_Running && m_Journey.Stage == WorldJourneyStage.Bubble) m_WalkTrailGuide?.Say("F3"); }
-        void OnBubbleWandered() => m_WalkTrailGuide?.Say("F5");
+        // Moodi introduces each layer as it opens (W1*/W2*); F3 follows once the first intro has finished.
+        void OnBubbleLayerRevealed(string folder) { if (m_Running) m_Narrator?.PlayIntro(folder); }
+        System.Collections.IEnumerator BubbleWelcome()
+        {
+            yield return new WaitForSeconds(1.5f);
+            while (m_Narrator != null && m_Narrator.IsSpeaking) yield return null;
+            if (m_Running && m_Journey.Stage == WorldJourneyStage.Bubble) m_WalkTrailGuide?.Say("F3");
+        }
+        void OnBubbleWandered() { m_Narrator?.Stop(); m_WalkTrailGuide?.Say("F5"); }
         void OnBubbleLeft(LeaveTarget target)
         {
+            m_Narrator?.Stop();
             if (!m_Running) return;
             if (target == LeaveTarget.Exit) { m_Journey.End(); m_ExitAction?.Invoke(); return; }
             // Returning to the room keeps the same small-bubble entry available.

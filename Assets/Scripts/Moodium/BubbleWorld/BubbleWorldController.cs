@@ -101,6 +101,9 @@ namespace Moodium.NatureWorld
         public event Action Appeared;
         public event Action Touched;
         public event Action Revealed;
+        /// <summary>A layer finished opening around the viewer, with that layer's folder. Fires for the first
+        /// layer and (forwarded) for the nested one, unlike Revealed which the nested layer keeps to itself.</summary>
+        public event Action<string> LayerRevealed;
 
         public Phase CurrentPhase => m_Phase;
 
@@ -658,6 +661,7 @@ namespace Moodium.NatureWorld
                 if (m_Motion != null) m_Motion.SetStage(BubbleSplatMotion.Stage.HandingOff);
             };
             m_Nested.Revealed += () => { ClearVisuals(); m_Phase = Phase.HandingOff; };
+            m_Nested.LayerRevealed += folder => LayerRevealed?.Invoke(folder);
         }
 
         public void ShowPortal(Vector3 position, float radius)
@@ -873,6 +877,7 @@ namespace Moodium.NatureWorld
             if (m_Home != null) { Destroy(m_Home); m_Home = null; }
             m_Routine = null;
             Revealed?.Invoke();
+            LayerRevealed?.Invoke(m_Folder);
             PrepareNested();
         }
 
