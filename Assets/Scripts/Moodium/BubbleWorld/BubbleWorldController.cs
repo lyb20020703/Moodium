@@ -120,6 +120,16 @@ namespace Moodium.NatureWorld
         // The next-layer bubble and the exit bubble appear right where the viewer's finger just touched to enter.
         // A touch only counts once the fingertip has been away from them, so a resting hand never triggers them.
         bool m_PortalArmed, m_HomeArmed;
+        bool m_Parked,m_PortalLocked;Vector3 m_ParkTarget;float m_UnlockAt=-10f,m_PortalUnlockAt=-10f,m_GuardScale=1,m_GuardAlpha=1,m_FollowScale=1,m_FollowAlpha=1;
+        BubbleHoldGate m_HomeHold,m_Hold;BubbleHoldRing m_HomeHoldRing,m_PortalHoldRing;
+        bool ChimeLocked=>m_Play!=null&&m_Play.ChimeFocus;
+        bool PortalLocked=>m_PortalLocked||(transform.parent!=null&&transform.parent.TryGetComponent<BubbleWorldController>(out var outer)&&outer.ChimeLocked);
+        public static bool TouchAfterGrace(bool touching,float now,float unlockAt,ref bool armed)
+        {
+            if(now-unlockAt<ChimeFocus.UnlockGraceSeconds){armed=false;return false;}
+            if(!armed){armed=!touching;return false;}return touching;
+        }
+
 
         // Scene objects
         GameObject m_Root;          // bubble centre; the scan centre (eye point) sits here
@@ -295,6 +305,10 @@ namespace Moodium.NatureWorld
         void ClearVisuals()
         {
             m_ExitingHandoff = false;
+            m_Parked=m_PortalLocked=false;m_GuardScale=m_GuardAlpha=m_FollowScale=m_FollowAlpha=1;m_UnlockAt=m_PortalUnlockAt=-10;
+            m_HomeHold.Reset();m_Hold.Reset();
+            if(m_HomeHoldRing!=null)Destroy(m_HomeHoldRing.gameObject);if(m_PortalHoldRing!=null)Destroy(m_PortalHoldRing.gameObject);
+            m_HomeHoldRing=m_PortalHoldRing=null;
             m_Play=null;
             m_Motion = null;
             if (m_Routine != null) StopCoroutine(m_Routine);
@@ -513,8 +527,13 @@ namespace Moodium.NatureWorld
             {
                 m_WorldRoot.Rotate(Vector3.up, m_SpinDegreesPerSecond * Time.deltaTime, Space.Self);
                 var touchingPortal = FingertipTouching(m_Root.transform.position, m_Radius);
-                if (!m_PortalArmed) m_PortalArmed = !touchingPortal;
-                else if (touchingPortal) EnterFromPortal();
+                if(PortalLocked)
+                {
+                    if(m_Hold.Update(touchingPortal,Time.deltaTime)){Debug.Log("[Bubble Play] locked bubble hold 0.60s → enter");EnterFromPortal(true);}
+                    UpdateHoldRing(false,m_Phase==Phase.Portal?m_Hold.Progress:0);return;
+                }
+                m_Hold.Reset();UpdateHoldRing(false,0);
+                if(TouchAfterGrace(touchingPortal,Time.time,m_PortalUnlockAt,ref m_PortalArmed))EnterFromPortal();
                 return;
             }
             if (m_Phase == Phase.HandingOff)
@@ -549,8 +568,8 @@ namespace Moodium.NatureWorld
                     m_HomeTarget = PortalPosition(viewer);
                     m_Nested.ShowPortal(m_HomeTarget, .08f);
                 }
-                if (Vector3.Angle(viewer.transform.forward, m_HomeTarget - viewer.transform.position) > 60f)
-                    m_HomeTarget = PortalPosition(viewer);
+                bool focus=UpdateFollowTarget(viewer);
+                m_Nested.SetPortalGuard(focus,focus?ChimeFocus.ParkScale:1,focus?ChimeFocus.ParkAlpha:1);
                 m_Nested.SetPortalTarget(m_HomeTarget);
                 return;
             }
@@ -561,18 +580,28 @@ namespace Moodium.NatureWorld
                 if (m_HomeMaterial == null) m_HomeMaterial = new Material(m_MembraneMaterial);
                 BubbleWorldData.SetAlpha(m_HomeMaterial, m_MembraneAlpha);
                 m_Home.GetComponent<Renderer>().sharedMaterial = m_HomeMaterial;
-                m_Home.AddComponent<MoodiumSpatialButton>().Configure(null, null, RequestHome);
+                if(m_WorldSorting!=null)m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting{Renderer=m_Home,Order=3,ApplyToDescendants=false});
+                m_Home.AddComponent<MoodiumSpatialButton>().Configure(null, null, () => RequestHome());
                 m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
                 m_Home.transform.position = m_HomeTarget;
                 m_HomeArmed = false;
             }
             m_Home.SetActive(true);
-            if (Vector3.Angle(viewer.transform.forward, m_HomeTarget - viewer.transform.position) > 60f)
-                m_HomeTarget = viewer.transform.position + Quaternion.Euler(0, GazeYaw(viewer.transform.forward), 0) * Vector3.forward * .6f - Vector3.up * .25f;
-            m_Home.transform.position = Vector3.Lerp(m_Home.transform.position, m_HomeTarget, 1f - Mathf.Exp(-Time.deltaTime * 5f));
-            var touchingHome = FingertipTouching(m_Home.transform.position, .08f);
-            if (!m_HomeArmed) m_HomeArmed = !touchingHome;
-            else if (touchingHome) RequestHome();
+            bool locked=UpdateFollowTarget(viewer);
+            float blend=FollowBlend(locked);
+            m_FollowScale=Mathf.Lerp(m_FollowScale,locked?ChimeFocus.ParkScale:1,blend);m_FollowAlpha=Mathf.Lerp(m_FollowAlpha,locked?ChimeFocus.ParkAlpha:1,blend);
+            m_Home.transform.localScale=Moodium.Flow.StickerWorldSelectionController.GetCompensatedLocalScale(.16f*m_FollowScale,m_Home.transform.parent.lossyScale);
+            BubbleWorldData.SetAlpha(m_HomeMaterial,m_MembraneAlpha*m_FollowAlpha);
+            m_Home.GetComponent<Collider>().enabled=!locked;
+            m_Home.transform.position=Vector3.Lerp(m_Home.transform.position,m_HomeTarget,blend);
+            bool touchingHome=FingertipTouching(m_Home.transform.position,.08f*m_FollowScale);
+            if(locked)
+            {
+                if(m_HomeHold.Update(touchingHome,Time.deltaTime)){Debug.Log("[Bubble Play] locked bubble hold 0.60s → home");RequestHome(true);}
+                UpdateHoldRing(true,m_Phase==Phase.Inside?m_HomeHold.Progress:0);return;
+            }
+            m_HomeHold.Reset();UpdateHoldRing(true,0);
+            if(TouchAfterGrace(touchingHome,Time.time,m_UnlockAt,ref m_HomeArmed))RequestHome();
         }
 
         public static float SkyScaleForBreath(float breathScale) => SkyMaxRadius / Mathf.Max(.001f, breathScale);
@@ -624,11 +653,48 @@ namespace Moodium.NatureWorld
 #endif
 #endif
         }
-        void RequestHome()
+        void RequestHome(bool force=false)
         {
+            if(ChimeLocked&&!force)return;
+            if(!force&&Time.time-m_UnlockAt<ChimeFocus.UnlockGraceSeconds)return;
             if (m_Phase != Phase.Inside) return;
             HomeRequested?.Invoke();
             Leave(LeaveTarget.Room);
+        }
+
+        static float FollowBlend(bool locked)=>1f-Mathf.Exp(-Time.deltaTime*4.6f/(locked?ChimeFocus.SlideSeconds:ChimeFocus.ReturnSeconds));
+        bool UpdateFollowTarget(Camera viewer)
+        {
+            bool focus=ChimeLocked;var eye=viewer.transform.position;
+            if(focus)
+            {
+                if(!m_Parked||Vector3.Angle(viewer.transform.forward,m_ParkTarget-eye)>ChimeFocus.ReparkAngle)
+                {m_ParkTarget=ChimeFocus.ParkPosition(eye,GazeYaw(viewer.transform.forward),m_Play.WriterHand);Debug.Log($"[Bubble Play] follow bubble parked at yaw={(m_Play.WriterHand==0?50:-50)} locked");}
+                m_Parked=true;m_HomeTarget=m_ParkTarget;
+            }
+            else
+            {
+                if(m_Parked){m_Parked=false;m_UnlockAt=Time.time;m_HomeArmed=false;m_HomeTarget=PortalPosition(viewer);}
+                if(Vector3.Angle(viewer.transform.forward,m_HomeTarget-eye)>60)m_HomeTarget=PortalPosition(viewer);
+            }
+            if(m_Play!=null&&m_Play.TryChimeKeepOut(out var keep))m_HomeTarget=ChimeFocus.AvoidKeepOut(eye,m_HomeTarget,keep,ChimeFocus.KeepOutRadius,.08f*(focus?ChimeFocus.ParkScale:1));
+            return focus;
+        }
+        public void SetPortalGuard(bool locked,float scale,float alpha)
+        {
+            if(m_PortalLocked&&!locked){m_PortalUnlockAt=Time.time;m_PortalArmed=false;m_Hold.Reset();}
+            m_PortalLocked=locked;m_GuardScale=scale;m_GuardAlpha=alpha;
+            if(m_Phase!=Phase.Portal)return;
+            float blend=FollowBlend(locked);m_FollowScale=Mathf.Lerp(m_FollowScale,m_GuardScale,blend);m_FollowAlpha=Mathf.Lerp(m_FollowAlpha,m_GuardAlpha,blend);
+            SetRadius(.08f*m_FollowScale);BubbleWorldData.SetAlpha(m_MembraneMaterial,m_MembraneAlpha*m_FollowAlpha);
+            if(m_MembraneCollider!=null)m_MembraneCollider.enabled=!locked;
+        }
+        void UpdateHoldRing(bool home,float progress)
+        {
+            var viewer=ResolveViewer();var centre=home?m_Home:m_Root;if(centre==null)return;
+            var ring=home?m_HomeHoldRing:m_PortalHoldRing;
+            if(ring==null&&progress>0){ring=BubbleHoldRing.Create(transform,BubbleWorldData.IsCandy(m_Folder),m_WorldSorting);if(home)m_HomeHoldRing=ring;else m_PortalHoldRing=ring;}
+            if(ring!=null)ring.Show(progress,centre.transform.position,home?.08f*m_FollowScale:m_Radius,viewer);
         }
 
         static Vector3 PortalPosition(Camera viewer) => viewer.transform.position +
@@ -680,12 +746,15 @@ namespace Moodium.NatureWorld
         public void SetPortalTarget(Vector3 position)
         {
             if (m_Phase == Phase.Portal)
-                m_Root.transform.position = Vector3.Lerp(m_Root.transform.position, position, 1f - Mathf.Exp(-Time.deltaTime * 5f));
+                m_Root.transform.position = Vector3.Lerp(m_Root.transform.position, position, FollowBlend(m_PortalLocked));
         }
 
-        public void EnterFromPortal()
+        public void EnterFromPortal(bool force=false)
         {
+            if(PortalLocked&&!force)return;
+            if(!force&&Time.time-m_PortalUnlockAt<ChimeFocus.UnlockGraceSeconds)return;
             if (m_Phase != Phase.Portal) return;
+            UpdateHoldRing(false,0);
             m_FromPortal = true;
             var outer = transform.parent != null ? transform.parent.GetComponent<BubbleWorldController>() : null;
             if (outer != null) m_From = outer.m_OuterEntryFrom;
@@ -1018,6 +1087,7 @@ namespace Moodium.NatureWorld
             var hover = membrane.AddComponent<VisionOSHoverEffect>();
             hover.Type = VisionOSHoverEffect.EffectType.Highlight;
             hover.Color = new Color(.85f, 1f, .9f, 1f);
+            if(m_WorldSorting!=null)m_WorldSorting.Renderers.Add(new VisionOSSortingGroup.RendererSorting{Renderer=membrane,Order=3,ApplyToDescendants=false});
             m_Membrane = membrane.transform;
             m_MembraneCollider = membrane.GetComponent<Collider>();
             m_Audio = m_Root.AddComponent<AudioSource>();

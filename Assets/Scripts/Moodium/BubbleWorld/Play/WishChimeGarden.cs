@@ -8,12 +8,15 @@ using Unity.PolySpatial;
 using UnityEngine;
 namespace Moodium.NatureWorld
 {
+ [DefaultExecutionOrder(-10)]
  public sealed class WishChimeGarden : MonoBehaviour
  {
   static readonly ProfilerMarker s_Profile=new("BubblePlay.WishChimeGarden");
 
   public BubblePlayHands Hands{get;private set;}public Camera Viewer{get;private set;}public bool Candy=>BubbleWorldData.IsCandy(Folder);public string Folder{get;private set;}public int Layer=>Folder==BubbleWorldData.CandyFolder||Folder==BubbleWorldData.NatureFolder?0:1;
   public TMP_FontAsset ChineseFont{get;private set;}public WishChime Writing{get;set;}
+  public bool FocusActive{get;private set;}public int WriterHand{get;private set;}=-1;float focusUntil;
+  public bool TryKeepOut(out Vector3 centre){if(Writing!=null&&Writing.Strip!=null){centre=Writing.StripCentre;return true;}if(blank!=null&&blank.State==WishChime.Stage.Blank){centre=blank.transform.position;return true;}centre=default;return false;}
   public bool IsWriting=>Writing!=null;
   Transform scan;BubbleWorldNarrator narrator;WishChimeDocument document;readonly List<WishChime> chimes=new();WishChime blank;
   float introEnded=-1,nextBlank,nextLod;Vector3 previousHead;bool running,taught,b7,restoring,hadSaved;
@@ -27,7 +30,7 @@ namespace Moodium.NatureWorld
   {
    running=true;hadSaved=false;introEnded=-1;nextBlank=float.PositiveInfinity;previousHead=Viewer.transform.position;StartCoroutine(LoadSaved());
   }
-  public void Leave(){StopAllCoroutines();running=false;Writing=null;blank=null;foreach(var c in chimes)if(c!=null)BubblePlayVisuals.Release(c.gameObject);chimes.Clear();}
+  public void Leave(){StopAllCoroutines();FocusActive=false;WriterHand=-1;focusUntil=0;running=false;Writing=null;blank=null;foreach(var c in chimes)if(c!=null)BubblePlayVisuals.Release(c.gameObject);chimes.Clear();}
   IEnumerator LoadSaved()
   {
    restoring=true;var path=WishChimeStore.DefaultPath;var task=Task.Run(()=>WishChimeStore.Load(path));
@@ -56,6 +59,13 @@ namespace Moodium.NatureWorld
    if(introEnded>=0&&!restoring&&hadSaved&&!b7){b7=true;Say("B7");}
    if(!restoring&&blank==null&&!IsWriting&&introEnded>=0&&Time.time>=nextBlank&&speed<.15f){blank=Create(null);Say("B3");}
    if(Time.time>=nextLod){nextLod=Time.time+2;UpdateNearest();}
+   bool flying=chimes.Exists(c=>c!=null&&c.State==WishChime.Stage.Flying);float nearest=float.PositiveInfinity;int nearHand=-1;
+   if(blank!=null&&blank.State==WishChime.Stage.Blank)for(int i=0;i<2;i++){var h=Hands.Hands[i];if(h.Valid&&blank.Near(h.Tip,ChimeFocus.HandNearChime)){nearest=0;nearHand=i;}}
+   if(Writing!=null&&Writing.LastWriter>=0)WriterHand=Writing.LastWriter;else if(nearHand>=0)WriterHand=nearHand;
+   bool raw=ChimeFocus.RawFocus(Writing!=null,flying,blank!=null,nearest);focusUntil=ChimeFocus.NextFocusUntil(raw,Time.time,focusUntil);
+   bool focus=ChimeFocus.Active(raw,Time.time,focusUntil);
+   if(focus!=FocusActive)Debug.Log(focus?$"[Bubble Play] chime focus on ({(Writing!=null?"writing":flying?"flying":"reach")}) writer={(WriterHand==0?"L":WriterHand==1?"R":"?")}":"[Bubble Play] chime focus off, bubble returning (grace 0.8s)");
+   FocusActive=focus;
   }
   void UpdateNearest()
   {

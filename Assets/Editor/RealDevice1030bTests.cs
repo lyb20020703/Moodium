@@ -37,8 +37,13 @@ public sealed class RealDevice1030bTests
         var source = Source("Scripts/Moodium/BubbleWorld/BubbleWorldController.cs");
         StringAssert.DoesNotContain("Time.time - m_InsideAt < 10f", source);
         StringAssert.Contains("float m_NextBubbleDelaySeconds = 0f", source);
-        StringAssert.Contains("if (!m_PortalArmed) m_PortalArmed = !touchingPortal;", source);
-        StringAssert.Contains("if (!m_HomeArmed) m_HomeArmed = !touchingHome;", source);
+        // The shared gate now also handles the chime-focus unlock grace period.
+        bool armed = false;
+        Assert.That(Moodium.NatureWorld.BubbleWorldController.TouchAfterGrace(true, 100f, -10f, ref armed), Is.False);
+        Assert.That(Moodium.NatureWorld.BubbleWorldController.TouchAfterGrace(false, 100f, -10f, ref armed), Is.False);
+        Assert.That(Moodium.NatureWorld.BubbleWorldController.TouchAfterGrace(true, 100f, -10f, ref armed), Is.True);
+        StringAssert.Contains("TouchAfterGrace(touchingPortal,Time.time,m_PortalUnlockAt,ref m_PortalArmed)", source);
+        StringAssert.Contains("TouchAfterGrace(touchingHome,Time.time,m_UnlockAt,ref m_HomeArmed)", source);
         StringAssert.Contains("if (m_PrepareNestedEarly) PrepareNested();", source);
     }
 

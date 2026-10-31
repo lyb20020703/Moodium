@@ -12,6 +12,9 @@ namespace Moodium.NatureWorld
 
   public readonly BubblePlayHands Hands=new();
   WishChimeGarden garden;
+  public bool ChimeFocus=>active&&garden!=null&&(garden.FocusActive||garden.IsWriting);
+  public int WriterHand=>garden!=null?garden.WriterHand:-1;
+  public bool TryChimeKeepOut(out Vector3 centre){centre=default;return active&&garden!=null&&garden.TryKeepOut(out centre);}
   BubbleLightRipple ripple;BubbleCatchFall catchFall;BubbleWorldNarrator narrator;
   Func<Vector3,bool> blocked;string folder;bool active;float metricAt,worst,sum;int frames;
   public void Initialize(string world,Transform scan,Camera viewer,IList<GameObject> layers,float[] radii,Material material,Action<float> sparkle,Func<Vector3,bool> exclusion)

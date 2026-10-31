@@ -15,10 +15,15 @@ namespace Moodium.NatureWorld
   public Stage State{get;private set;}public WishChimeRecord Record{get;private set;}
   public Transform Strip{get;private set;}
   Transform bell;
+  WishActionButton rewriteButton,releaseButton;float lastStrokeEnd=-10f;int lastWriter=-1;
+  public int LastWriter=>lastWriter;
+  public Vector3 StripCentre=>Strip.TransformPoint(frame.Surface(Vector2.one*.5f));
+  public static bool ActionBlocked(bool stroke,float now,float ended,bool erase,bool persist)=>stroke||now-ended<.35f||erase||persist;
+  bool PressBlocked()=>ActionBlocked(current!=null,Time.time,lastStrokeEnd,clearing,saving);
   public bool HasInk=>WishChimeStore.CanRelease(strokes);
   public bool IsWriting=>State==Stage.Writing;
   WishChimeGarden garden;WishPaperFrame frame;WishInkMesh ink;Camera viewer;BubblePlayHands input;bool candy,lite,fullVisible=true;
-  readonly List<Mesh> ownedMeshes=new();readonly List<Material> materials=new();List<List<float[]>> strokes=new();List<float[]> current;int total,writer=-1;
+  readonly List<Material> materials=new();List<List<float[]>> strokes=new();List<float[]> current;int total,writer=-1;
   AudioSource sound,writeSound;GameObject buttons,cursor,model;Vector3 stripScale,stripPosition,flyStripScale,flyStripPosition;Quaternion baseRotation,lastRotation;float lastAction,ringAt,patAt,shakeAt;bool b5,b8,clearing,grabbing,saving;
   readonly float[] liftAt={-1,-1},liftY=new float[2];readonly bool[] wasOpen=new bool[2];
   public void Initialize(WishChimeGarden owner,WishChimeRecord record,bool minimal=false)
@@ -81,8 +86,10 @@ namespace Moodium.NatureWorld
    lastAction=Time.time;lastRotation=transform.rotation;garden.TeachWriting();
    cursor=GameObject.CreatePrimitive(PrimitiveType.Sphere);BubblePlayVisuals.Release(cursor.GetComponent<Collider>());cursor.name="Ink Cursor";cursor.transform.SetParent(transform,false);cursor.transform.localScale=Vector3.one*.004f;cursor.GetComponent<Renderer>().sharedMaterial=Mat(candy?"#FF78B4":"#FFE98C");cursor.SetActive(false);
    buttons=new GameObject("Wish Actions");buttons.transform.SetParent(transform,false);
-   Button("Rewrite",Moodium.Characters.MoodiVoice.LanguageCode=="en"?"Rewrite":"重写",-.1f,Rewrite);
-   Button("Release",Moodium.Characters.MoodiVoice.LanguageCode=="en"?"Release":"放飞",.1f,ReleaseWish);
+   bool en=Moodium.Characters.MoodiVoice.LanguageCode=="en";
+   rewriteButton=AddAction("Rewrite",WishActionButton.Prefix(false,candy,en),-WishActionButton.Offset,Rewrite);
+   releaseButton=AddAction("Release",WishActionButton.Prefix(true,candy,en),WishActionButton.Offset,ReleaseWish);
+   rewriteButton.SetInteractable(HasInk);releaseButton.SetInteractable(HasInk);
   }
   void AlignWriting()
   {
@@ -91,16 +98,12 @@ namespace Moodium.NatureWorld
    transform.rotation=Quaternion.LookRotation((viewer.transform.position-target).normalized,viewer.transform.up)*Quaternion.Inverse(basis)*transform.rotation;
    transform.position+=target-Strip.TransformPoint(frame.Surface(Vector2.one*.5f));
   }
-  void Button(string name,string label,float offset,Action action)
+  WishActionButton AddAction(string name,string prefix,float offset,Action action)
   {
-   var b=new GameObject(name);b.transform.SetParent(buttons.transform,false);b.transform.position=Strip.TransformPoint(frame.Surface(Vector2.one*.5f))+viewer.transform.right*offset;b.transform.rotation=Quaternion.LookRotation(viewer.transform.forward,Vector3.up);
-   var plate=new GameObject("Button Plate");plate.transform.SetParent(b.transform,false);plate.transform.localPosition=Vector3.forward*.001f;
-   var mesh=new Mesh{name="Wish action rounded plate"};var vertices=new Vector3[33];var triangles=new int[96];
-   for(int i=0;i<32;i++){float a=i*Mathf.PI*2/32;float x=Mathf.Cos(a),y=Mathf.Sin(a);vertices[i+1]=new Vector3(Mathf.Sign(x)*(.0325f-.008f)+x*.008f,Mathf.Sign(y)*(.016f-.008f)+y*.008f,0);triangles[i*3]=0;triangles[i*3+1]=i+1;triangles[i*3+2]=(i+1)%32+1;}
-   mesh.vertices=vertices;mesh.triangles=triangles;mesh.RecalculateBounds();ownedMeshes.Add(mesh);plate.AddComponent<MeshFilter>().sharedMesh=mesh;plate.AddComponent<MeshRenderer>().sharedMaterial=Mat(candy?"#FFE6F0":"#C9A574");
-   b.AddComponent<BoxCollider>().size=new Vector3(.065f,.035f,.015f);b.AddComponent<MoodiumSpatialButton>().Configure(null,null,action);
-   var font=Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");if(label!="Rewrite"&&label!="Release")font=garden.ChineseFont;
-   var text=Moodium.UI.UIRefreshVisuals.Text(b.transform,"Label",font,16,5);text.text=label;ColorUtility.TryParseHtmlString(candy?"#C93D78":"#3E2A16",out var inkColor);text.color=inkColor;Moodium.MoodCheck.MoodTextMaterial.Apply(text);
+   var holder=new GameObject(name).transform;holder.SetParent(buttons.transform,false);
+   holder.position=StripCentre+viewer.transform.right*offset;holder.rotation=Quaternion.LookRotation(viewer.transform.forward,Vector3.up);
+   Moodium.UI.UIRefreshVisuals.UnitScale(holder);
+   return WishActionButton.Create(holder,name+" Glass",prefix,action,PressBlocked,5);
   }
   void Update()
   {
@@ -117,7 +120,9 @@ namespace Moodium.NatureWorld
     }
     return;
    }
-   if(State!=Stage.Writing||saving)return;
+   if(State!=Stage.Writing)return;
+   releaseButton?.SetInteractable(HasInk);rewriteButton?.SetInteractable(HasInk||current!=null);
+   if(saving)return;
    bool drew=false,visible=false,grabbed=false;float speed=0;
    for(int hand=0;hand<2;hand++)
    {
@@ -125,7 +130,7 @@ namespace Moodium.NatureWorld
     if(bounds&&distance<.06f){visible=true;cursor.transform.position=Strip.TransformPoint(surface+frame.Normal*.0006f);}
     if(!clearing&&h.Pinching&&bounds&&distance<.03f&&total<4000&&(writer<0||writer==hand))
     {
-     if(current==null){current=new List<float[]>();writer=hand;}
+     if(current==null){current=new List<float[]>();writer=hand;lastWriter=hand;}
      var previous=current.Count>0?new Vector2(current[^1][0],current[^1][1]):uv;
      if(WishChimeStore.AddPoint(current,uv,2.5f)){total++;lastAction=Time.time;speed=Vector2.Scale(uv-previous,new Vector2(.085f,.275f)).magnitude/Mathf.Max(.001f,Time.deltaTime);ink.Active(current);}
      drew=true;
@@ -147,7 +152,7 @@ namespace Moodium.NatureWorld
    if(drew&&speed>.001f){if(!writeSound.isPlaying)writeSound.Play();writeSound.volume=Mathf.Clamp(speed*2,0,.35f);}else writeSound.volume=0;
    if(HasInk&&!b5&&Time.time-lastAction>=3){b5=true;garden.Say("B5");}
   }
-  void FinishStroke(){if(current==null)return;if(current.Count>=2)strokes.Add(current);else total-=current.Count;current=null;writer=-1;ink.Active(null);ink.Completed(strokes);}
+  void FinishStroke(){if(current==null)return;if(current.Count>=2)strokes.Add(current);else total-=current.Count;current=null;writer=-1;ink.Active(null);ink.Completed(strokes);lastStrokeEnd=Time.time;}
   public void Rewrite(){if(State!=Stage.Writing||clearing||saving)return;FinishStroke();if(!b8){b8=true;garden.Say("B8");}StartCoroutine(Erase());}
   IEnumerator Erase(){clearing=true;for(float t=0;t<.5f;t+=Time.deltaTime){ink.Alpha(1-t/.5f);yield return null;}strokes.Clear();total=0;ink.Completed(strokes);ink.Active(null);ink.Alpha(1);clearing=false;lastAction=Time.time;}
   public void ReleaseWish()
@@ -172,6 +177,6 @@ namespace Moodium.NatureWorld
   void Ring(){sound.PlayOneShot(BubblePlayVisuals.Clip("chime_ring_"+(candy?"candy_":"nature_")+UnityEngine.Random.Range(0,3)));}
   IEnumerator PatSway(){var q=baseRotation;for(float t=0;t<1.5f;t+=Time.deltaTime){transform.localRotation=q*Quaternion.Euler(Mathf.Sin(t*12)*8*Mathf.Exp(-t*2),0,0);yield return null;}}
   void OnDisable(){if(writeSound!=null)writeSound.Stop();if(sound!=null)sound.Stop();}
-  void OnDestroy(){foreach(var mesh in ownedMeshes)BubblePlayVisuals.Release(mesh);foreach(var m in materials)BubblePlayVisuals.Release(m);}
+  void OnDestroy(){foreach(var m in materials)BubblePlayVisuals.Release(m);}
  }
 }

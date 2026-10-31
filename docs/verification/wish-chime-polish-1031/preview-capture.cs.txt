@@ -1,0 +1,43 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Moodium.NatureWorld;
+public static class WishPolishCapture
+{
+ const BindingFlags Flags=BindingFlags.Instance|BindingFlags.NonPublic;
+ static void Set(object o,string n,object v)=>o.GetType().GetField(n,Flags).SetValue(o,v);
+ static void Shot(PreviewRenderUtility p,string name){p.BeginStaticPreview(new Rect(0,0,1000,1000));p.Render(true);var t=p.EndStaticPreview();File.WriteAllBytes("/tmp/wish-polish-previews/"+name+".png",t.EncodeToPNG());Object.DestroyImmediate(t);}
+ public static void Capture()
+ {
+  ShaderUtil.allowAsyncCompilation=false;Directory.CreateDirectory("/tmp/wish-polish-previews");
+  var folders=new[]{BubbleWorldData.CandyFolder,BubbleWorldData.NestedCandyFolder,BubbleWorldData.NatureFolder,BubbleWorldData.NestedNatureFolder};
+  var names=new[]{"Candy","Candy_Nested","Nature","NestedNature"};
+  for(int i=0;i<folders.Length;i++)
+  {
+   bool candy=i<2;var p=new PreviewRenderUtility();var root=new GameObject("Polish preview");var owned=new List<Object>();
+   try{
+    var garden=root.AddComponent<WishChimeGarden>();garden.Initialize(folders[i],root.transform,p.camera,new BubblePlayHands(),null);Set(garden,"taught",true);
+    var host=new GameObject("Wish");host.transform.SetParent(root.transform,false);var chime=host.AddComponent<WishChime>();
+    var record=new WishChimeRecord{id="preview",folder=folders[i],position=new[]{0f,0f,0f}};
+    record.strokes.Add(new List<float[]>{new[]{.25f,.2f},new[]{.25f,.8f},new[]{.8f,.8f}});record.strokes.Add(new List<float[]>{new[]{.25f,.5f},new[]{.65f,.5f}});chime.Initialize(garden,record);
+    var frame=Resources.Load<WishPaperFrame>("MoodiumBubblePlay/PaperFrame_"+(candy?"Candy":"Nature"));var centre=chime.StripCentre;var normal=chime.Strip.TransformDirection(frame.Normal);
+    p.camera.transform.position=centre+normal*.42f+Vector3.up*.07f;p.camera.transform.LookAt(centre+Vector3.up*.04f);p.camera.fieldOfView=68;p.camera.nearClipPlane=.001f;p.camera.farClipPlane=30;
+    typeof(WishChime).GetField("<State>k__BackingField",Flags).SetValue(chime,WishChime.Stage.Blank);chime.BeginWrite();
+    var texture=new Texture2D(2,2);texture.LoadImage(File.ReadAllBytes("/tmp/moodium-wish-polish/wish-chime-polish-1031/Source/preview-bg/"+names[i]+".jpg"));owned.Add(texture);
+    var sky=GameObject.CreatePrimitive(PrimitiveType.Sphere);sky.name="Preview panorama only";sky.transform.SetParent(root.transform);sky.transform.position=p.camera.transform.position;sky.transform.localScale=Vector3.one*20;
+    var skyMaterial=BubbleWorldData.CreateUnlit("Preview pano",texture,false,CullMode.Off,Color.white);owned.Add(skyMaterial);sky.GetComponent<Renderer>().sharedMaterial=skyMaterial;
+    p.AddSingleGO(root);Shot(p,names[i]+"-buttons");
+    var play=root.AddComponent<BubbleWorldPlay>();Set(play,"active",true);Set(play,"garden",garden);
+    var controller=root.AddComponent<BubbleWorldController>();Set(controller,"m_Play",play);Set(controller,"m_Folder",folders[i]);
+    typeof(BubbleWorldController).GetMethod("UpdateFollowTarget",Flags).Invoke(controller,new object[]{p.camera});var parked=(Vector3)typeof(BubbleWorldController).GetField("m_HomeTarget",Flags).GetValue(controller);
+    var bubble=GameObject.CreatePrimitive(PrimitiveType.Sphere);bubble.name="Simulated parked follow bubble";bubble.transform.SetParent(root.transform);bubble.transform.position=parked;bubble.transform.localScale=Vector3.one*.16f*ChimeFocus.ParkScale;
+    var tint=candy?new Color(1,.9f,.97f,.85f*ChimeFocus.ParkAlpha):new Color(1,1,1,.85f*ChimeFocus.ParkAlpha);
+    var film=BubbleWorldData.CreateUnlit("Parked film",Resources.Load<Texture2D>(BubbleWorldData.FilmResource),true,CullMode.Off,tint);film.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");owned.Add(film);bubble.GetComponent<Renderer>().sharedMaterial=film;
+    p.camera.fieldOfView=120;var ring=BubbleHoldRing.Create(root.transform,candy);ring.Show(.6f,parked,.08f*ChimeFocus.ParkScale,p.camera);Shot(p,names[i]+"-focus");
+   }finally{p.Cleanup();if(root!=null)Object.DestroyImmediate(root);foreach(var o in owned)Object.DestroyImmediate(o);}
+  }
+ }
+}

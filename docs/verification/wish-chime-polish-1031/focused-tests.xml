@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="37" result="Passed" total="37" passed="37" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.2198883">
+  <test-suite type="TestSuite" id="1000" name="Moodium" fullname="Moodium" runstate="Runnable" testcasecount="721" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.219888" total="37" passed="37" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1884" name="Assembly-CSharp-Editor.dll" fullname="/private/tmp/moodium-round-vine-check/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="712" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.214886" total="37" passed="37" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="32560" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1047" name="BubbleWorldNestedEntryTests" fullname="BubbleWorldNestedEntryTests" classname="BubbleWorldNestedEntryTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.021182" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1048" name="OuterCloudFadesOnlyBetweenOneAndFourMetres" fullname="BubbleWorldNestedEntryTests.OuterCloudFadesOnlyBetweenOneAndFourMetres" methodname="OuterCloudFadesOnlyBetweenOneAndFourMetres" classname="BubbleWorldNestedEntryTests" runstate="Runnable" seed="1175900908" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.008718" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1049" name="PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" fullname="BubbleWorldNestedEntryTests.PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" methodname="PortalApproachKeepsOriginalPoseRadiusAndOuterVisuals" classname="BubbleWorldNestedEntryTests" runstate="Runnable" seed="1375708423" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.006010" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1763" name="WishChimeGuardTests" fullname="WishChimeGuardTests" classname="WishChimeGuardTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.024922" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1771" name="DisabledOrBlockedButtonsNeverInvokeAction" fullname="WishChimeGuardTests.DisabledOrBlockedButtonsNeverInvokeAction" methodname="DisabledOrBlockedButtonsNeverInvokeAction" classname="WishChimeGuardTests" runstate="Runnable" seed="981838950" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.019411" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1768" name="DrawingRecentStrokeEraseAndSaveBlockAction" fullname="WishChimeGuardTests.DrawingRecentStrokeEraseAndSaveBlockAction" classname="WishChimeGuardTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000997" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1764" name="DrawingRecentStrokeEraseAndSaveBlockAction(True,1.0f,0.0f,False,False)" fullname="WishChimeGuardTests.DrawingRecentStrokeEraseAndSaveBlockAction(True,1.0f,0.0f,False,False)" methodname="DrawingRecentStrokeEraseAndSaveBlockAction" classname="WishChimeGuardTests" runstate="Runnable" seed="1952764464" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000184" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1765" name="DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.8f,False,False)" fullname="WishChimeGuardTests.DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.8f,False,False)" methodname="DrawingRecentStrokeEraseAndSaveBlockAction" classname="WishChimeGuardTests" runstate="Runnable" seed="952242118" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000024" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1766" name="DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.0f,True,False)" fullname="WishChimeGuardTests.DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.0f,True,False)" methodname="DrawingRecentStrokeEraseAndSaveBlockAction" classname="WishChimeGuardTests" runstate="Runnable" seed="1400599425" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000019" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1767" name="DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.0f,False,True)" fullname="WishChimeGuardTests.DrawingRecentStrokeEraseAndSaveBlockAction(False,1.0f,0.0f,False,True)" methodname="DrawingRecentStrokeEraseAndSaveBlockAction" classname="WishChimeGuardTests" runstate="Runnable" seed="805832928" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000019" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1769" name="FinishedStrokeEventuallyAllowsAction" fullname="WishChimeGuardTests.FinishedStrokeEventuallyAllowsAction" methodname="FinishedStrokeEventuallyAllowsAction" classname="WishChimeGuardTests" runstate="Runnable" seed="1313672994" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000101" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1770" name="GraceRequiresFingerToLeaveBeforeRearming" fullname="WishChimeGuardTests.GraceRequiresFingerToLeaveBeforeRearming" methodname="GraceRequiresFingerToLeaveBeforeRearming" classname="WishChimeGuardTests" runstate="Runnable" seed="1755107325" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000108" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1773" name="LockedHomeRejectsOrdinaryRequestAndForceLeaves" fullname="WishChimeGuardTests.LockedHomeRejectsOrdinaryRequestAndForceLeaves" methodname="LockedHomeRejectsOrdinaryRequestAndForceLeaves" classname="WishChimeGuardTests" runstate="Runnable" seed="1804083514" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.002140" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1774" name="LockedPortalCanBeEnteredOnlyWithForce" fullname="WishChimeGuardTests.LockedPortalCanBeEnteredOnlyWithForce" methodname="LockedPortalCanBeEnteredOnlyWithForce" classname="WishChimeGuardTests" runstate="Runnable" seed="1966684715" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000772" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1772" name="LockedPortalDoesNotStartEntry" fullname="WishChimeGuardTests.LockedPortalDoesNotStartEntry" methodname="LockedPortalDoesNotStartEntry" classname="WishChimeGuardTests" runstate="Runnable" seed="773956838" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000129" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1775" name="WishChimePolishTests" fullname="WishChimePolishTests" classname="WishChimePolishTests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.028409" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="ParameterizedMethod" id="1784" name="AllButtonSpritesImportAtTheRightSize" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.024936" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <output><![CDATA[[AB-UMCP] Main toolbar injection not available on this Unity version. Use Unity 6000.3+ for native toolbar support.
+]]></output>
+          <test-case id="1778" name="AllButtonSpritesImportAtTheRightSize(&quot;rewrite_zh&quot;,False)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;rewrite_zh&quot;,False)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="181217788" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.003644" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1779" name="AllButtonSpritesImportAtTheRightSize(&quot;rewrite_en&quot;,False)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;rewrite_en&quot;,False)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="1213210048" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.003405" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1780" name="AllButtonSpritesImportAtTheRightSize(&quot;release_candy_zh&quot;,True)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;release_candy_zh&quot;,True)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="475917910" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.002575" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1781" name="AllButtonSpritesImportAtTheRightSize(&quot;release_candy_en&quot;,True)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;release_candy_en&quot;,True)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="1283690495" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.004756" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1782" name="AllButtonSpritesImportAtTheRightSize(&quot;release_nature_zh&quot;,True)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;release_nature_zh&quot;,True)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="967786765" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.004614" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1783" name="AllButtonSpritesImportAtTheRightSize(&quot;release_nature_en&quot;,True)" fullname="WishChimePolishTests.AllButtonSpritesImportAtTheRightSize(&quot;release_nature_en&quot;,True)" methodname="AllButtonSpritesImportAtTheRightSize" classname="WishChimePolishTests" runstate="Runnable" seed="1253081146" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.004704" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1790" name="AvoidingKeepsTheSideTheBubbleIsAlreadyOn" fullname="WishChimePolishTests.AvoidingKeepsTheSideTheBubbleIsAlreadyOn" methodname="AvoidingKeepsTheSideTheBubbleIsAlreadyOn" classname="WishChimePolishTests" runstate="Runnable" seed="922890046" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000786" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1785" name="ButtonsLeaveAGapBesideTheEnlargedStrip" fullname="WishChimePolishTests.ButtonsLeaveAGapBesideTheEnlargedStrip" methodname="ButtonsLeaveAGapBesideTheEnlargedStrip" classname="WishChimePolishTests" runstate="Runnable" seed="1017640994" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000083" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1776" name="ButtonSpritePathsFollowLanguageAndWorld" fullname="WishChimePolishTests.ButtonSpritePathsFollowLanguageAndWorld" methodname="ButtonSpritePathsFollowLanguageAndWorld" classname="WishChimePolishTests" runstate="Runnable" seed="986003618" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000135" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1777" name="ButtonStateSuffixPrefersDisabledThenPressed" fullname="WishChimePolishTests.ButtonStateSuffixPrefersDisabledThenPressed" methodname="ButtonStateSuffixPrefersDisabledThenPressed" classname="WishChimePolishTests" runstate="Runnable" seed="660244502" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000075" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1789" name="ClearTargetIsNotMoved" fullname="WishChimePolishTests.ClearTargetIsNotMoved" methodname="ClearTargetIsNotMoved" classname="WishChimePolishTests" runstate="Runnable" seed="271978210" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000136" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1788" name="DefaultBubbleSpotOverlapsTheBlankChimeAndIsPushedAside" fullname="WishChimePolishTests.DefaultBubbleSpotOverlapsTheBlankChimeAndIsPushedAside" methodname="DefaultBubbleSpotOverlapsTheBlankChimeAndIsPushedAside" classname="WishChimePolishTests" runstate="Runnable" seed="890541468" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000234" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1791" name="FocusStartsForWritingFlyingOrReachingAndHasATail" fullname="WishChimePolishTests.FocusStartsForWritingFlyingOrReachingAndHasATail" methodname="FocusStartsForWritingFlyingOrReachingAndHasATail" classname="WishChimePolishTests" runstate="Runnable" seed="1665224283" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000141" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1792" name="HoldGateNeedsAnUnbrokenHold" fullname="WishChimePolishTests.HoldGateNeedsAnUnbrokenHold" methodname="HoldGateNeedsAnUnbrokenHold" classname="WishChimePolishTests" runstate="Runnable" seed="1120342336" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000152" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1787" name="ParkedBubbleIsClearOfTheWritingStripAndButtons" fullname="WishChimePolishTests.ParkedBubbleIsClearOfTheWritingStripAndButtons" methodname="ParkedBubbleIsClearOfTheWritingStripAndButtons" classname="WishChimePolishTests" runstate="Runnable" seed="2103908638" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000357" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1786" name="ParksOnTheSideOfTheFreeHand" fullname="WishChimePolishTests.ParksOnTheSideOfTheFreeHand" methodname="ParksOnTheSideOfTheFreeHand" classname="WishChimePolishTests" runstate="Runnable" seed="480681252" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000145" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1793" name="WishChimeTests" fullname="WishChimeTests" classname="WishChimeTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.131256" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1803" name="AllPlaySoundsAndVoicesLoad" fullname="WishChimeTests.AllPlaySoundsAndVoicesLoad" methodname="AllPlaySoundsAndVoicesLoad" classname="WishChimeTests" runstate="Runnable" seed="1781207909" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.049245" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-suite type="ParameterizedMethod" id="1800" name="ChimePartsAndBakedSurfaceAreAvailable" fullname="WishChimeTests.ChimePartsAndBakedSurfaceAreAvailable" classname="WishChimeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.005385" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-case id="1798" name="ChimePartsAndBakedSurfaceAreAvailable(&quot;Candy&quot;)" fullname="WishChimeTests.ChimePartsAndBakedSurfaceAreAvailable(&quot;Candy&quot;)" methodname="ChimePartsAndBakedSurfaceAreAvailable" classname="WishChimeTests" runstate="Runnable" seed="1437958722" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.003511" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+          <test-case id="1799" name="ChimePartsAndBakedSurfaceAreAvailable(&quot;Nature&quot;)" fullname="WishChimeTests.ChimePartsAndBakedSurfaceAreAvailable(&quot;Nature&quot;)" methodname="ChimePartsAndBakedSurfaceAreAvailable" classname="WishChimeTests" runstate="Runnable" seed="1224347704" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.001256" asserts="0">
+            <properties>
+              <property name="retryIteration" value="0" />
+              <property name="repeatIteration" value="0" />
+            </properties>
+          </test-case>
+        </test-suite>
+        <test-case id="1801" name="DynamicStrokeNeverExceedsThreeHundredVertices" fullname="WishChimeTests.DynamicStrokeNeverExceedsThreeHundredVertices" methodname="DynamicStrokeNeverExceedsThreeHundredVertices" classname="WishChimeTests" runstate="Runnable" seed="1695714911" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.004637" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1796" name="HangingPositionsStayApart" fullname="WishChimeTests.HangingPositionsStayApart" methodname="HangingPositionsStayApart" classname="WishChimeTests" runstate="Runnable" seed="853583691" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000500" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1794" name="InkRejectsJitterAndNeedsARealStroke" fullname="WishChimeTests.InkRejectsJitterAndNeedsARealStroke" methodname="InkRejectsJitterAndNeedsARealStroke" classname="WishChimeTests" runstate="Runnable" seed="2110597914" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000508" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1802" name="NaturePaperDecorationFollowsItsWritingScale" fullname="WishChimeTests.NaturePaperDecorationFollowsItsWritingScale" methodname="NaturePaperDecorationFollowsItsWritingScale" classname="WishChimeTests" runstate="Runnable" seed="1487526611" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.025123" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1797" name="SavedWishesRoundTripAndReplaceAtomically" fullname="WishChimeTests.SavedWishesRoundTripAndReplaceAtomically" methodname="SavedWishesRoundTripAndReplaceAtomically" classname="WishChimeTests" runstate="Runnable" seed="228022152" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.044323" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[[Wish Chime] Read failed; keeping existing file: Unexpected character encountered while parsing value: c. Path '', line 0, position 0.
+]]></output>
+        </test-case>
+        <test-case id="1795" name="SpacingUsesTheEnlargedWritingSurface" fullname="WishChimeTests.SpacingUsesTheEnlargedWritingSurface" methodname="SpacingUsesTheEnlargedWritingSurface" classname="WishChimeTests" runstate="Runnable" seed="764962182" result="Passed" start-time="2026-10-31 08:37:10Z" end-time="2026-10-31 08:37:10Z" duration="0.000157" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: /Users/yibei/Library/Application Support/DefaultCompany/Moodium/TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
