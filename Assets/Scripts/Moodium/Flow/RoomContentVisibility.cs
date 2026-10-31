@@ -89,7 +89,7 @@ namespace Moodium.Flow
                 {
                     if (i > 0 && i % ObjectsPerFrame == 0) yield return null;
                     var item = m_Items[i];
-                    if (!item.Snapshot || item.Target == null) continue;
+                    if (!item.Snapshot || item.Target == null || (hidden && item.ImmediateHide)) continue;
                     var t = Mathf.Clamp01((Time.realtimeSinceStartup - start) / duration);
                     Visual(item, Mathf.Lerp(item.From, hidden ? 0f : 1f, Mathf.SmoothStep(0, 1, t)));
                     if (t >= 1f)
@@ -105,7 +105,7 @@ namespace Moodium.Flow
             {
                 if (i > 0 && i % ObjectsPerFrame == 0) yield return null;
                 var item = m_Items[i]; if (item.Target == null || !item.Snapshot) continue;
-                Visual(item, hidden ? 0f : 1f); item.Target.SetActive(!hidden && item.Active);
+                if (!(hidden && item.ImmediateHide)) Visual(item, hidden ? 0f : 1f); item.Target.SetActive(!hidden && item.Active);
                 if (!hidden) item.Snapshot = false;
             }
             m_Transition = null;

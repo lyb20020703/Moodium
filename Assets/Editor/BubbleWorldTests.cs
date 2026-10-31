@@ -6,6 +6,21 @@ using UnityEngine;
 public sealed class BubbleWorldTests
 {
     [Test]
+    public void VisibleArrivingBubbleRemembersTheFirstPress()
+    {
+        var go=new GameObject("arriving bubble");
+        try
+        {
+            var controller=go.AddComponent<BubbleWorldController>();
+            var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance;
+            typeof(BubbleWorldController).GetField("m_Phase",flags).SetValue(controller,BubbleWorldController.Phase.Rising);
+            controller.Touch();controller.Touch();
+            Assert.That(typeof(BubbleWorldController).GetField("m_TouchRequested",flags).GetValue(controller),Is.True);
+            Assert.That(typeof(BubbleWorldController).GetField("m_Phase",flags).GetValue(controller),Is.EqualTo(BubbleWorldController.Phase.Rising));
+        }
+        finally {Object.DestroyImmediate(go);}
+    }
+    [Test]
     public void BreathingKeepsSkyAtFixedWorldRadius()
     {
         foreach (var scale in new[] { 1f, 1.0075f, 1.015f })

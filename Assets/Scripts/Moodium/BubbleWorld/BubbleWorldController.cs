@@ -282,7 +282,7 @@ namespace Moodium.NatureWorld
         public void Touch()
         {
             if (m_Phase == Phase.Portal) EnterFromPortal();
-            else if (m_Phase == Phase.Floating) m_TouchRequested = true;
+            else if (m_Phase == Phase.Floating || m_Phase == Phase.Rising) m_TouchRequested = true;
         }
 
         public void StopAndClear()
@@ -614,10 +614,10 @@ namespace Moodium.NatureWorld
             var viewer = ResolveViewer();
             if (viewer == null) return;
             var ray = viewer.ScreenPointToRay(position);
-            var collider = m_Phase == Phase.Floating || m_Phase == Phase.Portal ? m_MembraneCollider :
+            var collider = m_Phase == Phase.Floating || m_Phase == Phase.Rising || m_Phase == Phase.Portal ? m_MembraneCollider :
                 m_Phase == Phase.Inside && m_Home != null && m_Home.activeInHierarchy ? m_Home.GetComponent<Collider>() : null;
             if (collider == null || !collider.enabled || !collider.Raycast(ray, out _, 100f)) return;
-            if (m_Phase == Phase.Floating || m_Phase == Phase.Portal) Touch(); else RequestHome();
+            if (m_Phase == Phase.Floating || m_Phase == Phase.Rising || m_Phase == Phase.Portal) Touch(); else RequestHome();
 #endif
 #endif
         }
@@ -1028,16 +1028,10 @@ namespace Moodium.NatureWorld
             {
                 var resourcePath = BubbleWorldData.MeshResource(m_Folder, BubbleWorldData.LayerMeshName(layer));
                 Mesh mesh;
-                if (layer < warmupLayers)
-                {
-                    mesh = Resources.Load<Mesh>(resourcePath);
-                }
-                else
-                {
-                    var request = Resources.LoadAsync<Mesh>(resourcePath);
-                    yield return request;
-                    mesh = request.asset as Mesh;
-                }
+                // Stream core layers too: loading a dozen large meshes synchronously stalls input.
+                var request = Resources.LoadAsync<Mesh>(resourcePath);
+                yield return request;
+                mesh = request.asset as Mesh;
                 if (mesh == null)
                 {
                     if (cloud == null && !BubbleWorldData.TryParse(bytes, out cloud))
@@ -1065,7 +1059,7 @@ namespace Moodium.NatureWorld
                     m_CoreLayersReady = true;
                     yield return null;
                 }
-                else if (layer + 1 > warmupLayers)
+                else
                     yield return null;
             }
             CacheQuietLayerPose();
